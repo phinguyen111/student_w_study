@@ -1,0 +1,16 @@
+
+    <h1>Xin chào <%= name %>!</h1>
+    <h1>Xin chào <%- name %>!</h1>
+
+    <div class="content"><%- sanitizedHtmlContent %></div>
+    </p>
+
+    <h2>Danh sách bạn bè:</h2>
+    <ul>
+        <% friends.forEach(friend => { %>
+                <li>
+                    <%= friend %>
+                </li>
+            <% });
+        %>
+    </ul>
