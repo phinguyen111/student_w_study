@@ -8,12 +8,15 @@ const cookieParser = require('cookie-parser');
 
 module.exports = (app) =>{
   app.use(
-  cors({
-    origin: ["https://your-frontend-domain.com", "http://localhost:3000"],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: false,
-  })
+    cors({
+      origin: [
+        "https://student-swin-study.vercel.app",
+        "http://localhost:3000"
+      ],
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+      credentials: true, // nếu bạn dùng cookie/session
+    })
 );
     // helmet
      app.use(helmet({
