@@ -7,17 +7,13 @@ const hpp = require('hpp');
 const cookieParser = require('cookie-parser');
 
 module.exports = (app) =>{
-  app.use(
-    cors({
-      origin: [
-        "https://student-swin-study.vercel.app",
-        "http://localhost:3000"
-      ],
-      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization"],
-      credentials: true, // nếu bạn dùng cookie/session
-    })
-);
+  app.use(cors({
+  origin: ["https://student-w-study.vercel.app", "http://localhost:3000"],
+  methods: ["GET","POST","PUT","DELETE","OPTIONS"],
+  allowedHeaders: ["Content-Type","Authorization"],
+  credentials: true, 
+}));
+
     // helmet
      app.use(helmet({
     contentSecurityPolicy: {
