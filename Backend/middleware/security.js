@@ -8,9 +8,13 @@ const cookieParser = require('cookie-parser');
 
 module.exports = (app) =>{
    app.use(cors({
-    origin: 'http://localhost:3000', // địa chỉ frontend
-    credentials: true
-  }));
+  origin: [
+    'http://localhost:3000',
+    'https://student-swin-study.vercel.app',
+    /\.vercel\.app$/   // cho phép tất cả domain preview của Vercel (ví dụ: branch builds)
+  ],
+  credentials: true
+}));
     // helmet
      app.use(helmet({
     contentSecurityPolicy: {
