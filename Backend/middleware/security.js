@@ -7,14 +7,14 @@ const hpp = require('hpp');
 const cookieParser = require('cookie-parser');
 
 module.exports = (app) =>{
-   app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'https://student-swin-study.vercel.app',
-    /\.vercel\.app$/   // cho phép tất cả domain preview của Vercel (ví dụ: branch builds)
-  ],
-  credentials: true
-}));
+  app.use(
+  cors({
+    origin: ["https://your-frontend-domain.com", "http://localhost:3000"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: false,
+  })
+);
     // helmet
      app.use(helmet({
     contentSecurityPolicy: {
