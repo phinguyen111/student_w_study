@@ -1,11 +1,11 @@
 // Backend/app.js
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 
-const { connectDB, disconnectDB } = require('./config/database'); // <-- sửa: destructure
-const security = require('./middleware/security');                // nếu chưa có có thể noop
-const errorHandler = require('./middleware/error-handler');       // middleware cuối
-// const sanitize = require('./middleware/sanitize');             // dùng nếu bạn đã viết
+const { connectDB, disconnectDB } = require('./config/database');
+const security = require('./middleware/security'); // nếu có, file này tự app.use bên trong
+const { notFound, errorHandler } = require('./middleware/error-handler'); // <<< sửa
 const apiRoutes = require('./routes/api');
 
 const app = express();
@@ -18,43 +18,40 @@ const ORIGIN = process.env.FRONTEND_ORIGIN || 'http://localhost:3000';
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Bảo mật (helmet, hpp, rate-limit...) nếu bạn đã cấu hình trong file security.js
+// Bảo mật (helmet, rate-limit...) nếu bạn có cài trong file security.js
 if (typeof security === 'function') security(app);
 
-// CORS cho frontend
-// backend/app.js
-const cors = require('cors');
-app.use(cors({
-  origin: ['http://localhost:3000'],
-  credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
-}));
-app.use(express.json());
-
-// Làm sạch input (nếu có)
-/// app.use(sanitize);
+// CORS cho frontend (prod + preview vercel + local)
+app.use(
+  cors({
+    origin: [ORIGIN, 'http://localhost:3000', /\.vercel\.app$/],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  })
+);
 
 // -----------------------------
 // 2) ROUTES
 // -----------------------------
 app.use('/api', apiRoutes);
 
-// healthcheck (đơn giản)
-app.get('/healthz', (_req, res) => {
+// Healthcheck
+const healthHandler = (_req, res) =>
   res.status(200).json({
     ok: true,
     service: 'Backend API',
     env: process.env.NODE_ENV || 'development',
   });
-});
+
+app.get('/healthz', healthHandler);
+app.get('/api/health', healthHandler); // thêm để khớp Render
 
 // -----------------------------
-// 3) ERROR HANDLERS (đặt cuối)
+// 3) ERROR HANDLERS (đặt CUỐI CÙNG)
 // -----------------------------
-if (typeof errorHandler === 'function') {
-  app.use(errorHandler);
-}
+app.use(notFound);       // 404
+app.use(errorHandler);   // 500 (4 tham số)
 
 // -----------------------------
 // 4) BOOT & SHUTDOWN
@@ -74,7 +71,6 @@ connectDB()
     process.exit(1);
   });
 
-// Graceful shutdown
 async function shutdown(signal) {
   try {
     console.log(`\n📴 Received ${signal}. Closing server...`);
@@ -90,4 +86,4 @@ async function shutdown(signal) {
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 
-module.exports = app; // hữu ích cho test
+module.exports = app;
