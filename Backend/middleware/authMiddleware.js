@@ -1,43 +1,29 @@
+// Backend/middleware/authMiddleware.js
 const jwt = require('jsonwebtoken');
-const User = require('../models/User'); // Import User Model
+const User = require('../models/User');
 
-// Hàm middleware để bảo vệ các route (kiểm tra token JWT)
 const protect = async (req, res, next) => {
-    let token;
-
-    // 1. Kiểm tra header Authorization (ví dụ: 'Bearer <token>')
-    if (
-        req.headers.authorization &&
-        req.headers.authorization.startsWith('Bearer')
-    ) {
-        try {
-            // Lấy token từ chuỗi 'Bearer '
-            token = req.headers.authorization.split(' ')[1];
-
-            // Giải mã token (verify)
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-            // Tìm user dựa trên ID trong token và loại bỏ mật khẩu
-            req.user = await User.findById(decoded.id).select('-password');
-
-            // Nếu không tìm thấy user, trả lỗi 401
-            if (!req.user) {
-                return res.status(401).json({ message: 'Token không hợp lệ, người dùng không tồn tại' });
-            }
-            
-            // Chuyển sang middleware/route tiếp theo
-            next();
-        } catch (error) {
-            console.error(error);
-            // Token không hợp lệ (hết hạn, sai secret,...)
-            return res.status(401).json({ message: 'Không được ủy quyền, Token thất bại' });
-        }
+  try {
+    const auth = req.headers.authorization || '';
+    if (!auth.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'Không được ủy quyền, thiếu Bearer token' });
     }
-
-    // 2. Nếu không có token trong header
-    if (!token) {
-        return res.status(401).json({ message: 'Không được ủy quyền, không có Token' });
-    }
+    const token = auth.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select('-password').lean();
+    if (!user) return res.status(401).json({ message: 'Token hợp lệ nhưng người dùng không tồn tại' });
+    req.user = user;
+    next();
+  } catch {
+    return res.status(401).json({ message: 'Không được ủy quyền, Token không hợp lệ/đã hết hạn' });
+  }
 };
 
-module.exports = { protect };
+const adminOnly = (req, res, next) => {
+  if (!req.user || req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Chỉ admin mới được phép' });
+  }
+  next();
+};
+
+module.exports = { protect, adminOnly };

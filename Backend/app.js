@@ -1,7 +1,6 @@
 // Backend/app.js
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
 
 const { connectDB, disconnectDB } = require('./config/database'); // <-- sửa: destructure
 const security = require('./middleware/security');                // nếu chưa có có thể noop
@@ -23,10 +22,15 @@ app.use(express.urlencoded({ extended: true }));
 if (typeof security === 'function') security(app);
 
 // CORS cho frontend
+// backend/app.js
+const cors = require('cors');
 app.use(cors({
-  origin: ORIGIN,
+  origin: ['http://localhost:3000'],
   credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
 }));
+app.use(express.json());
 
 // Làm sạch input (nếu có)
 /// app.use(sanitize);

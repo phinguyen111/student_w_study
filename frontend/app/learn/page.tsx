@@ -1,3 +1,4 @@
+// frontend/app/learn/page.tsx
 import { LanguageCard } from "@/components/language-card" // Giả định component này đã được nâng cấp
 import { Button } from "@/components/ui/button"
 import { GraduationCap, BookMarked, UserCircle2, ArrowRight } from "lucide-react"
