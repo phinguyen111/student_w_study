@@ -75,8 +75,7 @@ export const translations = {
     expected: 'Kỳ vọng',
     got: 'Nhận được',
     
-    // Profile
-    profile: 'Hồ sơ',
+    // Profile (email, name, role already defined above)
     email: 'Email',
     name: 'Tên',
     role: 'Vai trò',
@@ -89,7 +88,6 @@ export const translations = {
     // Home
     masterFullStack: 'Thành thạo Full Stack Web Development',
     getStarted: 'Bắt đầu',
-    continueLearning: 'Tiếp tục học',
     learnByLevel: 'Học theo cấp độ',
     learnByLevelDesc: 'Tiến bộ qua các cấp độ có cấu trúc từ cơ bản đến nâng cao',
     interactiveQuizzes: 'Quiz tương tác',
@@ -212,8 +210,7 @@ export const translations = {
     expected: 'Expected',
     got: 'Got',
     
-    // Profile
-    profile: 'Profile',
+    // Profile (profile already defined above in Navigation)
     email: 'Email',
     name: 'Name',
     role: 'Role',
@@ -226,7 +223,6 @@ export const translations = {
     // Home
     masterFullStack: 'Master Full Stack Web Development',
     getStarted: 'Get Started',
-    continueLearning: 'Continue Learning',
     learnByLevel: 'Learn by Level',
     learnByLevelDesc: 'Progress through structured levels from basics to advanced',
     interactiveQuizzes: 'Interactive Quizzes',

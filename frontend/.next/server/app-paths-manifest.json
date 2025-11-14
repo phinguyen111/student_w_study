@@ -1,1 +1,13 @@
-{}
+{
+  "/_not-found": "app/_not-found.js",
+  "/learn/[langId]/lesson/[lessonId]/code/page": "app/learn/[langId]/lesson/[lessonId]/code/page.js",
+  "/admin/page": "app/admin/page.js",
+  "/learn/[langId]/lesson/[lessonId]/page": "app/learn/[langId]/lesson/[lessonId]/page.js",
+  "/learn/[langId]/page": "app/learn/[langId]/page.js",
+  "/login/page": "app/login/page.js",
+  "/learn/[langId]/level/[levelId]/page": "app/learn/[langId]/level/[levelId]/page.js",
+  "/learn/page": "app/learn/page.js",
+  "/page": "app/page.js",
+  "/profile/page": "app/profile/page.js",
+  "/register/page": "app/register/page.js"
+}

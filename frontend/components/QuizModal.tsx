@@ -7,7 +7,7 @@ import { X, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Trophy, AlertCircl
 
 interface Question {
   question: string
-  options: string[]
+  options: (string | { vi?: string; en?: string; [key: string]: any })[]
   correctAnswer: number
   explanation?: string
 }
@@ -43,14 +43,15 @@ export function QuizModal({ questions, passingScore, onComplete, onClose }: Quiz
           }
           if (opt && typeof opt === 'object') {
             // Handle {vi: "...", en: "..."} format
-            const value = opt.en || opt.vi
+            const optObj = opt as { vi?: string; en?: string; [key: string]: any }
+            const value = optObj.en || optObj.vi
             if (value) {
               return String(value)
             }
             // If no en/vi, try to extract any string property
-            for (const key in opt) {
-              if (key !== '_id' && key !== '__v' && typeof opt[key] === 'string' && opt[key]) {
-                return String(opt[key])
+            for (const key in optObj) {
+              if (key !== '_id' && key !== '__v' && typeof optObj[key] === 'string' && optObj[key]) {
+                return String(optObj[key])
               }
             }
             return JSON.stringify(opt)
@@ -65,18 +66,19 @@ export function QuizModal({ questions, passingScore, onComplete, onClose }: Quiz
           .sort((a, b) => a - b)
         
         normalizedOptions = keys.map(key => {
-          const opt = q.options[key]
+          const opt = (q.options as any)[key]
           if (typeof opt === 'string') {
             return opt
           }
           if (opt && typeof opt === 'object') {
-            const value = opt.en || opt.vi
+            const optObj = opt as { vi?: string; en?: string; [key: string]: any }
+            const value = optObj.en || optObj.vi
             if (value) {
               return String(value)
             }
-            for (const key in opt) {
-              if (key !== '_id' && key !== '__v' && typeof opt[key] === 'string' && opt[key]) {
-                return String(opt[key])
+            for (const key in optObj) {
+              if (key !== '_id' && key !== '__v' && typeof optObj[key] === 'string' && optObj[key]) {
+                return String(optObj[key])
               }
             }
             return JSON.stringify(opt)
