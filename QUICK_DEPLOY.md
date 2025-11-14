@@ -20,9 +20,8 @@
 2. Import repository, chọn **Root Directory: `frontend`**
 3. Thêm Environment Variable:
    ```
-   NEXT_PUBLIC_API_URL=https://codecatalyst-backend.vercel.app/api
+   NEXT_PUBLIC_API_URL=https://codecatalyst-azure.vercel.app/api
    ```
-   (Thay bằng URL backend thực tế của bạn)
 4. Deploy → Đặt tên project: `codecatalyst`
 
 ### Bước 3: Cập nhật Backend CORS

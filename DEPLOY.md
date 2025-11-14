@@ -13,8 +13,8 @@ Backend cần được deploy riêng trên một service khác (Vercel Serverles
    - `JWT_SECRET`: Secret key cho JWT (tạo một chuỗi ngẫu nhiên)
    - `FRONTEND_URL`: `https://codecatalyst.vercel.app` (hoặc URL frontend của bạn)
 
-4. Deploy backend và lấy URL (ví dụ: `https://codecatalyst-backend.vercel.app`)
-5. **Lưu ý:** URL backend sẽ là `https://your-project.vercel.app/api/...` (không cần `/api` trong FRONTEND_URL)
+4. Deploy backend và lấy URL: `https://codecatalyst-azure.vercel.app`
+5. **Lưu ý:** URL backend sẽ là `https://codecatalyst-azure.vercel.app/api/...` (không cần `/api` trong FRONTEND_URL)
 
 ### Option 2: Deploy Backend lên Railway/Render
 
@@ -45,13 +45,12 @@ git push origin main
 Trong Vercel project settings, thêm:
 
 ```
-NEXT_PUBLIC_API_URL=https://your-backend-url.vercel.app/api
+NEXT_PUBLIC_API_URL=https://codecatalyst-azure.vercel.app/api
 ```
 
 **Lưu ý:** 
-- Thay `your-backend-url.vercel.app` bằng URL backend thực tế của bạn
-- Nếu backend deploy trên Vercel, URL sẽ có dạng: `https://codecatalyst-backend.vercel.app/api`
-- Đảm bảo có `/api` ở cuối URL
+- URL backend: `https://codecatalyst-azure.vercel.app`
+- URL API: `https://codecatalyst-azure.vercel.app/api` (đảm bảo có `/api` ở cuối)
 
 ### 4. Cấu hình Build Settings
 
