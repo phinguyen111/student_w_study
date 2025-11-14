@@ -46,17 +46,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const login = async (email: string, password: string) => {
-    const response = await api.post('/auth/login', { email, password });
-    localStorage.setItem('token', response.data.token);
-    setUser(response.data.user);
-    router.push('/learn');
+    try {
+      const response = await api.post('/auth/login', { email, password });
+      if (response.data.success && response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        setUser(response.data.user);
+        router.push('/learn');
+      } else {
+        throw new Error(response.data.message || 'Login failed');
+      }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Login failed';
+      throw new Error(errorMessage);
+    }
   };
 
   const register = async (email: string, password: string, name: string) => {
-    const response = await api.post('/auth/register', { email, password, name });
-    localStorage.setItem('token', response.data.token);
-    setUser(response.data.user);
-    router.push('/learn');
+    try {
+      const response = await api.post('/auth/register', { email, password, name });
+      if (response.data.success && response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        setUser(response.data.user);
+        router.push('/learn');
+      } else {
+        throw new Error(response.data.message || 'Registration failed');
+      }
+    } catch (error: any) {
+      console.error('Register error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Registration failed';
+      throw new Error(errorMessage);
+    }
   };
 
   const logout = () => {

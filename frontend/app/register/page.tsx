@@ -23,7 +23,9 @@ export default function RegisterPage() {
     try {
       await register(email, password, name)
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Đăng ký thất bại')
+      console.error('Register error:', err)
+      const errorMessage = err.message || err.response?.data?.message || 'Registration failed. Please try again later.'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }

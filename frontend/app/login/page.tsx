@@ -22,7 +22,9 @@ export default function LoginPage() {
     try {
       await login(email, password)
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Đăng nhập thất bại')
+      console.error('Login error:', err)
+      const errorMessage = err.message || err.response?.data?.message || 'Login failed. Please check your credentials or try again later.'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
