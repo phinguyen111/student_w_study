@@ -15,8 +15,12 @@ dotenv.config();
 
 const app = express();
 
-// Connect to database
-connectDB();
+// Connect to database (async, but don't block server startup)
+// In Vercel serverless, connection will be established on first request
+connectDB().catch(err => {
+  console.error('Failed to connect to MongoDB:', err.message);
+  // Don't crash the server, let it try to connect on first request
+});
 
 // Middleware
 // CORS configuration - allow all origins in development, specific origins in production
