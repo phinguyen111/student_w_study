@@ -25,10 +25,41 @@ connectDB().catch(err => {
 // Middleware
 // CORS configuration - allow all origins in development, specific origins in production
 const corsOptions = {
-  origin: process.env.FRONTEND_URL 
-    ? process.env.FRONTEND_URL.split(',')
-    : ['http://localhost:3000', 'https://codecatalyst.vercel.app'],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = process.env.FRONTEND_URL 
+      ? process.env.FRONTEND_URL.split(',')
+      : [
+          'http://localhost:3000',
+          'https://codecatalyst.vercel.app',
+          'https://code-catalyst-sigma.vercel.app',
+          /^https:\/\/.*\.vercel\.app$/, // Allow all Vercel preview deployments
+        ];
+    
+    // Check if origin matches allowed origins
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (allowed instanceof RegExp) {
+        return allowed.test(origin);
+      }
+      return allowed === origin;
+    });
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      // In development, allow all origins
+      if (process.env.NODE_ENV !== 'production') {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    }
+  },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 };
 
 app.use(cors(corsOptions));
