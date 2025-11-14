@@ -1,0 +1,134 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 3px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.5);
+  }
+}
+
+/* Markdown Content Styles */
+.markdown-content {
+  @apply text-foreground;
+}
+
+.markdown-content pre {
+  @apply rounded-lg overflow-x-auto;
+}
+
+.markdown-content pre code {
+  @apply p-0 bg-transparent;
+}
+
+/* Syntax Highlighter Custom Styles */
+.markdown-content pre[class*="language-"] {
+  @apply bg-slate-900 dark:bg-slate-950;
+}
+
+.markdown-content pre[class*="language-"] code {
+  @apply text-slate-100;
+}
+
+@layer base {
+  :root {
+    /* Teal-Blue to Purple-Blue gradient theme */
+    --background: 0 0% 100%;
+    --foreground: 200 30% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 200 30% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 200 30% 15%;
+    /* Primary: Teal-blue (vibrant teal) */
+    --primary: 185 80% 45%;
+    --primary-foreground: 0 0% 100%;
+    /* Secondary: Medium blue */
+    --secondary: 210 60% 55%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 200 20% 96%;
+    --muted-foreground: 200 15% 45%;
+    /* Accent: Purple-blue */
+    --accent: 250 60% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 200 25% 88%;
+    --input: 200 25% 88%;
+    --ring: 185 80% 45%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Dark mode with teal-purple gradient theme */
+    --background: 220 30% 8%;
+    --foreground: 200 20% 95%;
+    --card: 220 30% 10%;
+    --card-foreground: 200 20% 95%;
+    --popover: 220 30% 10%;
+    --popover-foreground: 200 20% 95%;
+    /* Primary: Bright teal-blue */
+    --primary: 185 85% 55%;
+    --primary-foreground: 220 30% 8%;
+    /* Secondary: Medium blue */
+    --secondary: 210 65% 60%;
+    --secondary-foreground: 220 30% 8%;
+    --muted: 220 25% 15%;
+    --muted-foreground: 200 15% 65%;
+    /* Accent: Purple-blue */
+    --accent: 250 65% 60%;
+    --accent-foreground: 220 30% 8%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 220 25% 20%;
+    --input: 220 25% 20%;
+    --ring: 185 85% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    background: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(200 30% 98%) 100%);
+  }
+  
+  .dark body {
+    background: linear-gradient(135deg, hsl(220 30% 8%) 0%, hsl(240 30% 12%) 100%);
+  }
+}
+
+/* Gradient backgrounds for cards and sections */
+.gradient-primary {
+  background: linear-gradient(135deg, hsl(185 80% 45%) 0%, hsl(210 60% 55%) 50%, hsl(250 60% 55%) 100%);
+}
+
+.gradient-primary-light {
+  background: linear-gradient(135deg, hsl(185 80% 95%) 0%, hsl(210 60% 95%) 50%, hsl(250 60% 95%) 100%);
+}
+
+.gradient-primary-dark {
+  background: linear-gradient(135deg, hsl(185 80% 20%) 0%, hsl(210 60% 20%) 50%, hsl(250 60% 20%) 100%);
+}
+
+
+

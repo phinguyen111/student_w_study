@@ -1,0 +1,97 @@
+🚀 Project Plan: LearnCode – Full Stack Learning Platform
+
+🎯 1. Mục Tiêu Dự Án
+Xây dựng nền tảng học lập trình web full-stack (HTML, CSS, JavaScript) với các tính năng:
+- Học theo level (Level 1–3)
+- Mỗi bài học có quiz riêng
+- Tính điểm trung bình để mở khóa level tiếp theo
+- Theo dõi tiến độ học, thời gian học, streak
+- Admin dashboard quản lý người dùng, tạo quiz cho user hoặc nhiều user, có thể chọn user làm bài test trong thời gian nhất định và cấp phép mở level
+
+🧱 2. Phạm Vi Dự Án
+Frontend: Next.js 14 + TypeScript + Tailwind + shadcn/ui
+Backend: Node.js + Express + MongoDB
+Database: MongoDB (Mongoose ORM)
+Authentication: JWT
+Admin Dashboard: Next.js route riêng
+
+⚙️ 3. Kiến Trúc Dự Án
+learncode/
+├── backend/
+│   ├── api/
+│   ├── models/
+│   ├── middleware/
+│   ├── config/
+│   ├── seed.js
+│   └── app.js
+│
+├── frontend/
+│   ├── app/
+│   ├── components/
+│   ├── hooks/
+│   ├── lib/
+│   └── styles/
+│
+└── package.json
+
+🧠 4. Chức Năng Chính
+- Học HTML, CSS, JS theo level
+- Mỗi lesson có phần lý thuyết, demo code, quiz
+- Tính điểm quiz và lưu tiến độ
+- Khi điểm trung bình level >7 → mở khóa level tiếp theo
+- Nếu chưa đạt, admin có thể phê duyệt mở level
+- Theo dõi thời gian học và streak
+- Profile user & Admin Dashboard
+
+📋 5. Cấu Trúc Database
+User, Lesson, Language, UserProgress
+- Lesson có quiz (questions, answers, score)
+- UserProgress lưu completedLessonIds, timeStats, levelScores
+
+🛠️ 6. Nhiệm Vụ Chính (Task Breakdown)
+
+🔹 Backend
+1. Thiết kế models (User, Lesson, Language, UserProgress)
+2. Tạo API routes (public, protected, admin)
+3. Thêm cơ chế quiz & scoring
+4. Tính điểm trung bình theo level
+5. Logic mở khóa level tự động hoặc admin approval
+6. Middleware: Auth, AdminOnly, Error handling
+7. Seed dữ liệu mẫu
+
+🔹 Frontend
+1. Tạo pages: learn/, learn/[langId], learn/[lessonId]
+2. Thiết kế UI học tập và quiz
+3. Hiển thị tiến độ học (progress bar, streak)
+4. Xây dựng Profile và Dashboard
+5. Admin panel quản lý users và level approvals
+6. Hook useAuth, useTimeTracker, useQuiz
+7. Responsive + dark mode
+
+🔐 7. Authentication Flow
+1. User đăng nhập → POST /api/auth/login
+2. Backend verify email/password → JWT token
+3. Frontend lưu token vào localStorage
+4. Gửi token trong header Authorization cho protected routes
+
+📈 8. Logic Quiz & Level Unlock
+- Mỗi lesson có quiz riêng (multiple choice)
+- Điểm mỗi bài lưu trong UserProgress
+- Tính trung bình theo level
+- Trung bình >7: tự động mở level tiếp theo
+- Nếu không đạt: chờ bài test định kỳ và admin phê duyệt
+
+🎨 9. UI/UX
+- shadcn/ui components
+- Dark mode (next-themes)
+- Responsive grid layout
+- Loading/Error states
+- Accessibility (ARIA)
+
+🧩 10. Kế Hoạch Mở Rộng
+- Thêm nhiều ngôn ngữ (Python, React, NodeJS)
+- Hệ thống achievements & ranking
+- Forum cộng đồng
+- Code editor tích hợp
+- Video tutorials
+- Mobile app (React Native)
