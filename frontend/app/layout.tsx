@@ -4,6 +4,10 @@ import './globals.css'
 import { AuthProvider } from '@/hooks/useAuth'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import Navbar from '@/components/Navbar'
+import { ActivityTracker } from '@/components/ActivityTracker'
+import { GoogleAnalytics } from '@/components/GoogleAnalytics'
+import { ExitTracker } from '@/components/ExitTracker'
+import { GATrackingProvider } from '@/components/GATrackingProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -23,12 +27,17 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
+        <GoogleAnalytics />
         <ThemeProvider>
           <AuthProvider>
-            <Navbar />
-            <main className="min-h-screen">
-              {children}
-            </main>
+            <GATrackingProvider>
+              <ExitTracker />
+              <ActivityTracker />
+              <Navbar />
+              <main className="min-h-screen">
+                {children}
+              </main>
+            </GATrackingProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

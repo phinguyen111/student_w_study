@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
+import { useGATracking } from '@/hooks/useGATracking'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -14,18 +15,24 @@ export default function RegisterPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { register } = useAuth()
+  const { trackAuthAction, trackFormSubmit, trackError: trackGAError } = useGATracking()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
 
+    trackFormSubmit('register_form', false)
+
     try {
       await register(email, password, name)
+      trackAuthAction('register', true, { user_email: email })
     } catch (err: any) {
       console.error('Register error:', err)
       const errorMessage = err.message || err.response?.data?.message || 'Registration failed. Please try again later.'
       setError(errorMessage)
+      trackAuthAction('register', false, { error_message: errorMessage })
+      trackGAError('Registration Error', errorMessage, '/register')
     } finally {
       setLoading(false)
     }

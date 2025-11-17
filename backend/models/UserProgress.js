@@ -74,6 +74,17 @@ const lessonScoreSchema = new mongoose.Schema({
   codeAttempts: {
     type: Number,
     default: 0
+  },
+  // Track quiz session ID for detailed tracking analysis
+  quizSessionId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'QuizSessionTracking',
+    default: null
+  },
+  // Track time spent on quiz (in milliseconds)
+  quizTimeSpent: {
+    type: Number,
+    default: null
   }
 });
 

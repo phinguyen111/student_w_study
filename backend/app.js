@@ -10,6 +10,8 @@ import languagesRoutes from './api/languages.js';
 import lessonsRoutes from './api/lessons.js';
 import progressRoutes from './api/progress.js';
 import adminRoutes from './api/admin.js';
+import activityRoutes from './api/activity.js';
+import quizTrackingRoutes from './api/quizTracking.js';
 
 dotenv.config();
 
@@ -72,6 +74,8 @@ app.use('/api/languages', languagesRoutes);
 app.use('/api/lessons', lessonsRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/activity', activityRoutes);
+app.use('/api/quiz-tracking', quizTrackingRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

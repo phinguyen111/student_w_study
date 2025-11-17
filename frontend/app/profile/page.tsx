@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Flame, Clock, BookOpen } from 'lucide-react'
+import { Flame, Clock, BookOpen, ClipboardList, CheckCircle2, XCircle } from 'lucide-react'
 
 interface UserProgress {
   currentStreak: number
@@ -25,11 +25,25 @@ interface UserProgress {
   }>
 }
 
+interface QuizAssignmentResult {
+  _id: string
+  assignmentId: {
+    _id: string
+    title: string
+    deadline: string
+    passingScore: number
+  }
+  score: number
+  passed: boolean
+  submittedAt: string
+}
+
 export default function ProfilePage() {
   const { isAuthenticated, user, loading } = useAuth()
   const router = useRouter()
   const [progress, setProgress] = useState<UserProgress | null>(null)
   const [loadingProgress, setLoadingProgress] = useState(true)
+  const [assignmentResults, setAssignmentResults] = useState<QuizAssignmentResult[]>([])
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -37,11 +51,6 @@ export default function ProfilePage() {
     }
   }, [isAuthenticated, loading, router])
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchProgress()
-    }
-  }, [isAuthenticated])
 
   const fetchProgress = async () => {
     try {
@@ -53,6 +62,22 @@ export default function ProfilePage() {
       setLoadingProgress(false)
     }
   }
+
+  const fetchAssignmentResults = async () => {
+    try {
+      const response = await api.get('/progress/quiz-assignments/results')
+      setAssignmentResults(response.data.results || [])
+    } catch (error) {
+      console.error('Error fetching assignment results:', error)
+    }
+  }
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchProgress()
+      fetchAssignmentResults()
+    }
+  }, [isAuthenticated])
 
   if (loading || loadingProgress) {
     return (
@@ -223,6 +248,91 @@ export default function ProfilePage() {
                 <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">
                   {progress.lessonScores.filter(ls => ls.totalScore > 0).length} bài đã hoàn thành
                 </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Quiz Assignments Results */}
+      {assignmentResults.length > 0 && (
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ClipboardList className="h-5 w-5" />
+              Điểm Quiz Assignments
+            </CardTitle>
+            <CardDescription>Điểm số Quiz Assignments (riêng biệt với Quiz của bài học)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {assignmentResults.map((result) => {
+                const deadlineDate = new Date(result.assignmentId.deadline)
+                return (
+                  <div 
+                    key={result._id} 
+                    className={`p-4 border-2 rounded-lg ${
+                      result.passed
+                        ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20'
+                        : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex-1">
+                        <p className="font-semibold text-lg">{result.assignmentId.title}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Deadline: {deadlineDate.toLocaleString()} • Passing: {result.assignmentId.passingScore}/10
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 ml-4">
+                        {result.passed ? (
+                          <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                        ) : (
+                          <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                        )}
+                        <div className="text-right">
+                          <p className="font-bold text-xl">
+                            {result.score.toFixed(1)}/10
+                          </p>
+                          <p className={`text-sm font-medium ${result.passed ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                            {result.passed ? 'Passed' : 'Failed'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Submitted: {new Date(result.submittedAt).toLocaleString()}
+                    </p>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="mt-6 pt-4 border-t">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="p-3 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-1">Quiz Assignments Done</p>
+                  <p className="text-2xl font-bold">{assignmentResults.length}</p>
+                </div>
+                <div className="p-3 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-1">Average Score</p>
+                  <p className="text-2xl font-bold">
+                    {assignmentResults.length > 0
+                      ? (assignmentResults.reduce((sum, r) => sum + r.score, 0) / assignmentResults.length).toFixed(1)
+                      : '0.0'}/10
+                  </p>
+                </div>
+                <div className="p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                  <p className="text-sm text-green-900 dark:text-green-100 mb-1">Passed</p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {assignmentResults.filter(r => r.passed).length}
+                  </p>
+                </div>
+                <div className="p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
+                  <p className="text-sm text-red-900 dark:text-red-100 mb-1">Failed</p>
+                  <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                    {assignmentResults.filter(r => !r.passed).length}
+                  </p>
+                </div>
               </div>
             </div>
           </CardContent>

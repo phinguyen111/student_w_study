@@ -19,7 +19,7 @@ export default function Navbar() {
   }, [])
 
   return (
-    <nav className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
+    <nav className="border-b border-border/40 bg-background/95 backdrop-blur-md sticky top-0 z-50 shadow-sm dark:shadow-none dark:border-border/60">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
@@ -33,7 +33,7 @@ export default function Navbar() {
                 priority
               />
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-[hsl(185_80%_45%)] via-[hsl(210_60%_55%)] to-[hsl(250_60%_55%)] bg-clip-text text-transparent">
+            <span className="text-2xl font-bold bg-gradient-to-r from-[hsl(185_80%_45%)] via-[hsl(210_60%_55%)] to-[hsl(250_60%_55%)] dark:from-[hsl(185_85%_55%)] dark:via-[hsl(210_65%_60%)] dark:to-[hsl(250_65%_60%)] bg-clip-text text-transparent">
               Code Catalyst
             </span>
           </Link>
@@ -44,8 +44,14 @@ export default function Navbar() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="hover:bg-accent/50"
+                aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
               >
-                {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                {theme === 'dark' ? (
+                  <Sun className="h-5 w-5 text-foreground" />
+                ) : (
+                  <Moon className="h-5 w-5 text-foreground" />
+                )}
               </Button>
             )}
 
@@ -53,6 +59,9 @@ export default function Navbar() {
               <>
                 <Link href="/learn">
                   <Button variant="ghost">Learn</Button>
+                </Link>
+                <Link href="/assignments">
+                  <Button variant="ghost">Assignments</Button>
                 </Link>
                 <Link href="/profile">
                   <Button variant="ghost">

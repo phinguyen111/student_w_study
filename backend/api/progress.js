@@ -2,6 +2,8 @@ import express from 'express';
 import UserProgress from '../models/UserProgress.js';
 import Lesson from '../models/Lesson.js';
 import Level from '../models/Level.js';
+import QuizAssignment from '../models/QuizAssignment.js';
+import QuizAssignmentResult from '../models/QuizAssignmentResult.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -27,7 +29,7 @@ router.get('/', authenticate, async (req, res) => {
 // Submit quiz score
 router.post('/quiz/:lessonId', authenticate, async (req, res) => {
   try {
-    const { quizScore, codeScore } = req.body;
+    const { quizScore, codeScore, sessionId } = req.body;
     const { lessonId } = req.params;
 
     const lesson = await Lesson.findById(lessonId);
@@ -38,6 +40,21 @@ router.post('/quiz/:lessonId', authenticate, async (req, res) => {
     let progress = await UserProgress.findOne({ userId: req.user._id });
     if (!progress) {
       progress = await UserProgress.create({ userId: req.user._id });
+    }
+
+    // Get quiz session tracking data if sessionId provided
+    let quizTimeSpent = null;
+    if (sessionId) {
+      try {
+        const QuizSessionTracking = (await import('../models/QuizSessionTracking.js')).default;
+        const session = await QuizSessionTracking.findById(sessionId);
+        if (session && session.activeDuration) {
+          quizTimeSpent = session.activeDuration; // Time in milliseconds
+        }
+      } catch (error) {
+        console.error('Error fetching quiz session:', error);
+        // Continue without session data
+      }
     }
 
     // Update lesson score
@@ -61,6 +78,14 @@ router.post('/quiz/:lessonId', authenticate, async (req, res) => {
       const code = progress.lessonScores[existingScoreIndex].codeScore || 0;
       progress.lessonScores[existingScoreIndex].totalScore = quiz + code;
       progress.lessonScores[existingScoreIndex].completedAt = new Date();
+      
+      // Update session tracking info
+      if (sessionId) {
+        progress.lessonScores[existingScoreIndex].quizSessionId = sessionId;
+      }
+      if (quizTimeSpent !== null) {
+        progress.lessonScores[existingScoreIndex].quizTimeSpent = quizTimeSpent;
+      }
     } else {
       // Create new score entry
       const quiz = quizScore || 0;
@@ -71,7 +96,9 @@ router.post('/quiz/:lessonId', authenticate, async (req, res) => {
         codeScore: codeScore || null,
         totalScore: quiz + code,
         quizAttempts: quizScore !== undefined ? 1 : 0,
-        codeAttempts: codeScore !== undefined ? 1 : 0
+        codeAttempts: codeScore !== undefined ? 1 : 0,
+        quizSessionId: sessionId || null,
+        quizTimeSpent: quizTimeSpent
       });
     }
 
@@ -273,6 +300,289 @@ router.post('/time', authenticate, async (req, res) => {
     await progress.save();
 
     res.json({ success: true, progress });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Quiz Assignment endpoints for users
+
+// Get user's quiz assignments
+router.get('/quiz-assignments', authenticate, async (req, res) => {
+  try {
+    const assignments = await QuizAssignment.find({
+      assignedTo: req.user._id,
+      status: { $in: ['active', 'expired'] }
+    })
+      .populate('assignedBy', 'name email')
+      .sort({ deadline: 1 });
+
+    // Get user's results for each assignment
+    const assignmentsWithResults = await Promise.all(
+      assignments.map(async (assignment) => {
+        const result = await QuizAssignmentResult.findOne({
+          assignmentId: assignment._id,
+          userId: req.user._id
+        }).sort({ submittedAt: -1 });
+
+        // If result exists and is abandoned, exclude from list or mark as abandoned
+        if (result && result.status === 'abandoned') {
+          return null; // Don't show abandoned assignments
+        }
+
+        const isExpired = new Date(assignment.deadline) < new Date();
+        const isSubmitted = !!result && result.status === 'submitted';
+        const isAbandoned = result && result.status === 'abandoned';
+
+        return {
+          ...assignment.toObject(),
+          isExpired,
+          isSubmitted,
+          isAbandoned,
+          userResult: result || null,
+          canSubmit: !isSubmitted && !isAbandoned && !isExpired
+        };
+      })
+    );
+
+    // Filter out null assignments (abandoned)
+    const filteredAssignments = assignmentsWithResults.filter(a => a !== null);
+
+    res.json({ success: true, assignments: filteredAssignments });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get quiz assignment by ID (for taking quiz)
+router.get('/quiz-assignments/:id', authenticate, async (req, res) => {
+  try {
+    const assignment = await QuizAssignment.findById(req.params.id)
+      .populate('assignedBy', 'name email');
+
+    if (!assignment) {
+      return res.status(404).json({ message: 'Quiz assignment not found' });
+    }
+
+    // Check if user is assigned to this quiz
+    const isAssigned = assignment.assignedTo.some(
+      userId => userId.toString() === req.user._id.toString()
+    );
+
+    if (!isAssigned) {
+      return res.status(403).json({ message: 'You are not assigned to this quiz' });
+    }
+
+    // Get user's previous results
+    const previousResults = await QuizAssignmentResult.find({
+      assignmentId: assignment._id,
+      userId: req.user._id
+    }).sort({ submittedAt: -1 });
+
+    const isExpired = new Date(assignment.deadline) < new Date();
+    const latestResult = previousResults.length > 0 ? previousResults[0] : null;
+
+    // Return assignment without correct answers if user hasn't submitted yet
+    // Or if deadline has passed, show correct answers
+    const assignmentData = {
+      _id: assignment._id,
+      title: assignment.title,
+      description: assignment.description,
+      passingScore: assignment.passingScore,
+      deadline: assignment.deadline,
+      assignedBy: assignment.assignedBy,
+      isExpired,
+      canSubmit: !latestResult && !isExpired,
+      previousResults,
+      latestResult
+    };
+
+    // Include questions
+    if (latestResult || isExpired) {
+      // User already submitted or deadline passed - show questions with correct answers
+      assignmentData.questions = assignment.questions.map((q, index) => ({
+        question: q.question,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation
+      }));
+    } else {
+      // User hasn't submitted - show questions without correct answers
+      assignmentData.questions = assignment.questions.map((q) => ({
+        question: q.question,
+        options: q.options
+      }));
+    }
+
+    res.json({ success: true, assignment: assignmentData });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Submit quiz assignment
+router.post('/quiz-assignments/:id/submit', authenticate, async (req, res) => {
+  try {
+    const { answers, timeTaken } = req.body;
+
+    const assignment = await QuizAssignment.findById(req.params.id);
+
+    if (!assignment) {
+      return res.status(404).json({ message: 'Quiz assignment not found' });
+    }
+
+    // Check if user is assigned to this quiz
+    const isAssigned = assignment.assignedTo.some(
+      userId => userId.toString() === req.user._id.toString()
+    );
+
+    if (!isAssigned) {
+      return res.status(403).json({ message: 'You are not assigned to this quiz' });
+    }
+
+    // Check if deadline has passed
+    const isExpired = new Date(assignment.deadline) < new Date();
+    if (isExpired) {
+      return res.status(400).json({ message: 'Deadline has passed for this quiz' });
+    }
+
+    // Check if user already submitted
+    const existingResult = await QuizAssignmentResult.findOne({
+      assignmentId: assignment._id,
+      userId: req.user._id
+    }).sort({ submittedAt: -1 });
+
+    if (existingResult) {
+      return res.status(400).json({ message: 'You have already submitted this quiz' });
+    }
+
+    // Calculate score
+    let correctCount = 0;
+    const submittedAnswers = answers || [];
+
+    assignment.questions.forEach((question, index) => {
+      const userAnswer = submittedAnswers[index];
+      if (userAnswer !== undefined && userAnswer === question.correctAnswer) {
+        correctCount++;
+      }
+    });
+
+    const score = (correctCount / assignment.questions.length) * 10;
+    const passed = score >= assignment.passingScore;
+
+    // Get attempt number
+    const attemptNumber = (await QuizAssignmentResult.countDocuments({
+      assignmentId: assignment._id,
+      userId: req.user._id
+    })) + 1;
+
+    // Create result
+    const result = await QuizAssignmentResult.create({
+      assignmentId: assignment._id,
+      userId: req.user._id,
+      answers: submittedAnswers.map((answer, index) => ({
+        questionIndex: index,
+        selectedAnswer: answer
+      })),
+      score,
+      passingScore: assignment.passingScore,
+      passed,
+      timeTaken: timeTaken || 0,
+      attemptNumber,
+      status: 'submitted'
+    });
+
+    const populatedResult = await QuizAssignmentResult.findById(result._id)
+      .populate('userId', 'name email')
+      .populate('assignmentId', 'title');
+
+    res.json({ success: true, result: populatedResult });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Abandon quiz assignment
+router.post('/quiz-assignments/:id/abandon', authenticate, async (req, res) => {
+  try {
+    const { reason } = req.body;
+    
+    const assignment = await QuizAssignment.findById(req.params.id);
+
+    if (!assignment) {
+      return res.status(404).json({ message: 'Quiz assignment not found' });
+    }
+
+    // Check if user is assigned to this quiz
+    const isAssigned = assignment.assignedTo.some(
+      userId => userId.toString() === req.user._id.toString()
+    );
+
+    if (!isAssigned) {
+      return res.status(403).json({ message: 'You are not assigned to this quiz' });
+    }
+
+    // Check if user already submitted or abandoned
+    const existingResult = await QuizAssignmentResult.findOne({
+      assignmentId: assignment._id,
+      userId: req.user._id
+    }).sort({ submittedAt: -1 });
+
+    if (existingResult) {
+      // If already abandoned or submitted, just return success
+      return res.json({ 
+        success: true, 
+        result: existingResult,
+        message: existingResult.status === 'abandoned' 
+          ? 'This quiz has already been abandoned' 
+          : 'You have already submitted this quiz'
+      });
+    }
+
+    // Get attempt number
+    const attemptNumber = (await QuizAssignmentResult.countDocuments({
+      assignmentId: assignment._id,
+      userId: req.user._id
+    })) + 1;
+
+    // Create abandoned result with reason
+    const result = await QuizAssignmentResult.create({
+      assignmentId: assignment._id,
+      userId: req.user._id,
+      answers: [], // Empty answers
+      score: 0,
+      passingScore: assignment.passingScore,
+      passed: false,
+      timeTaken: 0,
+      attemptNumber,
+      status: 'abandoned',
+      abandonReason: reason || 'unknown' // Store reason for admin reference
+    });
+
+    res.json({ 
+      success: true, 
+      result,
+      message: reason === 'browser_leave' 
+        ? 'Quiz abandoned: You left the browser. Please contact admin to retake.'
+        : 'Quiz abandoned successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get user's quiz assignment results
+router.get('/quiz-assignments/results', authenticate, async (req, res) => {
+  try {
+    // Only get submitted results, exclude abandoned ones
+    const results = await QuizAssignmentResult.find({ 
+      userId: req.user._id,
+      status: 'submitted' // Only show submitted quizzes, not abandoned
+    })
+      .populate('assignmentId', 'title deadline passingScore')
+      .sort({ submittedAt: -1 });
+
+    res.json({ success: true, results });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

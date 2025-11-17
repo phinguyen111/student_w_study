@@ -1,9 +1,9 @@
 {
   "pages": {
-    "/page": [
+    "/learn/[langId]/lesson/[lessonId]/code/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/page.js"
+      "static/chunks/app/learn/[langId]/lesson/[lessonId]/code/page.js"
     ],
     "/layout": [
       "static/chunks/webpack.js",
@@ -11,15 +11,15 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/login/page": [
+    "/learn/[langId]/lesson/[lessonId]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/login/page.js"
+      "static/chunks/app/learn/[langId]/lesson/[lessonId]/page.js"
     ],
-    "/learn/page": [
+    "/learn/[langId]/level/[levelId]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/learn/page.js"
+      "static/chunks/app/learn/[langId]/level/[levelId]/page.js"
     ]
   }
 }

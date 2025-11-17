@@ -3,6 +3,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import { setUserId } from '@/lib/gaTracking';
 
 interface User {
   id: string;
@@ -51,6 +52,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.data.success && response.data.token) {
         localStorage.setItem('token', response.data.token);
         setUser(response.data.user);
+        
+        // Set user ID in Google Analytics
+        if (response.data.user?.id) {
+          setUserId(response.data.user.id);
+        }
+        
         router.push('/learn');
       } else {
         throw new Error(response.data.message || 'Login failed');
@@ -68,6 +75,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.data.success && response.data.token) {
         localStorage.setItem('token', response.data.token);
         setUser(response.data.user);
+        
+        // Set user ID in Google Analytics
+        if (response.data.user?.id) {
+          setUserId(response.data.user.id);
+        }
+        
         router.push('/learn');
       } else {
         throw new Error(response.data.message || 'Registration failed');
@@ -80,8 +93,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    // Track logout before clearing
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'auth_action', {
+        event_category: 'Authentication',
+        event_label: 'logout',
+        auth_action: 'logout',
+        auth_success: true
+      });
+    }
+    
     localStorage.removeItem('token');
     setUser(null);
+    
+    // Clear user ID in GA
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('set', 'user_properties', { user_id: null });
+    }
+    
     router.push('/');
   };
 

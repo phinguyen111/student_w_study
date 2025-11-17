@@ -1,33 +1,99 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { X, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Trophy, AlertCircle } from 'lucide-react'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { CodeEditor } from '@/components/CodeEditor'
+import { X, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Trophy, AlertCircle, Play, RotateCcw } from 'lucide-react'
+import { useQuizTracker } from '@/hooks/useQuizTracker'
 
 interface Question {
   question: string
-  options: (string | { vi?: string; en?: string; [key: string]: any })[]
-  correctAnswer: number
+  options?: (string | { vi?: string; en?: string; [key: string]: any })[]
+  correctAnswer?: number
   explanation?: string
+  type?: 'multiple-choice' | 'code'
+  codeType?: 'html' | 'css' | 'javascript' | 'html-css-js'
+  starterCode?: {
+    html?: string
+    css?: string
+    javascript?: string
+  }
+  expectedOutput?: string
 }
 
 interface QuizModalProps {
   questions: Question[]
   passingScore: number
-  onComplete: (quizScore: number, codeScore?: number) => void
+  lessonId?: string
+  onComplete: (quizScore: number, codeScore?: number, sessionId?: string) => void
   onClose: () => void
 }
 
-export function QuizModal({ questions, passingScore, onComplete, onClose }: QuizModalProps) {
+export function QuizModal({ questions, passingScore, lessonId, onComplete, onClose }: QuizModalProps) {
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [selectedAnswers, setSelectedAnswers] = useState<number[]>([])
+  const [codeAnswers, setCodeAnswers] = useState<Array<{ html?: string; css?: string; javascript?: string }>>([])
   const [showResults, setShowResults] = useState(false)
   const [score, setScore] = useState(0)
+  const [iframeKey, setIframeKey] = useState(0)
+  const [previewOutput, setPreviewOutput] = useState<string>('')
+  const startTimeRef = useRef<number | null>(null)
+  const questionTimesRef = useRef<Array<{ questionIndex: number; startTime: number; endTime?: number }>>([])
+
+  // Initialize quiz tracking
+  const { startTracking, endTracking, isTracking, sessionId } = useQuizTracker({
+    lessonId: lessonId || undefined,
+    quizType: 'lesson',
+    onSessionStart: (sessionId) => {
+      startTimeRef.current = Date.now()
+      questionTimesRef.current = []
+      // Track first question start
+      questionTimesRef.current.push({
+        questionIndex: 0,
+        startTime: Date.now()
+      })
+    }
+  })
+
+  // Start tracking when modal opens
+  useEffect(() => {
+    if (lessonId && !isTracking) {
+      startTracking()
+    }
+
+    return () => {
+      // End tracking when modal closes (only if not already ended)
+      if (isTracking) {
+        endTracking()
+      }
+    }
+  }, [lessonId, isTracking, startTracking, endTracking])
+
+  // Initialize code answers
+  useEffect(() => {
+    const initialCodeAnswers = questions.map((q) => {
+      if (q.type === 'code' && q.starterCode) {
+        return {
+          html: q.starterCode.html || '',
+          css: q.starterCode.css || '',
+          javascript: q.starterCode.javascript || ''
+        }
+      }
+      return { html: '', css: '', javascript: '' }
+    })
+    setCodeAnswers(initialCodeAnswers)
+  }, [questions])
 
   // Ensure all questions have valid options as strings
   const normalizedQuestions = useMemo(() => {
     return questions.map((q, qIndex) => {
+      // Skip normalization for code questions
+      if (q.type === 'code') {
+        return q
+      }
+
       // Normalize options to always be array of strings
       let normalizedOptions: string[] = []
       
@@ -94,10 +160,60 @@ export function QuizModal({ questions, passingScore, onComplete, onClose }: Quiz
       
       return {
         ...q,
+        type: q.type || 'multiple-choice',
         options: normalizedOptions
       }
     })
   }, [questions])
+
+  const handleCodeChange = (type: 'html' | 'css' | 'javascript', value: string) => {
+    const newCodeAnswers = [...codeAnswers]
+    if (!newCodeAnswers[currentQuestion]) {
+      newCodeAnswers[currentQuestion] = { html: '', css: '', javascript: '' }
+    }
+    newCodeAnswers[currentQuestion] = {
+      ...newCodeAnswers[currentQuestion],
+      [type]: value
+    }
+    setCodeAnswers(newCodeAnswers)
+  }
+
+  const handleResetCode = () => {
+    const question = normalizedQuestions[currentQuestion]
+    if (question.type === 'code' && question.starterCode) {
+      const newCodeAnswers = [...codeAnswers]
+      newCodeAnswers[currentQuestion] = {
+        html: question.starterCode.html || '',
+        css: question.starterCode.css || '',
+        javascript: question.starterCode.javascript || ''
+      }
+      setCodeAnswers(newCodeAnswers)
+      setPreviewOutput('')
+    }
+  }
+
+  const handleRunCode = () => {
+    const question = normalizedQuestions[currentQuestion]
+    if (question.type === 'code') {
+      const code = codeAnswers[currentQuestion] || { html: '', css: '', javascript: '' }
+      
+      if (question.codeType === 'javascript') {
+        try {
+          const result = eval(code.javascript || '')
+          if (result !== undefined) {
+            setPreviewOutput(String(result))
+          } else {
+            setPreviewOutput('Code executed successfully!')
+          }
+        } catch (error: any) {
+          setPreviewOutput(`Error: ${error.message}`)
+        }
+      } else {
+        setPreviewOutput('Code ready for preview!')
+        setIframeKey(prev => prev + 1)
+      }
+    }
+  }
 
   const handleAnswerSelect = (answerIndex: number) => {
     const newAnswers = [...selectedAnswers]
@@ -106,8 +222,27 @@ export function QuizModal({ questions, passingScore, onComplete, onClose }: Quiz
   }
 
   const handleNext = () => {
+    // Track time spent on current question
+    const currentQuestionTime = questionTimesRef.current.find(
+      qt => qt.questionIndex === currentQuestion && !qt.endTime
+    )
+    if (currentQuestionTime) {
+      currentQuestionTime.endTime = Date.now()
+    }
+
+    // Reset preview when moving to next question
+    setPreviewOutput('')
+    setIframeKey(0)
+
     if (currentQuestion < normalizedQuestions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1)
+      const nextQuestion = currentQuestion + 1
+      setCurrentQuestion(nextQuestion)
+      
+      // Track new question start
+      questionTimesRef.current.push({
+        questionIndex: nextQuestion,
+        startTime: Date.now()
+      })
     } else {
       calculateScore()
     }
@@ -115,15 +250,57 @@ export function QuizModal({ questions, passingScore, onComplete, onClose }: Quiz
 
   const handlePrevious = () => {
     if (currentQuestion > 0) {
-      setCurrentQuestion(currentQuestion - 1)
+      // Track time spent on current question
+      const currentQuestionTime = questionTimesRef.current.find(
+        qt => qt.questionIndex === currentQuestion && !qt.endTime
+      )
+      if (currentQuestionTime) {
+        currentQuestionTime.endTime = Date.now()
+      }
+
+      // Reset preview when moving to previous question
+      setPreviewOutput('')
+      setIframeKey(0)
+
+      const prevQuestion = currentQuestion - 1
+      setCurrentQuestion(prevQuestion)
+      
+      // Track previous question start (if not already tracked)
+      const prevQuestionTime = questionTimesRef.current.find(
+        qt => qt.questionIndex === prevQuestion
+      )
+      if (!prevQuestionTime) {
+        questionTimesRef.current.push({
+          questionIndex: prevQuestion,
+          startTime: Date.now()
+        })
+      }
     }
   }
 
   const calculateScore = () => {
+    // Track time spent on last question
+    const currentQuestionTime = questionTimesRef.current.find(
+      qt => qt.questionIndex === currentQuestion && !qt.endTime
+    )
+    if (currentQuestionTime) {
+      currentQuestionTime.endTime = Date.now()
+    }
+
     let correct = 0
     normalizedQuestions.forEach((q, index) => {
-      if (selectedAnswers[index] === q.correctAnswer) {
-        correct++
+      if (q.type === 'code') {
+        // For code questions, check if code was written (basic check)
+        const code = codeAnswers[index] || { html: '', css: '', javascript: '' }
+        const hasCode = !!(code.html || code.css || code.javascript)
+        // For now, give points if code exists. Can be enhanced with actual code validation
+        if (hasCode) {
+          correct++
+        }
+      } else {
+        if (selectedAnswers[index] === q.correctAnswer) {
+          correct++
+        }
       }
     })
     const finalScore = (correct / normalizedQuestions.length) * 10
@@ -131,8 +308,26 @@ export function QuizModal({ questions, passingScore, onComplete, onClose }: Quiz
     setShowResults(true)
   }
 
-  const handleSubmit = () => {
-    onComplete(score, undefined)
+  const handleSubmit = async () => {
+    // End tracking session
+    if (isTracking) {
+      await endTracking(new Date())
+    }
+    
+    // Calculate total time and question statistics
+    const totalTime = startTimeRef.current 
+      ? Date.now() - startTimeRef.current 
+      : 0
+    
+    onComplete(score, undefined, sessionId || undefined)
+    onClose()
+  }
+
+  const handleClose = async () => {
+    // End tracking if user closes modal without submitting
+    if (isTracking && !showResults) {
+      await endTracking()
+    }
     onClose()
   }
 
@@ -149,7 +344,7 @@ export function QuizModal({ questions, passingScore, onComplete, onClose }: Quiz
                 <Trophy className={`h-6 w-6 ${passed ? 'text-yellow-500' : 'text-gray-400'}`} />
                 Quiz Results
               </CardTitle>
-              <Button variant="ghost" size="icon" onClick={onClose}>
+              <Button variant="ghost" size="icon" onClick={handleClose}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -203,10 +398,15 @@ export function QuizModal({ questions, passingScore, onComplete, onClose }: Quiz
               </div>
             </div>
 
-            <div className="space-y-3 mb-4 max-h-64 overflow-y-auto pr-2 scrollbar-thin">
+            <div className="space-y-3 mb-4 max-h-96 overflow-y-auto pr-2 scrollbar-thin">
               {normalizedQuestions.map((q, index) => {
+                const isCodeQ = q.type === 'code'
                 const userAnswer = selectedAnswers[index]
-                const isCorrect = userAnswer === q.correctAnswer
+                const isCorrect = isCodeQ 
+                  ? !!(codeAnswers[index]?.html || codeAnswers[index]?.css || codeAnswers[index]?.javascript)
+                  : userAnswer === q.correctAnswer
+                const codeAnswer = codeAnswers[index] || { html: '', css: '', javascript: '' }
+                
                 return (
                   <div 
                     key={index} 
@@ -224,31 +424,63 @@ export function QuizModal({ questions, passingScore, onComplete, onClose }: Quiz
                       )}
                       <p className="font-semibold text-base flex-1">{q.question}</p>
                     </div>
-                    <div className="space-y-2 ml-8">
-                      {q.options.map((option, optIndex) => {
-                        let className = 'p-3 rounded-lg border-2 transition-all'
-                        if (optIndex === q.correctAnswer) {
-                          className += ' border-green-500 bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100 font-medium'
-                        } else if (optIndex === userAnswer && !isCorrect) {
-                          className += ' border-red-500 bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-100'
-                        } else {
-                          className += ' border-border bg-background'
-                        }
-                        return (
-                          <div key={optIndex} className={className}>
-                            <div className="flex items-center gap-2">
-                              {optIndex === q.correctAnswer && (
-                                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-                              )}
-                              {optIndex === userAnswer && !isCorrect && (
-                                <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                              )}
-                              <span>{option}</span>
+                    
+                    {isCodeQ ? (
+                      <div className="ml-8 space-y-3">
+                        <div className="text-sm font-medium text-muted-foreground mb-2">Your Code:</div>
+                        {(codeAnswer.html || q.codeType === 'html' || q.codeType === 'html-css-js') && (
+                          <div className="space-y-1">
+                            <div className="text-xs font-medium text-muted-foreground">HTML:</div>
+                            <div className="p-3 bg-muted rounded-lg border font-mono text-xs overflow-x-auto">
+                              <pre className="whitespace-pre-wrap">{codeAnswer.html || '(empty)'}</pre>
                             </div>
                           </div>
-                        )
-                      })}
-                    </div>
+                        )}
+                        {(codeAnswer.css || q.codeType === 'css' || q.codeType === 'html-css-js') && (
+                          <div className="space-y-1">
+                            <div className="text-xs font-medium text-muted-foreground">CSS:</div>
+                            <div className="p-3 bg-muted rounded-lg border font-mono text-xs overflow-x-auto">
+                              <pre className="whitespace-pre-wrap">{codeAnswer.css || '(empty)'}</pre>
+                            </div>
+                          </div>
+                        )}
+                        {(codeAnswer.javascript || q.codeType === 'javascript' || q.codeType === 'html-css-js') && (
+                          <div className="space-y-1">
+                            <div className="text-xs font-medium text-muted-foreground">JavaScript:</div>
+                            <div className="p-3 bg-muted rounded-lg border font-mono text-xs overflow-x-auto">
+                              <pre className="whitespace-pre-wrap">{codeAnswer.javascript || '(empty)'}</pre>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-2 ml-8">
+                        {q.options?.map((option, optIndex) => {
+                          let className = 'p-3 rounded-lg border-2 transition-all'
+                          if (optIndex === q.correctAnswer) {
+                            className += ' border-green-500 bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100 font-medium'
+                          } else if (optIndex === userAnswer && !isCorrect) {
+                            className += ' border-red-500 bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-100'
+                          } else {
+                            className += ' border-border bg-background'
+                          }
+                          return (
+                            <div key={optIndex} className={className}>
+                              <div className="flex items-center gap-2">
+                                {optIndex === q.correctAnswer && (
+                                  <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                )}
+                                {optIndex === userAnswer && !isCorrect && (
+                                  <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                                )}
+                                <span>{option}</span>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                    
                     {q.explanation && (
                       <div className="mt-3 ml-8 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                         <p className="text-sm text-blue-900 dark:text-blue-100">
@@ -273,17 +505,26 @@ export function QuizModal({ questions, passingScore, onComplete, onClose }: Quiz
   }
 
   const question = normalizedQuestions[currentQuestion]
-  if (!question || !question.options || question.options.length === 0) {
+  if (!question) {
     return null
   }
 
-  const hasAnswer = selectedAnswers[currentQuestion] !== undefined
+  // Check if question has valid options (for multiple-choice) or is a code question
+  if (question.type !== 'code' && (!question.options || question.options.length === 0)) {
+    return null
+  }
+
+  const isCodeQuestion = question.type === 'code'
+  const hasAnswer = isCodeQuestion 
+    ? !!(codeAnswers[currentQuestion]?.html || codeAnswers[currentQuestion]?.css || codeAnswers[currentQuestion]?.javascript)
+    : selectedAnswers[currentQuestion] !== undefined
   const progress = ((currentQuestion + 1) / normalizedQuestions.length) * 100
+  const currentCode = codeAnswers[currentQuestion] || { html: '', css: '', javascript: '' }
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in">
-      <Card className="w-full max-w-3xl shadow-2xl border-2 animate-in zoom-in-95 duration-200">
-        <CardHeader className="border-b">
+      <Card className="w-full max-w-4xl max-h-[90vh] shadow-2xl border-2 animate-in zoom-in-95 duration-200 flex flex-col">
+        <CardHeader className="border-b flex-shrink-0">
           <div className="flex items-center justify-between mb-4">
             <CardTitle className="text-2xl">Quiz</CardTitle>
             <Button variant="ghost" size="icon" onClick={onClose}>
@@ -305,38 +546,225 @@ export function QuizModal({ questions, passingScore, onComplete, onClose }: Quiz
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-6">
+        <CardContent className="pt-6 overflow-y-auto flex-1 min-h-0">
           <div className="mb-8">
             <h3 className="text-2xl font-bold mb-6 leading-tight">{question.question}</h3>
-            <div className="space-y-3">
-              {question.options.map((option, index) => {
-                const isSelected = selectedAnswers[currentQuestion] === index
-                return (
-                  <button
-                    key={index}
-                    onClick={() => handleAnswerSelect(index)}
-                    className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 ${
-                      isSelected
-                        ? 'border-primary bg-primary/10 shadow-md scale-[1.02]'
-                        : 'border-border hover:border-primary/50 hover:bg-accent/50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                        isSelected
-                          ? 'border-primary bg-primary text-primary-foreground'
-                          : 'border-muted-foreground/30'
-                      }`}>
-                        {isSelected && (
-                          <div className="w-3 h-3 rounded-full bg-current" />
-                        )}
+            
+            {isCodeQuestion ? (
+              <div className="space-y-4">
+                {/* Code Type Selection */}
+                {question.codeType === 'html-css-js' && (
+                  <Tabs defaultValue="html" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="html">HTML</TabsTrigger>
+                      <TabsTrigger value="css">CSS</TabsTrigger>
+                      <TabsTrigger value="javascript">JS</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="html" className="mt-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">HTML Code</span>
+                          <Button variant="outline" size="sm" onClick={handleResetCode}>
+                            <RotateCcw className="h-4 w-4 mr-2" />
+                            Reset
+                          </Button>
+                        </div>
+                        <CodeEditor
+                          value={currentCode.html || ''}
+                          onChange={(value) => handleCodeChange('html', value)}
+                          language="html"
+                          height="300px"
+                          placeholder="Write your HTML code here..."
+                        />
                       </div>
-                      <span className="text-base">{option}</span>
+                    </TabsContent>
+                    
+                    <TabsContent value="css" className="mt-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">CSS Code</span>
+                          <Button variant="outline" size="sm" onClick={handleResetCode}>
+                            <RotateCcw className="h-4 w-4 mr-2" />
+                            Reset
+                          </Button>
+                        </div>
+                        <CodeEditor
+                          value={currentCode.css || ''}
+                          onChange={(value) => handleCodeChange('css', value)}
+                          language="css"
+                          height="300px"
+                          placeholder="Write your CSS code here..."
+                        />
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="javascript" className="mt-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">JavaScript Code</span>
+                          <Button variant="outline" size="sm" onClick={handleResetCode}>
+                            <RotateCcw className="h-4 w-4 mr-2" />
+                            Reset
+                          </Button>
+                        </div>
+                        <CodeEditor
+                          value={currentCode.javascript || ''}
+                          onChange={(value) => handleCodeChange('javascript', value)}
+                          language="javascript"
+                          height="300px"
+                          placeholder="Write your JavaScript code here..."
+                        />
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                )}
+
+                {/* Single Code Type */}
+                {question.codeType && question.codeType !== 'html-css-js' && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">
+                        {question.codeType === 'html' ? 'HTML' : 
+                         question.codeType === 'css' ? 'CSS' : 'JavaScript'} Code
+                      </span>
+                      <Button variant="outline" size="sm" onClick={handleResetCode}>
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        Reset
+                      </Button>
                     </div>
-                  </button>
-                )
-              })}
-            </div>
+                    <CodeEditor
+                      value={
+                        question.codeType === 'html' ? (currentCode.html || '') :
+                        question.codeType === 'css' ? (currentCode.css || '') :
+                        (currentCode.javascript || '')
+                      }
+                      onChange={(value) => {
+                        if (question.codeType === 'html') handleCodeChange('html', value)
+                        else if (question.codeType === 'css') handleCodeChange('css', value)
+                        else handleCodeChange('javascript', value)
+                      }}
+                      language={question.codeType}
+                      height="300px"
+                      placeholder={`Write your ${question.codeType.toUpperCase()} code here...`}
+                    />
+                  </div>
+                )}
+
+                {/* Run Code Button */}
+                <Button
+                  onClick={handleRunCode}
+                  variant="outline"
+                  className="w-full"
+                  size="lg"
+                >
+                  <Play className="h-4 w-4 mr-2" />
+                  Run Code
+                </Button>
+
+                {/* Output/Preview */}
+                {previewOutput && question.codeType === 'javascript' && (
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm">Output:</h4>
+                    <div className="p-4 bg-muted rounded-lg border">
+                      <pre className="whitespace-pre-wrap text-sm">{previewOutput}</pre>
+                    </div>
+                  </div>
+                )}
+
+                {(question.codeType === 'html' || question.codeType === 'css' || question.codeType === 'html-css-js') && (
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm">Preview:</h4>
+                    <div className="border rounded-lg overflow-hidden bg-white dark:bg-[hsl(220_30%_8%)]">
+                      <iframe
+                        key={`${iframeKey}-${currentCode.html?.length || 0}-${currentCode.css?.length || 0}`}
+                        onLoad={(e) => {
+                          const iframe = e.currentTarget
+                          const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document
+                          if (iframeDoc) {
+                            iframeDoc.open()
+                            if (question.codeType === 'html' || question.codeType === 'html-css-js') {
+                              const htmlContent = question.codeType === 'html-css-js' 
+                                ? currentCode.html || ''
+                                : currentCode.html || ''
+                              const cssContent = question.codeType === 'html-css-js' 
+                                ? currentCode.css || ''
+                                : question.codeType === 'css' 
+                                ? currentCode.css || ''
+                                : ''
+                              
+                              iframeDoc.write(`
+                                <!DOCTYPE html>
+                                <html>
+                                <head>
+                                  ${cssContent ? `<style>${cssContent}</style>` : ''}
+                                </head>
+                                <body>
+                                  ${htmlContent}
+                                  ${currentCode.javascript ? `<script>${currentCode.javascript}</script>` : ''}
+                                </body>
+                                </html>
+                              `)
+                            } else if (question.codeType === 'css') {
+                              iframeDoc.write(`
+                                <!DOCTYPE html>
+                                <html>
+                                <head>
+                                  <style>${currentCode.css || ''}</style>
+                                </head>
+                                <body>
+                                  <div class="demo-container">
+                                    <h1>CSS Demo</h1>
+                                    <p>This is a paragraph styled with your CSS.</p>
+                                    <div class="box">Box Element</div>
+                                    <button>Button Element</button>
+                                  </div>
+                                </body>
+                                </html>
+                              `)
+                            }
+                            iframeDoc.close()
+                          }
+                        }}
+                        className="w-full h-96 border-0"
+                        sandbox="allow-scripts allow-same-origin"
+                        title="Code Output"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {question.options?.map((option, index) => {
+                  const isSelected = selectedAnswers[currentQuestion] === index
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => handleAnswerSelect(index)}
+                      className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 ${
+                        isSelected
+                          ? 'border-primary bg-primary/10 shadow-md scale-[1.02]'
+                          : 'border-border hover:border-primary/50 hover:bg-accent/50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                          isSelected
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'border-muted-foreground/30'
+                        }`}>
+                          {isSelected && (
+                            <div className="w-3 h-3 rounded-full bg-current" />
+                          )}
+                        </div>
+                        <span className="text-base">{option}</span>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
           </div>
 
           <div className="flex justify-between gap-4 pt-4 border-t">

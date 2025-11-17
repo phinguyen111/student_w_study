@@ -8,8 +8,10 @@ import api from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { MarkdownContent } from '@/components/MarkdownContent'
+import { CodeEditor } from '@/components/CodeEditor'
 import { ArrowLeft, Code, Loader2, FileCode, Play, RotateCcw, CheckCircle2 } from 'lucide-react'
 import { useTimeTracker } from '@/hooks/useTimeTracker'
+import { useGATracking } from '@/hooks/useGATracking'
 
 interface Lesson {
   _id: string
@@ -33,6 +35,7 @@ export default function CodeExercisePage() {
   const [iframeKey, setIframeKey] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { stopTracking } = useTimeTracker()
+  const { trackLessonAction, trackButtonClick } = useGATracking()
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -58,6 +61,13 @@ export default function CodeExercisePage() {
       } else {
         console.warn('No codeExercise found in lesson data')
       }
+      
+      // Track code exercise view
+      if (lessonData) {
+        trackLessonAction('view', lessonData._id, lessonData.title, {
+          exercise_type: 'code'
+        })
+      }
     } catch (error) {
       console.error('Error fetching lesson:', error)
     } finally {
@@ -68,6 +78,7 @@ export default function CodeExercisePage() {
   const handleRun = () => {
     setIsRunning(true)
     setOutput('')
+    trackButtonClick('Run Code', window.location.pathname)
 
     try {
       if (lesson?.codeExercise?.language === 'javascript') {
@@ -102,6 +113,8 @@ export default function CodeExercisePage() {
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
+    trackButtonClick('Submit Code', window.location.pathname)
+    
     try {
       // Calculate code score based on output correctness
       // For now, give full score if code runs without errors
@@ -119,6 +132,14 @@ export default function CodeExercisePage() {
         codeScore,
         code
       })
+      
+      // Track code submission
+      trackLessonAction('code_submit', Array.isArray(params.lessonId) ? params.lessonId[0] : params.lessonId, lesson?.title, {
+        code_score: codeScore,
+        has_output: !!output,
+        output_length: output?.length || 0
+      })
+      
       stopTracking()
       
       // Show success message and redirect
@@ -203,15 +224,13 @@ export default function CodeExercisePage() {
                 </Button>
               </div>
 
-              <div className="relative">
-                <textarea
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  className="w-full h-96 p-4 font-mono text-sm bg-[hsl(220_40%_96%)] dark:bg-[hsl(220_30%_10%)] border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Write your code here..."
-                  spellCheck={false}
-                />
-              </div>
+              <CodeEditor
+                value={code}
+                onChange={setCode}
+                language={lesson.codeExercise.language}
+                height="500px"
+                placeholder="Write your code here..."
+              />
 
               <div className="flex gap-2">
                 <Button

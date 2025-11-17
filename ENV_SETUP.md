@@ -23,17 +23,21 @@ FRONTEND_URL=https://codecatalyst.vercel.app
 
 ## Frontend (codecatalyst.vercel.app)
 
-### Environment Variable cần thiết:
+### Environment Variables cần thiết:
 
 Vào Vercel Dashboard → Project Settings → Environment Variables, thêm:
 
 ```
 NEXT_PUBLIC_API_URL=https://codecatalyst-azure.vercel.app/api
+NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
 ```
 
 **Lưu ý:**
-- Đảm bảo có `/api` ở cuối URL
-- Sau khi thêm/sửa environment variable, cần redeploy frontend
+- `NEXT_PUBLIC_API_URL`: Đảm bảo có `/api` ở cuối URL
+- `NEXT_PUBLIC_GA_ID`: Google Analytics Measurement ID (tùy chọn, format: G-XXXXXXXXXX)
+  - Để lấy GA ID: Vào Google Analytics → Admin → Data Streams → Chọn stream → Copy Measurement ID
+  - Nếu không có, Google Analytics sẽ không được kích hoạt
+- Sau khi thêm/sửa environment variables, cần redeploy frontend
 
 ---
 

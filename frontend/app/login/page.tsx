@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
+import { useGATracking } from '@/hooks/useGATracking'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -13,18 +14,24 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
+  const { trackAuthAction, trackFormSubmit, trackError: trackGAError } = useGATracking()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
 
+    trackFormSubmit('login_form', false) // Track form submission attempt
+
     try {
       await login(email, password)
+      trackAuthAction('login', true, { user_email: email })
     } catch (err: any) {
       console.error('Login error:', err)
       const errorMessage = err.message || err.response?.data?.message || 'Login failed. Please check your credentials or try again later.'
       setError(errorMessage)
+      trackAuthAction('login', false, { error_message: errorMessage })
+      trackGAError('Login Error', errorMessage, '/login')
     } finally {
       setLoading(false)
     }

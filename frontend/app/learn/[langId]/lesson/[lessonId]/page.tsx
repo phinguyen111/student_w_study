@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { QuizModal } from '@/components/QuizModal'
 import { MarkdownContent } from '@/components/MarkdownContent'
 import { useTimeTracker } from '@/hooks/useTimeTracker'
+import { useGATracking } from '@/hooks/useGATracking'
 import { ArrowLeft, BookOpen, Code, Clock, CheckCircle2, PlayCircle, Loader2, Copy, Check, FileCode } from 'lucide-react'
 
 interface Question {
@@ -43,6 +44,7 @@ export default function LessonPage() {
   const [loadingLesson, setLoadingLesson] = useState(true)
   const [showQuiz, setShowQuiz] = useState(false)
   const { startTracking, stopTracking } = useTimeTracker()
+  const { trackLessonAction, trackQuizAction, trackButtonClick } = useGATracking()
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -66,6 +68,11 @@ export default function LessonPage() {
       const response = await api.get(`/lessons/${params.lessonId}?lang=en`)
       const lessonData = response.data.lesson
       setLesson(lessonData)
+      
+      // Track lesson view
+      if (lessonData) {
+        trackLessonAction('view', lessonData._id, lessonData.title)
+      }
     } catch (error) {
       console.error('Error fetching lesson:', error)
     } finally {
@@ -73,16 +80,39 @@ export default function LessonPage() {
     }
   }
 
-  const handleQuizComplete = async (quizScore: number, codeScore?: number) => {
+  const handleQuizComplete = async (quizScore: number, codeScore?: number, sessionId?: string) => {
     try {
       await api.post(`/progress/quiz/${params.lessonId}`, { 
         quizScore,
-        codeScore: codeScore !== undefined ? codeScore : undefined
+        codeScore: codeScore !== undefined ? codeScore : undefined,
+        sessionId: sessionId || undefined
       })
+      
+      // Track quiz completion
+      trackQuizAction('submit', Array.isArray(params.lessonId) ? params.lessonId[0] : params.lessonId, lesson?.title, {
+        quiz_score: quizScore,
+        code_score: codeScore,
+        passed: quizScore >= (lesson?.quiz?.passingScore || 7)
+      })
+      
+      // Track lesson completion if passed
+      if (quizScore >= (lesson?.quiz?.passingScore || 7)) {
+        trackLessonAction('complete', Array.isArray(params.lessonId) ? params.lessonId[0] : params.lessonId, lesson?.title, {
+          quiz_score: quizScore,
+          code_score: codeScore
+        })
+      }
+      
       stopTracking()
     } catch (error) {
       console.error('Error submitting quiz:', error)
     }
+  }
+
+  const handleShowQuiz = () => {
+    setShowQuiz(true)
+    trackQuizAction('start', Array.isArray(params.lessonId) ? params.lessonId[0] : params.lessonId, lesson?.title)
+    trackButtonClick('Start Quiz', window.location.pathname)
   }
 
   if (loading || loadingLesson) {
@@ -210,7 +240,7 @@ export default function LessonPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Quiz Button */}
               <Button 
-                onClick={() => setShowQuiz(true)} 
+                onClick={handleShowQuiz} 
                 size="lg"
                 variant="default"
                 className="w-full h-24 flex flex-col items-center justify-center gap-2"
@@ -248,6 +278,7 @@ export default function LessonPage() {
           <QuizModal
             questions={lesson.quiz.questions}
             passingScore={lesson.quiz.passingScore}
+            lessonId={lesson._id}
             onComplete={handleQuizComplete}
             onClose={() => setShowQuiz(false)}
           />
