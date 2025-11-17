@@ -1,5 +1,3 @@
 {
-  "/not-found": "app/not-found.js",
-  "/learn/[langId]/lesson/[lessonId]/code/page": "app/learn/[langId]/lesson/[lessonId]/code/page.js",
-  "/learn/[langId]/level/[levelId]/page": "app/learn/[langId]/level/[levelId]/page.js"
+  "/learn/page": "app/learn/page.js"
 }

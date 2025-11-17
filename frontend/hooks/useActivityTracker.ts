@@ -1,10 +1,24 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import api from '@/lib/api'
 import { useAuth } from './useAuth'
 
 export function useActivityTracker() {
-  const pathname = usePathname()
+  // Get pathname safely - use hook, fallback to window.location
+  const navPathname = usePathname()
+  const [pathname, setPathname] = useState<string>(
+    navPathname || (typeof window !== 'undefined' ? window.location.pathname : '/')
+  )
+  
+  // Update pathname when navigation pathname changes
+  useEffect(() => {
+    if (navPathname) {
+      setPathname(navPathname)
+    } else if (typeof window !== 'undefined') {
+      setPathname(window.location.pathname)
+    }
+  }, [navPathname])
+  
   const { isAuthenticated } = useAuth()
   const lastVisibilityChangeRef = useRef<number | null>(null)
   const lastPageUrlRef = useRef<string>('')

@@ -3,7 +3,7 @@
  * Tracks various user interactions across the application
  */
 
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { sendGAEvent, trackPageView } from '@/lib/gaTracking'
 
@@ -18,7 +18,20 @@ interface TrackEventOptions {
  * Hook to track user actions comprehensively
  */
 export function useGATracking() {
-  const pathname = usePathname()
+  // Get pathname safely - use hook, fallback to window.location
+  const navPathname = usePathname()
+  const [pathname, setPathname] = useState<string>(
+    navPathname || (typeof window !== 'undefined' ? window.location.pathname : '/')
+  )
+  
+  // Update pathname when navigation pathname changes
+  useEffect(() => {
+    if (navPathname) {
+      setPathname(navPathname)
+    } else if (typeof window !== 'undefined') {
+      setPathname(window.location.pathname)
+    }
+  }, [navPathname])
 
   // Track page views
   useEffect(() => {

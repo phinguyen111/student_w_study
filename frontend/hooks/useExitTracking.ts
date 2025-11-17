@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 
 interface ExitTrackingOptions {
@@ -41,7 +41,21 @@ export function useExitTracking(options: ExitTrackingOptions = {}) {
     trackVisibilityChange = true,
   } = options
 
-  const pathname = usePathname()
+  // Get pathname safely - use hook, fallback to window.location
+  const navPathname = usePathname()
+  const [pathname, setPathname] = useState<string>(
+    navPathname || (typeof window !== 'undefined' ? window.location.pathname : '/')
+  )
+  
+  // Update pathname when navigation pathname changes
+  useEffect(() => {
+    if (navPathname) {
+      setPathname(navPathname)
+    } else if (typeof window !== 'undefined') {
+      setPathname(window.location.pathname)
+    }
+  }, [navPathname])
+  
   const startTimeRef = useRef<number>(Date.now())
   const lastPathnameRef = useRef<string>(pathname)
   const hasTrackedExitRef = useRef<boolean>(false)

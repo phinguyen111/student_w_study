@@ -46,11 +46,12 @@ const connectDB = async (retries = 3) => {
           connectTimeoutMS: 15000, // Connection timeout
           maxPoolSize: 10, // Maximum number of connections
           minPoolSize: 1, // Minimum number of connections
-          bufferMaxEntries: 0, // Disable mongoose buffering
-          bufferCommands: false, // Disable mongoose buffering
           retryWrites: true,
           w: 'majority',
         });
+        
+        // Disable mongoose buffering after connection
+        mongoose.set('bufferCommands', false);
         
         console.log(`✅ MongoDB Connected successfully!`);
         console.log(`   Host: ${conn.connection.host}`);
