@@ -1,13 +1,23 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import User from '../models/User.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Helper to check DB connection
+const checkDBConnection = () => {
+  if (mongoose.connection.readyState !== 1) {
+    throw new Error('Database not connected');
+  }
+};
+
 // Register
 router.post('/register', async (req, res) => {
   try {
+    checkDBConnection();
+    
     const { email, password, name } = req.body;
 
     if (!email || !password || !name) {
@@ -45,6 +55,8 @@ router.post('/register', async (req, res) => {
 // Login
 router.post('/login', async (req, res) => {
   try {
+    checkDBConnection();
+    
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -84,15 +96,20 @@ router.post('/login', async (req, res) => {
 
 // Get current user
 router.get('/me', authenticate, async (req, res) => {
-  res.json({
-    success: true,
-    user: {
-      id: req.user._id,
-      email: req.user.email,
-      name: req.user.name,
-      role: req.user.role
-    }
-  });
+  try {
+    checkDBConnection();
+    res.json({
+      success: true,
+      user: {
+        id: req.user._id,
+        email: req.user.email,
+        name: req.user.name,
+        role: req.user.role
+      }
+    });
+  } catch (error) {
+    res.status(503).json({ message: 'Database connection error' });
+  }
 });
 
 export default router;

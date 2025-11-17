@@ -1,7 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import connectDB from './config/database.js';
+import connectDB, { ensureConnection } from './config/database.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 
 // Routes
@@ -68,6 +68,14 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Health check (no DB required)
+app.get('/api/health', (req, res) => {
+  res.json({ success: true, message: 'API is running' });
+});
+
+// Ensure DB connection for all API routes (except health check)
+app.use('/api', ensureConnection);
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/languages', languagesRoutes);
@@ -76,11 +84,6 @@ app.use('/api/progress', progressRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/quiz-tracking', quizTrackingRoutes);
-
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ success: true, message: 'API is running' });
-});
 
 // Error handling
 app.use(notFound);
