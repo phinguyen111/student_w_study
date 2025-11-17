@@ -456,6 +456,13 @@ export function QuizModal({ questions, passingScore, lessonId, onComplete, onClo
                     ) : (
                       <div className="space-y-2 ml-8">
                         {q.options?.map((option, optIndex) => {
+                          // Ensure option is always a string
+                          const optionText = typeof option === 'string' 
+                            ? option 
+                            : (option && typeof option === 'object' && ('en' in option || 'vi' in option)
+                                ? (option.en || option.vi || String(option))
+                                : String(option))
+                          
                           let className = 'p-3 rounded-lg border-2 transition-all'
                           if (optIndex === q.correctAnswer) {
                             className += ' border-green-500 bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100 font-medium'
@@ -473,7 +480,7 @@ export function QuizModal({ questions, passingScore, lessonId, onComplete, onClo
                                 {optIndex === userAnswer && !isCorrect && (
                                   <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
                                 )}
-                                <span>{option}</span>
+                                <span>{optionText}</span>
                               </div>
                             </div>
                           )
@@ -684,13 +691,9 @@ export function QuizModal({ questions, passingScore, lessonId, onComplete, onClo
                           if (iframeDoc) {
                             iframeDoc.open()
                             if (question.codeType === 'html' || question.codeType === 'html-css-js') {
-                              const htmlContent = question.codeType === 'html-css-js' 
-                                ? currentCode.html || ''
-                                : currentCode.html || ''
+                              const htmlContent = currentCode.html || ''
                               const cssContent = question.codeType === 'html-css-js' 
-                                ? currentCode.css || ''
-                                : question.codeType === 'css' 
-                                ? currentCode.css || ''
+                                ? (currentCode.css || '')
                                 : ''
                               
                               iframeDoc.write(`
@@ -737,6 +740,13 @@ export function QuizModal({ questions, passingScore, lessonId, onComplete, onClo
             ) : (
               <div className="space-y-3">
                 {question.options?.map((option, index) => {
+                  // Ensure option is always a string
+                  const optionText = typeof option === 'string' 
+                    ? option 
+                    : (option && typeof option === 'object' && ('en' in option || 'vi' in option)
+                        ? (option.en || option.vi || String(option))
+                        : String(option))
+                  
                   const isSelected = selectedAnswers[currentQuestion] === index
                   return (
                     <button
@@ -758,7 +768,7 @@ export function QuizModal({ questions, passingScore, lessonId, onComplete, onClo
                             <div className="w-3 h-3 rounded-full bg-current" />
                           )}
                         </div>
-                        <span className="text-base">{option}</span>
+                        <span className="text-base">{optionText}</span>
                       </div>
                     </button>
                   )
