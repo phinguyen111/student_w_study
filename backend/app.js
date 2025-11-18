@@ -29,40 +29,59 @@ connectDB().catch(err => {
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      console.log('CORS: No origin header, allowing request');
+      return callback(null, true);
+    }
+    
+    console.log('CORS: Checking origin:', origin);
+    
+    // Vercel pattern to match all vercel.app domains
+    const vercelPattern = /^https:\/\/.*\.vercel\.app$/;
+    
+    // Check if it's a Vercel domain
+    const isVercelDomain = vercelPattern.test(origin);
     
     const allowedOrigins = process.env.FRONTEND_URL 
-      ? process.env.FRONTEND_URL.split(',')
+      ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
       : [
           'http://localhost:3000',
           'https://codecatalyst.vercel.app',
           'https://code-catalyst-sigma.vercel.app',
-          /^https:\/\/.*\.vercel\.app$/, // Allow all Vercel preview deployments
+          'https://student-w-study.vercel.app', // Explicitly add the frontend domain
         ];
     
     // Check if origin matches allowed origins
-    const isAllowed = allowedOrigins.some(allowed => {
-      if (allowed instanceof RegExp) {
-        return allowed.test(origin);
-      }
-      return allowed === origin;
-    });
+    const isExplicitlyAllowed = allowedOrigins.includes(origin);
+    
+    // Allow if explicitly in list OR matches Vercel pattern
+    const isAllowed = isExplicitlyAllowed || isVercelDomain;
+    
+    console.log('CORS: isVercelDomain:', isVercelDomain, 'isExplicitlyAllowed:', isExplicitlyAllowed, 'isAllowed:', isAllowed);
     
     if (isAllowed) {
       callback(null, true);
     } else {
       // In development, allow all origins
       if (process.env.NODE_ENV !== 'production') {
+        console.log('CORS: Development mode, allowing all origins');
         callback(null, true);
       } else {
+        console.log('CORS: Blocked origin:', origin);
         callback(new Error('Not allowed by CORS'));
       }
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
 };
+
+// Handle preflight OPTIONS requests explicitly
+app.options('*', cors(corsOptions));
 
 app.use(cors(corsOptions));
 app.use(express.json());
