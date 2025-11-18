@@ -8,6 +8,7 @@ import QuizAssignment from '../models/QuizAssignment.js';
 import QuizAssignmentResult from '../models/QuizAssignmentResult.js';
 import QuizSessionTracking from '../models/QuizSessionTracking.js';
 import { authenticate, adminOnly } from '../middleware/auth.js';
+import { localizeData, extractLocalizedString } from '../utils/i18n.js';
 
 const router = express.Router();
 
@@ -28,12 +29,26 @@ router.get('/users', async (req, res) => {
 // Get user progress
 router.get('/users/:userId/progress', async (req, res) => {
   try {
+    const lang = req.query.lang || 'en';
     const progress = await UserProgress.findOne({ userId: req.params.userId })
       .populate('completedLessonIds')
       .populate('lessonScores.lessonId')
-      .populate('levelScores.levelId');
+      .populate({
+        path: 'levelScores.levelId',
+        populate: {
+          path: 'languageId',
+          select: 'name slug icon'
+        }
+      });
     
-    res.json({ success: true, progress });
+    if (!progress) {
+      return res.json({ success: true, progress: null });
+    }
+    
+    const progressObj = progress.toObject();
+    const localizedProgress = localizeData(progressObj, lang);
+    
+    res.json({ success: true, progress: localizedProgress });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -74,6 +89,43 @@ router.post('/users/:userId/unlock-level/:levelId', async (req, res) => {
   }
 });
 
+// Lock level for user (revoke access)
+router.post('/users/:userId/lock-level/:levelId', async (req, res) => {
+  try {
+    let progress = await UserProgress.findOne({ userId: req.params.userId });
+    
+    if (!progress) {
+      return res.status(404).json({ message: 'User progress not found' });
+    }
+
+    const levelScoreIndex = progress.levelScores.findIndex(
+      ls => ls.levelId.toString() === req.params.levelId
+    );
+
+    if (levelScoreIndex >= 0) {
+      progress.levelScores[levelScoreIndex].isUnlocked = false;
+      progress.levelScores[levelScoreIndex].unlockedBy = null;
+      progress.levelScores[levelScoreIndex].unlockedAt = null;
+      // Keep adminApproved flag to track that admin has interacted with this level
+    } else {
+      // If level score doesn't exist, create it as locked
+      progress.levelScores.push({
+        levelId: req.params.levelId,
+        isUnlocked: false,
+        unlockedBy: null,
+        unlockedAt: null,
+        adminApproved: true
+      });
+    }
+
+    await progress.save();
+
+    res.json({ success: true, progress });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Create quiz for user(s)
 router.post('/quiz', async (req, res) => {
   try {
@@ -96,9 +148,17 @@ router.post('/quiz', async (req, res) => {
 // Get all lessons (for admin)
 router.get('/lessons', async (req, res) => {
   try {
+    const lang = req.query.lang || 'en';
     const lessons = await Lesson.find()
       .populate('levelId', 'title levelNumber');
-    res.json({ success: true, lessons });
+    
+    // Transform lessons to localized version
+    const localizedLessons = lessons.map(lesson => {
+      const lessonObj = lesson.toObject();
+      return localizeData(lessonObj, lang);
+    });
+    
+    res.json({ success: true, lessons: localizedLessons });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -177,8 +237,16 @@ router.post('/languages', async (req, res) => {
 // Get all languages
 router.get('/languages', async (req, res) => {
   try {
+    const lang = req.query.lang || 'en';
     const languages = await Language.find().populate('levels');
-    res.json({ success: true, languages });
+    
+    // Transform languages to localized version
+    const localizedLanguages = languages.map(langObj => {
+      const langObjData = langObj.toObject();
+      return localizeData(langObjData, lang);
+    });
+    
+    res.json({ success: true, languages: localizedLanguages });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -187,10 +255,18 @@ router.get('/languages', async (req, res) => {
 // Get all levels
 router.get('/levels', async (req, res) => {
   try {
+    const lang = req.query.lang || 'en';
     const levels = await Level.find()
       .populate('languageId', 'name')
       .populate('lessons', 'title lessonNumber');
-    res.json({ success: true, levels });
+    
+    // Transform levels to localized version
+    const localizedLevels = levels.map(level => {
+      const levelObj = level.toObject();
+      return localizeData(levelObj, lang);
+    });
+    
+    res.json({ success: true, levels: localizedLevels });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -432,6 +508,7 @@ router.delete('/languages/:languageId', async (req, res) => {
 // Get detailed activity log - all sessions with full details
 router.get('/activity-log', async (req, res) => {
   try {
+    const lang = req.query.lang || 'en';
     const { limit = 100, skip = 0, userId, quizType } = req.query;
     
     // Build query
@@ -551,13 +628,21 @@ router.get('/activity-log', async (req, res) => {
       // Sort timeline by timestamp
       activityTimeline.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
       
+      // Localize session data
+      const sessionObj = session.toObject();
+      const localizedSession = localizeData(sessionObj, lang);
+      
+      // Extract quiz title from localized nested objects
+      const quizTitle = extractLocalizedString(
+        localizedSession.assignmentId?.title || localizedSession.lessonId?.title, 
+        lang
+      ) || 'Unknown';
+      
       return {
+        ...localizedSession,
         _id: session._id,
-        userId: session.userId,
-        assignmentId: session.assignmentId,
-        lessonId: session.lessonId,
         quizType: session.quizType,
-        quizTitle: session.assignmentId?.title || session.lessonId?.title || 'Unknown',
+        quizTitle: quizTitle,
         startTime: session.startTime,
         submitTime: session.submitTime,
         endTime: session.endTime,
@@ -612,28 +697,35 @@ router.delete('/activity-log/:sessionId', async (req, res) => {
 // Get tracking statistics
 router.get('/tracking-stats', async (req, res) => {
   try {
+    const lang = req.query.lang || 'en';
     // Get all quiz sessions
     const allSessions = await QuizSessionTracking.find()
       .populate('userId', 'name email')
       .populate('assignmentId', 'title')
       .populate('lessonId', 'title');
+    
+    // Localize sessions
+    const localizedSessions = allSessions.map(session => {
+      const sessionObj = session.toObject();
+      return localizeData(sessionObj, lang);
+    });
 
-    // Calculate statistics
-    const totalSessions = allSessions.length;
-    const activeSessions = allSessions.filter(s => s.isActive).length;
+    // Calculate statistics using localized sessions
+    const totalSessions = localizedSessions.length;
+    const activeSessions = localizedSessions.filter(s => s.isActive).length;
     
     // Sessions with external visits
-    const sessionsWithExternalVisits = allSessions.filter(s => 
+    const sessionsWithExternalVisits = localizedSessions.filter(s => 
       s.visitedDomains && s.visitedDomains.length > 0
     );
     
     // Sessions with suspicious activities
-    const sessionsWithSuspicious = allSessions.filter(s => 
+    const sessionsWithSuspicious = localizedSessions.filter(s => 
       s.suspiciousActivities && s.suspiciousActivities.length > 0
     );
     
     // Calculate total external time
-    const totalExternalTime = allSessions.reduce((sum, s) => {
+    const totalExternalTime = localizedSessions.reduce((sum, s) => {
       if (s.visitedDomains && s.visitedDomains.length > 0) {
         return sum + s.visitedDomains.reduce((domainSum, domain) => 
           domainSum + (domain.totalDuration || 0), 0
@@ -643,18 +735,18 @@ router.get('/tracking-stats', async (req, res) => {
     }, 0);
     
     // Calculate total tab switches
-    const totalTabSwitches = allSessions.reduce((sum, s) => 
+    const totalTabSwitches = localizedSessions.reduce((sum, s) => 
       sum + (s.tabSwitchCount || 0), 0
     );
     
     // Calculate total window blurs
-    const totalWindowBlurs = allSessions.reduce((sum, s) => 
+    const totalWindowBlurs = localizedSessions.reduce((sum, s) => 
       sum + (s.windowBlurCount || 0), 0
     );
     
     // Most visited external domains
     const domainMap = new Map();
-    allSessions.forEach(session => {
+    localizedSessions.forEach(session => {
       if (session.visitedDomains) {
         session.visitedDomains.forEach(domain => {
           const existing = domainMap.get(domain.domain) || { count: 0, totalDuration: 0 };
@@ -684,7 +776,7 @@ router.get('/tracking-stats', async (req, res) => {
       unusual_pattern: 0
     };
     
-    allSessions.forEach(session => {
+    localizedSessions.forEach(session => {
       if (session.suspiciousActivities) {
         session.suspiciousActivities.forEach(activity => {
           if (suspiciousActivityTypes.hasOwnProperty(activity.type)) {
@@ -695,21 +787,30 @@ router.get('/tracking-stats', async (req, res) => {
     });
     
     // Recent suspicious sessions (last 10)
-    const recentSuspiciousSessions = allSessions
+    const recentSuspiciousSessions = localizedSessions
       .filter(s => s.suspiciousActivities && s.suspiciousActivities.length > 0)
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, 10)
-      .map(s => ({
-        _id: s._id,
-        userId: s.userId,
-        assignmentId: s.assignmentId,
-        lessonId: s.lessonId,
-        quizType: s.quizType,
-        suspiciousCount: s.suspiciousActivities.length,
-        externalVisitsCount: s.visitedDomains?.length || 0,
-        tabSwitchCount: s.tabSwitchCount || 0,
-        createdAt: s.createdAt
-      }));
+      .map(s => {
+        // Extract quiz title from localized nested objects
+        const quizTitle = extractLocalizedString(
+          s.assignmentId?.title || s.lessonId?.title, 
+          lang
+        ) || 'Unknown';
+        
+        return {
+          _id: s._id,
+          userId: s.userId,
+          assignmentId: s.assignmentId,
+          lessonId: s.lessonId,
+          quizType: s.quizType,
+          quizTitle: quizTitle,
+          suspiciousCount: s.suspiciousActivities.length,
+          externalVisitsCount: s.visitedDomains?.length || 0,
+          tabSwitchCount: s.tabSwitchCount || 0,
+          createdAt: s.createdAt
+        };
+      });
     
     res.json({
       success: true,
@@ -735,6 +836,7 @@ router.get('/tracking-stats', async (req, res) => {
 // Get dashboard stats
 router.get('/stats', async (req, res) => {
   try {
+    const lang = req.query.lang || 'en';
     const totalUsers = await User.countDocuments();
     const totalAdmins = await User.countDocuments({ role: 'admin' });
     const totalLanguages = await Language.countDocuments();
@@ -753,6 +855,12 @@ router.get('/stats', async (req, res) => {
       .populate('userId', 'name email')
       .populate('lessonScores.lessonId', 'title lessonNumber');
     
+    // Localize progress data
+    const localizedProgress = allProgress.map(progress => {
+      const progressObj = progress.toObject();
+      return localizeData(progressObj, lang);
+    });
+    
     // Calculate score statistics
     let totalQuizScores = 0;
     let totalCodeScores = 0;
@@ -763,7 +871,7 @@ router.get('/stats', async (req, res) => {
     
     const userStats = [];
     
-    allProgress.forEach(progress => {
+    localizedProgress.forEach(progress => {
       let userQuizTotal = 0;
       let userCodeTotal = 0;
       let userQuizCount = 0;
@@ -822,7 +930,7 @@ router.get('/stats', async (req, res) => {
     const avgTotalScore = scoreCount > 0 ? totalScores / scoreCount / 2 : 0; // Convert from 20 to 10 scale
     
     // Calculate grand total score (sum of all total scores across all users)
-    const grandTotalScore = allProgress.reduce((sum, p) => {
+    const grandTotalScore = localizedProgress.reduce((sum, p) => {
       return sum + p.lessonScores.reduce((s, ls) => s + (ls.totalScore || 0), 0);
     }, 0);
     
@@ -848,7 +956,7 @@ router.get('/stats', async (req, res) => {
       poor: 0       // <5
     };
     
-    allProgress.forEach(progress => {
+    localizedProgress.forEach(progress => {
       progress.lessonScores.forEach(ls => {
         const avgScore = ls.totalScore / 2; // Convert to 10 scale
         if (avgScore >= 9) scoreDistribution.excellent++;
@@ -873,9 +981,9 @@ router.get('/stats', async (req, res) => {
         avgCodeScore: avgCodeScore.toFixed(2),
         avgTotalScore: avgTotalScore.toFixed(2),
         grandTotalScore: grandTotalScore,
-        totalQuizAttempts: allProgress.reduce((sum, p) => 
+        totalQuizAttempts: localizedProgress.reduce((sum, p) => 
           sum + p.lessonScores.reduce((s, ls) => s + (ls.quizAttempts || 0), 0), 0),
-        totalCodeAttempts: allProgress.reduce((sum, p) => 
+        totalCodeAttempts: localizedProgress.reduce((sum, p) => 
           sum + p.lessonScores.reduce((s, ls) => s + (ls.codeAttempts || 0), 0), 0),
         scoreDistribution
       },

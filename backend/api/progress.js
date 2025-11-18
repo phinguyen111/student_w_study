@@ -5,22 +5,45 @@ import Level from '../models/Level.js';
 import QuizAssignment from '../models/QuizAssignment.js';
 import QuizAssignmentResult from '../models/QuizAssignmentResult.js';
 import { authenticate } from '../middleware/auth.js';
+import { localizeData } from '../utils/i18n.js';
 
 const router = express.Router();
 
 // Get user progress
 router.get('/', authenticate, async (req, res) => {
   try {
+    const lang = req.query.lang || 'en';
     let progress = await UserProgress.findOne({ userId: req.user._id })
       .populate('completedLessonIds', 'title lessonNumber')
-      .populate('lessonScores.lessonId', 'title lessonNumber')
-      .populate('levelScores.levelId', 'title levelNumber');
+      .populate({
+        path: 'lessonScores.lessonId',
+        select: 'title lessonNumber levelId',
+        populate: {
+          path: 'levelId',
+          select: 'title levelNumber languageId',
+          populate: {
+            path: 'languageId',
+            select: 'name slug icon'
+          }
+        }
+      })
+      .populate({
+        path: 'levelScores.levelId',
+        populate: {
+          path: 'languageId',
+          select: 'name slug icon'
+        }
+      });
 
     if (!progress) {
       progress = await UserProgress.create({ userId: req.user._id });
     }
 
-    res.json({ success: true, progress });
+    // Localize progress data
+    const progressObj = progress.toObject();
+    const localizedProgress = localizeData(progressObj, lang);
+
+    res.json({ success: true, progress: localizedProgress });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -154,7 +177,12 @@ router.post('/quiz/:lessonId', authenticate, async (req, res) => {
 
     await progress.save();
 
-    res.json({ success: true, progress });
+    // Localize progress data before returning
+    const lang = req.query.lang || 'en';
+    const progressObj = progress.toObject();
+    const localizedProgress = localizeData(progressObj, lang);
+
+    res.json({ success: true, progress: localizedProgress });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -248,7 +276,12 @@ router.post('/code/:lessonId', authenticate, async (req, res) => {
 
     await progress.save();
 
-    res.json({ success: true, progress });
+    // Localize progress data before returning
+    const lang = req.query.lang || 'en';
+    const progressObj = progress.toObject();
+    const localizedProgress = localizeData(progressObj, lang);
+
+    res.json({ success: true, progress: localizedProgress });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -36,7 +36,7 @@ export default function LearnPage() {
 
   const fetchLanguages = async () => {
     try {
-      const response = await api.get('/languages')
+      const response = await api.get('/languages?lang=en')
       setLanguages(response.data.languages)
     } catch (error) {
       console.error('Error fetching languages:', error)

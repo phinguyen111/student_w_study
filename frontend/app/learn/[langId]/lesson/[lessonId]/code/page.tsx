@@ -51,7 +51,7 @@ export default function CodeExercisePage() {
 
   const fetchLesson = async () => {
     try {
-      const response = await api.get(`/lessons/${params.lessonId}`)
+      const response = await api.get(`/lessons/${params.lessonId}?lang=en`)
       const lessonData = response.data.lesson
       console.log('Lesson data:', lessonData)
       console.log('CodeExercise:', lessonData.codeExercise)

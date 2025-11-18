@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
   Unlock, 
+  Lock,
   Users, 
   BookOpen, 
   Layers, 
@@ -45,10 +46,32 @@ interface User {
 interface UserProgress {
   userId: { _id: string; name: string; email: string }
   levelScores: Array<{
-    levelId: { _id: string; title: string; levelNumber: number }
+    levelId: { 
+      _id: string
+      title: string
+      levelNumber: number
+      languageId?: { _id: string; name: string; slug: string; icon: string }
+    }
     isUnlocked: boolean
     averageScore: number
     adminApproved: boolean
+  }>
+  lessonScores?: Array<{
+    lessonId: { 
+      _id: string
+      title: string
+      lessonNumber: number
+      levelId?: { 
+        _id: string
+        title: string
+        levelNumber: number
+        languageId?: { _id: string; name: string; slug: string; icon: string }
+      }
+    }
+    quizScore: number | null
+    codeScore: number | null
+    totalScore: number
+    completedAt?: string
   }>
 }
 
@@ -270,6 +293,8 @@ export default function AdminPage() {
   const [users, setUsers] = useState<User[]>([])
   const [selectedUser, setSelectedUser] = useState<string | null>(null)
   const [userProgress, setUserProgress] = useState<UserProgress | null>(null)
+  const [selectedLanguageId, setSelectedLanguageId] = useState<string>('')
+  const [selectedLevelId, setSelectedLevelId] = useState<string>('')
   
   // Content Management
   const [languages, setLanguages] = useState<Language[]>([])
@@ -323,7 +348,7 @@ export default function AdminPage() {
 
   const fetchDashboard = async () => {
     try {
-      const response = await api.get('/admin/stats')
+      const response = await api.get('/admin/stats?lang=en')
       setStats(response.data.stats)
       setRecentUsers(response.data.recentUsers)
       setTopUsers(response.data.topUsers || [])
@@ -334,7 +359,7 @@ export default function AdminPage() {
 
   const fetchTrackingStats = async () => {
     try {
-      const response = await api.get('/admin/tracking-stats')
+      const response = await api.get('/admin/tracking-stats?lang=en')
       setTrackingStats(response.data.stats)
     } catch (error) {
       console.error('Error fetching tracking stats:', error)
@@ -352,7 +377,7 @@ export default function AdminPage() {
 
   const fetchUserProgress = async (userId: string) => {
     try {
-      const response = await api.get(`/admin/users/${userId}/progress`)
+      const response = await api.get(`/admin/users/${userId}/progress?lang=en`)
       setUserProgress(response.data.progress)
       setSelectedUser(userId)
     } catch (error) {
@@ -362,7 +387,7 @@ export default function AdminPage() {
 
   const fetchLanguages = async () => {
     try {
-      const response = await api.get('/admin/languages')
+      const response = await api.get('/admin/languages?lang=en')
       setLanguages(response.data.languages)
     } catch (error) {
       console.error('Error fetching languages:', error)
@@ -371,7 +396,7 @@ export default function AdminPage() {
 
   const fetchLevels = async () => {
     try {
-      const response = await api.get('/admin/levels')
+      const response = await api.get('/admin/levels?lang=en')
       setLevels(response.data.levels)
     } catch (error) {
       console.error('Error fetching levels:', error)
@@ -380,22 +405,128 @@ export default function AdminPage() {
 
   const fetchLessons = async () => {
     try {
-      const response = await api.get('/admin/lessons')
+      const response = await api.get('/admin/lessons?lang=en')
       setLessons(response.data.lessons)
     } catch (error) {
       console.error('Error fetching lessons:', error)
     }
   }
 
-  const handleUnlockLevel = async (levelId: string) => {
-    if (!selectedUser) return
+  const handleUnlockLevel = async (levelId?: string) => {
+    if (!selectedUser) {
+      alert('Please select a user first')
+      return
+    }
+    
+    const levelToUnlock = levelId || selectedLevelId
+    if (!levelToUnlock) {
+      alert('Please select a level to unlock')
+      return
+    }
+    
     try {
-      await api.post(`/admin/users/${selectedUser}/unlock-level/${levelId}`)
+      await api.post(`/admin/users/${selectedUser}/unlock-level/${levelToUnlock}`)
       fetchUserProgress(selectedUser)
       fetchDashboard()
+      setSelectedLanguageId('')
+      setSelectedLevelId('')
     } catch (error) {
       console.error('Error unlocking level:', error)
       alert('Error unlocking level')
+    }
+  }
+
+  const handleLockLevel = async (levelId: string) => {
+    if (!selectedUser) {
+      alert('Please select a user first')
+      return
+    }
+    
+    if (!confirm('Are you sure you want to lock this level? User will lose access to it.')) {
+      return
+    }
+    
+    try {
+      await api.post(`/admin/users/${selectedUser}/lock-level/${levelId}`)
+      fetchUserProgress(selectedUser)
+      fetchDashboard()
+    } catch (error) {
+      console.error('Error locking level:', error)
+      alert('Error locking level')
+    }
+  }
+
+  // Get available levels for selected language
+  const getAvailableLevels = () => {
+    if (!selectedLanguageId || !levels.length) return []
+    return levels.filter(level => level.languageId._id === selectedLanguageId)
+  }
+
+  // Get current language and level info for user
+  const getCurrentLanguageAndLevel = () => {
+    if (!userProgress || !userProgress.lessonScores || userProgress.lessonScores.length === 0) {
+      return null
+    }
+
+    // Find the most recent lesson score (by completedAt or highest totalScore)
+    const recentLessons = [...userProgress.lessonScores]
+      .filter(ls => ls.totalScore > 0) // Only lessons with scores
+      .sort((a, b) => {
+        // Sort by completedAt if available, otherwise by totalScore
+        if (a.completedAt && b.completedAt) {
+          return new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
+        }
+        return (b.totalScore || 0) - (a.totalScore || 0)
+      })
+
+    if (recentLessons.length === 0) return null
+
+    const recentLesson = recentLessons[0]
+    
+    // Try to get level and language info from lessonScore.populated data
+    let levelId = null
+    let levelData = null
+    let languageData = null
+
+    if (recentLesson.lessonId?.levelId?._id) {
+      // Use populated levelId from lessonScore
+      levelData = recentLesson.lessonId.levelId
+      levelId = typeof levelData._id === 'string' 
+        ? levelData._id 
+        : levelData._id.toString()
+
+      // Check if languageId is already populated in levelId
+      if (levelData.languageId && typeof levelData.languageId === 'object' && 'name' in levelData.languageId) {
+        languageData = levelData.languageId
+      }
+    } else {
+      // Fallback: find lesson in lessons array
+      const lessonId = typeof recentLesson.lessonId._id === 'string' 
+        ? recentLesson.lessonId._id 
+        : recentLesson.lessonId._id.toString()
+      
+      const lesson = lessons.find(l => l._id === lessonId)
+      if (!lesson) return null
+      levelId = lesson.levelId._id
+    }
+
+    // Get level and language if not already populated
+    if (!levelData) {
+      levelData = levels.find(l => l._id === levelId)
+      if (!levelData) return null
+    }
+
+    if (!languageData) {
+      const langId = typeof levelData.languageId === 'object' && levelData.languageId._id
+        ? levelData.languageId._id
+        : levelData.languageId
+      languageData = languages.find(lang => lang._id === langId)
+      if (!languageData) return null
+    }
+
+    return {
+      language: { name: languageData.name, icon: languageData.icon },
+      level: { number: levelData.levelNumber, title: levelData.title }
     }
   }
 
@@ -748,6 +879,7 @@ export default function AdminPage() {
       if (activityLogFilters.userId) params.append('userId', activityLogFilters.userId)
       if (activityLogFilters.quizType) params.append('quizType', activityLogFilters.quizType)
       params.append('limit', activityLogFilters.limit.toString())
+      params.append('lang', 'en')
       
       const response = await api.get(`/admin/activity-log?${params.toString()}`)
       setActivityLog(response.data.sessions || [])
@@ -2978,60 +3110,175 @@ export default function AdminPage() {
             </Card>
 
             {userProgress && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>User Progress</CardTitle>
-                  <CardDescription>
-                    {userProgress.userId.name} ({userProgress.userId.email})
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {userProgress.levelScores.length > 0 ? (
-                      userProgress.levelScores.map((levelScore, index) => (
-                        <div key={index} className="p-4 border rounded-lg">
-                          <div className="flex items-center justify-between mb-2">
+              <div className="space-y-6">
+                {/* Current Language and Level Info */}
+                {(() => {
+                  const currentInfo = getCurrentLanguageAndLevel()
+                  return currentInfo ? (
+                    <Card className="border-primary/30 bg-primary/5">
+                      <CardHeader>
+                        <CardTitle className="text-lg">Current Learning Status</CardTitle>
+                        <CardDescription>User's current language and level</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl">{currentInfo.language.icon}</span>
                             <div>
-                              <p className="font-semibold">
-                                Level {levelScore.levelId.levelNumber}: {levelScore.levelId.title}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                Score: {levelScore.averageScore.toFixed(1)}/10
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {levelScore.isUnlocked ? (
-                                <span className="text-green-500 text-sm flex items-center gap-1">
-                                  <Unlock className="h-4 w-4" />
-                                  Unlocked
-                                </span>
-                              ) : (
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleUnlockLevel(levelScore.levelId._id)}
-                                >
-                                  <Unlock className="h-4 w-4 mr-2" />
-                                  Unlock
-                                </Button>
-                              )}
+                              <p className="font-semibold">Language</p>
+                              <p className="text-sm text-muted-foreground">{currentInfo.language.name}</p>
                             </div>
                           </div>
-                          {levelScore.adminApproved && (
-                            <p className="text-xs text-muted-foreground flex items-center gap-1">
-                              <Shield className="h-3 w-3" />
-                              Admin approved
+                          <div className="h-12 w-px bg-border"></div>
+                          <div>
+                            <p className="font-semibold">Current Level</p>
+                            <p className="text-sm text-muted-foreground">
+                              Level {currentInfo.level.number}: {currentInfo.level.title}
                             </p>
-                          )}
+                          </div>
                         </div>
-                      ))
-                    ) : (
-                      <p className="text-muted-foreground text-center py-4">
-                        No progress data available
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                      </CardContent>
+                    </Card>
+                  ) : null
+                })()}
+
+                {/* Unlock Level Section */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Unlock Level</CardTitle>
+                    <CardDescription>Manually unlock a level for this user</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Select Language</label>
+                        <select
+                          className="w-full p-2 border rounded-lg"
+                          value={selectedLanguageId}
+                          onChange={(e) => {
+                            setSelectedLanguageId(e.target.value)
+                            setSelectedLevelId('') // Reset level when language changes
+                          }}
+                        >
+                          <option value="">-- Select Language --</option>
+                          {languages.map((lang) => (
+                            <option key={lang._id} value={lang._id}>
+                              {lang.icon} {lang.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {selectedLanguageId && (
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">Select Level</label>
+                          <select
+                            className="w-full p-2 border rounded-lg"
+                            value={selectedLevelId}
+                            onChange={(e) => setSelectedLevelId(e.target.value)}
+                          >
+                            <option value="">-- Select Level --</option>
+                            {getAvailableLevels().map((level) => (
+                              <option key={level._id} value={level._id}>
+                                Level {level.levelNumber}: {level.title}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <Button
+                        onClick={() => handleUnlockLevel()}
+                        disabled={!selectedLevelId}
+                        className="w-full"
+                      >
+                        <Unlock className="h-4 w-4 mr-2" />
+                        Unlock Selected Level
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* User Progress List */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>User Progress</CardTitle>
+                    <CardDescription>
+                      {userProgress.userId.name} ({userProgress.userId.email})
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {userProgress.levelScores.length > 0 ? (
+                        userProgress.levelScores.map((levelScore, index) => (
+                          <div key={index} className="p-4 border rounded-lg">
+                            <div className="flex items-center justify-between mb-2">
+                              <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                  {levelScore.levelId.languageId && (
+                                    <>
+                                      <span className="text-lg">
+                                        {levelScore.levelId.languageId.icon}
+                                      </span>
+                                      <span className="text-sm text-muted-foreground">
+                                        {levelScore.levelId.languageId.name}
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                                <p className="font-semibold">
+                                  Level {levelScore.levelId.levelNumber}: {levelScore.levelId.title}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  Score: {levelScore.averageScore.toFixed(1)}/10
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {levelScore.isUnlocked ? (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-green-500 text-sm flex items-center gap-1">
+                                      <CheckCircle2 className="h-4 w-4" />
+                                      Unlocked
+                                    </span>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleLockLevel(levelScore.levelId._id)}
+                                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                                    >
+                                      <Lock className="h-4 w-4 mr-2" />
+                                      Lock
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleUnlockLevel(levelScore.levelId._id)}
+                                  >
+                                    <Unlock className="h-4 w-4 mr-2" />
+                                    Unlock
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                            {levelScore.adminApproved && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-2">
+                                <Shield className="h-3 w-3" />
+                                Admin approved
+                              </p>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-muted-foreground text-center py-4">
+                          No progress data available
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             )}
           </div>
         </TabsContent>

@@ -40,7 +40,7 @@ export default function LevelPage() {
 
   const fetchLessons = async () => {
     try {
-      const response = await api.get(`/lessons/level/${params.levelId}`)
+      const response = await api.get(`/lessons/level/${params.levelId}?lang=en`)
       setLessons(response.data.lessons)
     } catch (error) {
       console.error('Error fetching lessons:', error)

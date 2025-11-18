@@ -46,7 +46,7 @@ export default function LanguagePage() {
 
   const fetchLanguage = async () => {
     try {
-      const response = await api.get(`/languages/${params.langId}`)
+      const response = await api.get(`/languages/${params.langId}?lang=en`)
       setLanguage(response.data.language)
     } catch (error) {
       console.error('Error fetching language:', error)

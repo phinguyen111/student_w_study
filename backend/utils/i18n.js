@@ -113,10 +113,17 @@ export function localizeData(data, lang = 'en') {
     }
   }
 
-  // Recursively transform nested objects (but skip already processed fields)
+  // Recursively transform nested objects (but skip already processed fields at current level)
   for (const key in transformed) {
-    // Skip options and localized fields as they're already processed
-    if (key === 'options' || localizedFields.includes(key)) {
+    // Skip options as it's already processed
+    // Note: We DON'T skip localizedFields here because they need to be processed in nested objects
+    if (key === 'options') {
+      continue;
+    }
+    
+    // Skip if this field was already processed at the current level (to avoid double processing)
+    // But we need to check if it's still an object (meaning it wasn't processed yet)
+    if (localizedFields.includes(key) && typeof transformed[key] !== 'object') {
       continue;
     }
     
@@ -133,4 +140,21 @@ export function localizeData(data, lang = 'en') {
   }
 
   return transformed;
+}
+
+/**
+ * Extract localized string from a field that could be a string or {vi, en} object
+ * @param {string|object} field - The field value (string or {vi, en} object)
+ * @param {string} lang - Language code ('vi' or 'en')
+ * @returns {string} - Localized string
+ */
+export function extractLocalizedString(field, lang = 'en') {
+  if (!field) return '';
+  if (typeof field === 'string') return field;
+  if (typeof field === 'object' && !Array.isArray(field)) {
+    if (field[lang] !== undefined) return String(field[lang]);
+    if (field.en !== undefined) return String(field.en);
+    if (field.vi !== undefined) return String(field.vi);
+  }
+  return String(field);
 }

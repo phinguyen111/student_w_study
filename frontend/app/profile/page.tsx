@@ -54,7 +54,7 @@ export default function ProfilePage() {
 
   const fetchProgress = async () => {
     try {
-      const response = await api.get('/progress')
+      const response = await api.get('/progress?lang=en')
       setProgress(response.data.progress)
     } catch (error) {
       console.error('Error fetching progress:', error)
