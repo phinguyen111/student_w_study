@@ -5,7 +5,6 @@ export const translations = {
     // Navigation
     learn: 'Học tập',
     login: 'Đăng nhập',
-    register: 'Đăng ký',
     logout: 'Đăng xuất',
     profile: 'Hồ sơ',
     admin: 'Quản trị',
@@ -99,13 +98,7 @@ export const translations = {
     enterCredentials: 'Nhập thông tin đăng nhập để truy cập tài khoản',
     password: 'Mật khẩu',
     loggingIn: 'Đang đăng nhập...',
-    dontHaveAccount: 'Chưa có tài khoản?',
-    signUp: 'Đăng ký',
-    createAccount: 'Tạo tài khoản mới để bắt đầu học',
-    creatingAccount: 'Đang tạo tài khoản...',
-    alreadyHaveAccount: 'Đã có tài khoản?',
     loginFailed: 'Đăng nhập thất bại',
-    registrationFailed: 'Đăng ký thất bại',
     
     // Learn
     chooseLanguage: 'Chọn ngôn ngữ',
@@ -139,7 +132,6 @@ export const translations = {
     // Navigation
     learn: 'Learn',
     login: 'Login',
-    register: 'Register',
     logout: 'Logout',
     profile: 'Profile',
     admin: 'Admin',
@@ -234,13 +226,7 @@ export const translations = {
     enterCredentials: 'Enter your credentials to access your account',
     password: 'Password',
     loggingIn: 'Logging in...',
-    dontHaveAccount: 'Don\'t have an account?',
-    signUp: 'Sign up',
-    createAccount: 'Create a new account to start learning',
-    creatingAccount: 'Creating account...',
-    alreadyHaveAccount: 'Already have an account?',
     loginFailed: 'Login failed',
-    registrationFailed: 'Registration failed',
     
     // Learn
     chooseLanguage: 'Choose a Language',

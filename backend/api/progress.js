@@ -458,16 +458,35 @@ router.post('/quiz-assignments/:id/submit', authenticate, async (req, res) => {
 
     // Calculate score
     let correctCount = 0;
-    const submittedAnswers = answers || [];
+    const submittedAnswers = Array.isArray(answers) ? answers : [];
+
+    // Ensure we have the same number of questions
+    if (submittedAnswers.length !== assignment.questions.length) {
+      console.warn(`Answer count mismatch: submitted ${submittedAnswers.length}, expected ${assignment.questions.length}`);
+    }
 
     assignment.questions.forEach((question, index) => {
       const userAnswer = submittedAnswers[index];
-      if (userAnswer !== undefined && userAnswer === question.correctAnswer) {
+      const correctAnswer = question.correctAnswer;
+      
+      // Only count as correct if:
+      // 1. User provided an answer (not undefined, not null)
+      // 2. Correct answer is defined
+      // 3. They match exactly (using strict equality)
+      if (
+        userAnswer !== undefined && 
+        userAnswer !== null &&
+        correctAnswer !== undefined && 
+        correctAnswer !== null &&
+        Number(userAnswer) === Number(correctAnswer)
+      ) {
         correctCount++;
       }
     });
 
-    const score = (correctCount / assignment.questions.length) * 10;
+    const score = assignment.questions.length > 0 
+      ? (correctCount / assignment.questions.length) * 10 
+      : 0;
     const passed = score >= assignment.passingScore;
 
     // Get attempt number

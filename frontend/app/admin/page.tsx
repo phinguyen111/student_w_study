@@ -268,6 +268,20 @@ export default function AdminPage() {
   const [newLevel, setNewLevel] = useState({ languageId: '', levelNumber: 1, title: '', description: '' })
   const [showNewLanguage, setShowNewLanguage] = useState(false)
   const [showNewLevel, setShowNewLevel] = useState(false)
+  const [showNewLesson, setShowNewLesson] = useState(false)
+  const [showBulkCreateUsers, setShowBulkCreateUsers] = useState(false)
+  const [bulkUsers, setBulkUsers] = useState<Array<{ name: string; email: string; password: string }>>([{ name: '', email: '', password: '' }])
+  const [newLesson, setNewLesson] = useState({
+    levelId: '',
+    lessonNumber: 1,
+    title: '',
+    content: '',
+    codeExample: '',
+    quiz: {
+      questions: [] as any[],
+      passingScore: 7
+    }
+  })
   
   // Quiz Assignments
   const [quizAssignments, setQuizAssignments] = useState<QuizAssignment[]>([])
@@ -394,6 +408,43 @@ export default function AdminPage() {
     }
   }
 
+  const handleBulkCreateUsers = async () => {
+    try {
+      // Filter out empty users
+      const validUsers = bulkUsers.filter(u => u.name && u.email && u.password)
+      if (validUsers.length === 0) {
+        alert('Please add at least one user with all fields filled')
+        return
+      }
+
+      const response = await api.post('/admin/users/bulk', { users: validUsers })
+      alert(`Successfully created ${response.data.created} user(s). ${response.data.failed > 0 ? `${response.data.failed} failed.` : ''}`)
+      setShowBulkCreateUsers(false)
+      setBulkUsers([{ name: '', email: '', password: '' }])
+      fetchUsers()
+      fetchDashboard()
+    } catch (error: any) {
+      console.error('Error creating users:', error)
+      alert(error.response?.data?.message || 'Error creating users')
+    }
+  }
+
+  const addBulkUser = () => {
+    setBulkUsers([...bulkUsers, { name: '', email: '', password: '' }])
+  }
+
+  const removeBulkUser = (index: number) => {
+    if (bulkUsers.length > 1) {
+      setBulkUsers(bulkUsers.filter((_, i) => i !== index))
+    }
+  }
+
+  const updateBulkUser = (index: number, field: 'name' | 'email' | 'password', value: string) => {
+    const newUsers = [...bulkUsers]
+    newUsers[index] = { ...newUsers[index], [field]: value }
+    setBulkUsers(newUsers)
+  }
+
   const handleCreateLanguage = async () => {
     try {
       await api.post('/admin/languages', newLanguage)
@@ -471,6 +522,34 @@ export default function AdminPage() {
     }
   }
 
+  const handleCreateLesson = async () => {
+    try {
+      if (!newLesson.levelId || !newLesson.title) {
+        alert('Please fill in all required fields')
+        return
+      }
+      await api.post('/admin/lessons', newLesson)
+      fetchLessons()
+      fetchLevels()
+      fetchDashboard()
+      setShowNewLesson(false)
+      setNewLesson({
+        levelId: '',
+        lessonNumber: 1,
+        title: '',
+        content: '',
+        codeExample: '',
+        quiz: {
+          questions: [],
+          passingScore: 7
+        }
+      })
+    } catch (error: any) {
+      console.error('Error creating lesson:', error)
+      alert(error.response?.data?.message || 'Error creating lesson')
+    }
+  }
+
   const handleDeleteLesson = async (lessonId: string) => {
     if (!confirm('Are you sure you want to delete this lesson?')) return
     try {
@@ -482,6 +561,155 @@ export default function AdminPage() {
       console.error('Error deleting lesson:', error)
       alert('Error deleting lesson')
     }
+  }
+
+  const addQuizQuestion = () => {
+    setNewLesson({
+      ...newLesson,
+      quiz: {
+        ...newLesson.quiz,
+        questions: [
+          ...newLesson.quiz.questions,
+          {
+            type: 'multiple-choice',
+            question: '',
+            options: ['', '', '', ''],
+            correctAnswer: 0,
+            explanation: ''
+          }
+        ]
+      }
+    })
+  }
+
+  const removeQuizQuestion = (index: number) => {
+    const newQuestions = [...newLesson.quiz.questions]
+    newQuestions.splice(index, 1)
+    setNewLesson({
+      ...newLesson,
+      quiz: {
+        ...newLesson.quiz,
+        questions: newQuestions
+      }
+    })
+  }
+
+  const updateQuizQuestion = (index: number, field: string, value: any) => {
+    const newQuestions = [...newLesson.quiz.questions]
+    if (field === 'type' && value === 'code') {
+      // Reset to code question structure
+      newQuestions[index] = {
+        type: 'code',
+        question: newQuestions[index].question || '',
+        codeType: 'html',
+        starterCode: {
+          html: '',
+          css: '',
+          javascript: ''
+        },
+        expectedOutput: '',
+        explanation: ''
+      }
+    } else if (field === 'type' && value === 'multiple-choice') {
+      // Reset to multiple-choice structure
+      newQuestions[index] = {
+        type: 'multiple-choice',
+        question: newQuestions[index].question || '',
+        options: ['', '', '', ''],
+        correctAnswer: 0,
+        explanation: ''
+      }
+    } else {
+      newQuestions[index] = {
+        ...newQuestions[index],
+        [field]: value
+      }
+    }
+    setNewLesson({
+      ...newLesson,
+      quiz: {
+        ...newLesson.quiz,
+        questions: newQuestions
+      }
+    })
+  }
+
+  const updateQuizQuestionOption = (qIndex: number, optIndex: number, value: string) => {
+    const newQuestions = [...newLesson.quiz.questions]
+    const newOptions = [...(newQuestions[qIndex].options || [])]
+    newOptions[optIndex] = value
+    newQuestions[qIndex].options = newOptions
+    setNewLesson({
+      ...newLesson,
+      quiz: {
+        ...newLesson.quiz,
+        questions: newQuestions
+      }
+    })
+  }
+
+  const duplicateQuizQuestion = (qIndex: number) => {
+    const newQuestions = [...newLesson.quiz.questions]
+    const questionToDuplicate = { ...newQuestions[qIndex] }
+    // Clear question text and adjust for duplicate
+    questionToDuplicate.question = ''
+    if (questionToDuplicate.type === 'multiple-choice') {
+      questionToDuplicate.correctAnswer = 0
+    }
+    newQuestions.splice(qIndex + 1, 0, questionToDuplicate)
+    setNewLesson({
+      ...newLesson,
+      quiz: {
+        ...newLesson.quiz,
+        questions: newQuestions
+      }
+    })
+  }
+
+  const addQuizQuestionOption = (qIndex: number) => {
+    const newQuestions = [...newLesson.quiz.questions]
+    const newOptions = [...(newQuestions[qIndex].options || [])]
+    newOptions.push('')
+    newQuestions[qIndex].options = newOptions
+    setNewLesson({
+      ...newLesson,
+      quiz: {
+        ...newLesson.quiz,
+        questions: newQuestions
+      }
+    })
+  }
+
+  const removeQuizQuestionOption = (qIndex: number, optIndex: number) => {
+    const newQuestions = [...newLesson.quiz.questions]
+    const newOptions = [...(newQuestions[qIndex].options || [])]
+    newOptions.splice(optIndex, 1)
+    newQuestions[qIndex].options = newOptions
+    setNewLesson({
+      ...newLesson,
+      quiz: {
+        ...newLesson.quiz,
+        questions: newQuestions
+      }
+    })
+  }
+
+  const updateStarterCode = (qIndex: number, lang: 'html' | 'css' | 'javascript', value: string) => {
+    const newQuestions = [...newLesson.quiz.questions]
+    newQuestions[qIndex] = {
+      ...newQuestions[qIndex],
+      starterCode: {
+        ...(newQuestions[qIndex].starterCode || { html: '', css: '', javascript: '' }),
+        [lang]: value
+      }
+    }
+    setNewLesson({
+      ...newLesson,
+      quiz: {
+        ...newLesson.quiz,
+        questions: newQuestions
+      }
+    })
   }
 
   // Quiz Assignment functions
@@ -668,6 +896,87 @@ export default function AdminPage() {
 
         {/* Dashboard Tab */}
         <TabsContent value="dashboard" className="space-y-6">
+          {/* Bulk Create Users */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Create Multiple Users</CardTitle>
+                <CardDescription>Create multiple user accounts at once</CardDescription>
+              </div>
+              <Button onClick={() => setShowBulkCreateUsers(!showBulkCreateUsers)}>
+                <Plus className="h-4 w-4 mr-2" />
+                {showBulkCreateUsers ? 'Hide' : 'Create Users'}
+              </Button>
+            </CardHeader>
+            {showBulkCreateUsers && (
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  {bulkUsers.map((user, index) => (
+                    <Card key={index} className="p-4 border-2">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="font-medium">User {index + 1}</span>
+                        {bulkUsers.length > 1 && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeBulkUser(index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                      <div className="grid md:grid-cols-3 gap-3">
+                        <div>
+                          <label className="text-xs font-medium mb-1 block">Name *</label>
+                          <Input
+                            placeholder="User name"
+                            value={user.name}
+                            onChange={(e) => updateBulkUser(index, 'name', e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium mb-1 block">Email *</label>
+                          <Input
+                            type="email"
+                            placeholder="user@example.com"
+                            value={user.email}
+                            onChange={(e) => updateBulkUser(index, 'email', e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium mb-1 block">Password *</label>
+                          <Input
+                            type="password"
+                            placeholder="Password"
+                            value={user.password}
+                            onChange={(e) => updateBulkUser(index, 'password', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={addBulkUser}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Another User
+                  </Button>
+                  <Button onClick={handleBulkCreateUsers}>
+                    <Save className="h-4 w-4 mr-2" />
+                    Create {bulkUsers.filter(u => u.name && u.email && u.password).length} User(s)
+                  </Button>
+                  <Button variant="outline" onClick={() => {
+                    setShowBulkCreateUsers(false)
+                    setBulkUsers([{ name: '', email: '', password: '' }])
+                  }}>
+                    <X className="h-4 w-4 mr-2" />
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+
           {/* Overview Stats */}
           {stats && (
             <>
@@ -1103,11 +1412,11 @@ export default function AdminPage() {
                   </CardTitle>
                   <div>
                     <CardDescription>
-                      Tất cả hoạt động của người dùng - Ai đã làm gì, ở trang nào, khi nào, bao lâu (bao gồm cả external visits)
+                      All user activities - Who did what, on which page, when, and for how long (including external visits)
                     </CardDescription>
                     {selectedSessions.size > 0 && (
                       <span className="ml-0 mt-1 inline-block px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded text-xs font-semibold">
-                        {selectedSessions.size} đã chọn
+                        {selectedSessions.size} selected
                       </span>
                     )}
                   </div>
@@ -1118,7 +1427,7 @@ export default function AdminPage() {
                       variant="destructive"
                       size="sm"
                       onClick={async () => {
-                        if (!confirm(`Bạn có chắc muốn xóa ${selectedSessions.size} hành động đã chọn?\n\nThông tin sẽ bị xóa vĩnh viễn và không thể khôi phục.`)) {
+                        if (!confirm(`Are you sure you want to delete ${selectedSessions.size} selected activities?\n\nThis information will be permanently deleted and cannot be recovered.`)) {
                           return
                         }
                         setIsDeleting(true)
@@ -1134,10 +1443,10 @@ export default function AdminPage() {
                           // Remove from local state
                           setActivityLog(activityLog.filter((s: any) => !selectedSessions.has(s._id)))
                           setSelectedSessions(new Set())
-                          alert(`Đã xóa ${deletedCount} hành động thành công`)
+                          alert(`Successfully deleted ${deletedCount} activities`)
                         } catch (error: any) {
                           console.error('Error deleting activity logs:', error)
-                          alert('Lỗi khi xóa hành động: ' + (error.response?.data?.message || error.message))
+                          alert('Error deleting activities: ' + (error.response?.data?.message || error.message))
                         } finally {
                           setIsDeleting(false)
                         }
@@ -1145,7 +1454,7 @@ export default function AdminPage() {
                       disabled={isDeleting}
                     >
                       <Trash2 className={`h-4 w-4 mr-2 ${isDeleting ? 'animate-spin' : ''}`} />
-                      Xóa đã chọn ({selectedSessions.size})
+                      Delete Selected ({selectedSessions.size})
                     </Button>
                   )}
                   <Button
@@ -1243,7 +1552,7 @@ export default function AdminPage() {
               ) : activityLog.length === 0 ? (
                 <div className="text-center py-8">
                   <Activity className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground">Không có hoạt động nào</p>
+                  <p className="text-muted-foreground">No activities</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -1359,22 +1668,22 @@ export default function AdminPage() {
                                 variant="destructive"
                                 size="sm"
                                 onClick={async () => {
-                                  if (!confirm(`Bạn có chắc muốn xóa hành động này của ${session.userId?.name || 'user'}?\n\nThông tin sẽ bị xóa vĩnh viễn và không thể khôi phục.`)) {
+                                  if (!confirm(`Are you sure you want to delete this activity from ${session.userId?.name || 'user'}?\n\nThis information will be permanently deleted and cannot be recovered.`)) {
                                     return
                                   }
                                   try {
                                     await api.delete(`/admin/activity-log/${session._id}`)
                                     // Remove from local state
                                     setActivityLog(activityLog.filter((s: any) => s._id !== session._id))
-                                    alert('Đã xóa hành động thành công')
+                                    alert('Activity deleted successfully')
                                   } catch (error: any) {
                                     console.error('Error deleting activity log:', error)
-                                    alert('Lỗi khi xóa hành động: ' + (error.response?.data?.message || error.message))
+                                    alert('Error deleting activity: ' + (error.response?.data?.message || error.message))
                                   }
                                 }}
                               >
                                 <Trash2 className="h-4 w-4 mr-2" />
-                                Xóa
+                                Delete
                               </Button>
                             </div>
                           </div>
@@ -1410,10 +1719,10 @@ export default function AdminPage() {
                               <div className="flex items-center gap-2 mb-3">
                                 <ExternalLink className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
                                 <span className="font-bold text-sm text-yellow-900 dark:text-yellow-100">
-                                  🌐 External Websites Đã Truy Cập:
+                                  🌐 External Websites Visited:
                                 </span>
                                 <span className="text-xs text-yellow-700 dark:text-yellow-300">
-                                  Tổng: {session.totalExternalTimeMinutes || session.visitedDomains.reduce((sum: number, v: any) => sum + parseFloat(v.totalDurationMinutes || 0), 0).toFixed(2)} phút
+                                  Total: {session.totalExternalTimeMinutes || session.visitedDomains.reduce((sum: number, v: any) => sum + parseFloat(v.totalDurationMinutes || 0), 0).toFixed(2)} minutes
                                 </span>
                               </div>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -1442,10 +1751,10 @@ export default function AdminPage() {
                                         </div>
                                         <div className="text-right">
                                           <p className="text-xs font-semibold text-yellow-700 dark:text-yellow-300">
-                                            {visit.totalDurationMinutes} phút
+                                            {visit.totalDurationMinutes} minutes
                                           </p>
                                           <p className="text-xs text-muted-foreground">
-                                            {visit.count} lần truy cập
+                                            {visit.count} visit(s)
                                           </p>
                                         </div>
                                       </div>
@@ -1454,7 +1763,7 @@ export default function AdminPage() {
                                       {uniqueRoutes.length > 0 && (
                                         <div className="mt-2 pt-2 border-t border-yellow-200 dark:border-yellow-800">
                                           <p className="text-xs font-medium text-yellow-900 dark:text-yellow-100 mb-1">
-                                            🛣️ Routes đã truy cập:
+                                            🛣️ Routes Visited:
                                           </p>
                                           <div className="space-y-1 max-h-24 overflow-y-auto">
                                             {uniqueRoutes.slice(0, 5).map((route: string, routeIdx: number) => (
@@ -1464,7 +1773,7 @@ export default function AdminPage() {
                                             ))}
                                             {uniqueRoutes.length > 5 && (
                                               <p className="text-xs text-muted-foreground">
-                                                +{uniqueRoutes.length - 5} route khác
+                                                +{uniqueRoutes.length - 5} more routes
                                               </p>
                                             )}
                                           </div>
@@ -1475,7 +1784,7 @@ export default function AdminPage() {
                                       {uniqueTitles.length > 0 && (
                                         <div className="mt-2 pt-2 border-t border-yellow-200 dark:border-yellow-800">
                                           <p className="text-xs font-medium text-yellow-900 dark:text-yellow-100 mb-1">
-                                            📄 Trang đã xem:
+                                            📄 Pages Viewed:
                                           </p>
                                           <div className="space-y-1 max-h-24 overflow-y-auto">
                                             {uniqueTitles.slice(0, 3).map((title: string, titleIdx: number) => (
@@ -1485,7 +1794,7 @@ export default function AdminPage() {
                                             ))}
                                             {uniqueTitles.length > 3 && (
                                               <p className="text-xs text-muted-foreground">
-                                                +{uniqueTitles.length - 3} trang khác
+                                                +{uniqueTitles.length - 3} more pages
                                               </p>
                                             )}
                                           </div>
@@ -1494,7 +1803,7 @@ export default function AdminPage() {
                                       
                                       {visit.firstVisit && (
                                         <p className="text-xs text-muted-foreground mt-2">
-                                          Lần đầu: {new Date(visit.firstVisit).toLocaleString()}
+                                          First visit: {new Date(visit.firstVisit).toLocaleString()}
                                         </p>
                                       )}
                                     </div>
@@ -1511,7 +1820,7 @@ export default function AdminPage() {
                               <div>
                                 <div className="flex items-center gap-2 mb-3">
                                   <Activity className="h-4 w-4 text-muted-foreground" />
-                                  <span className="font-semibold">Activity Timeline (Tất cả hoạt động):</span>
+                                  <span className="font-semibold">Activity Timeline (All Activities):</span>
                                 </div>
                                 <div className="space-y-2 max-h-96 overflow-y-auto">
                                   {session.activityTimeline.map((activity: any, idx: number) => {
@@ -1546,13 +1855,13 @@ export default function AdminPage() {
                                                   ? `⚠️ Suspicious: ${activity.activityType?.replace(/_/g, ' ')}`
                                                   : activity.action === 'switch_away'
                                                   ? isExternal 
-                                                    ? `🔗 Rời khỏi trang → ${getWebsiteName(activity.domain || '') || 'External Site'}`
-                                                    : `🔗 Rời khỏi trang`
+                                                    ? `🔗 Left page → ${getWebsiteName(activity.domain || '') || 'External Site'}`
+                                                    : `🔗 Left page`
                                                   : activity.action === 'switch_back'
-                                                  ? '↩️ Quay lại trang'
+                                                  ? '↩️ Return to page'
                                                   : activity.action === 'window_blur'
-                                                  ? '👁️ Window Blurred (Mất focus)'
-                                                  : '✅ Window Focused (Có focus)'}
+                                                  ? '👁️ Window Blurred (Lost focus)'
+                                                  : '✅ Window Focused (Gained focus)'}
                                               </span>
                                             </div>
                                             {activity.domain && isExternal && (
@@ -1579,7 +1888,7 @@ export default function AdminPage() {
                                             )}
                                             {activity.title && (
                                               <div className="text-xs text-muted-foreground mb-1">
-                                                <span className="font-semibold text-blue-700 dark:text-blue-300">📄 Tên trang:</span>{' '}
+                                                <span className="font-semibold text-blue-700 dark:text-blue-300">📄 Page Title:</span>{' '}
                                                 <span className="font-medium">{activity.title}</span>
                                               </div>
                                             )}
@@ -1596,7 +1905,7 @@ export default function AdminPage() {
                                             )}
                                             {activity.duration && activity.duration > 0 && (
                                               <div className="text-xs text-muted-foreground">
-                                                ⏱️ Đã ở: {activity.durationMinutes} phút ({activity.durationSeconds} giây)
+                                                ⏱️ Duration: {activity.durationMinutes} minutes ({activity.durationSeconds} seconds)
                                               </div>
                                             )}
                                           </div>
@@ -1610,7 +1919,7 @@ export default function AdminPage() {
                                   })}
                                   {session.activityTimeline.length === 0 && (
                                     <div className="text-center py-4 text-sm text-muted-foreground">
-                                      Không có timeline chi tiết
+                                      No detailed timeline
                                     </div>
                                   )}
                                 </div>
@@ -1884,11 +2193,312 @@ export default function AdminPage() {
 
           {/* Lessons */}
           <Card>
-            <CardHeader>
-              <CardTitle>Lessons</CardTitle>
-              <CardDescription>All lessons in the system</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Lessons</CardTitle>
+                <CardDescription>All lessons in the system</CardDescription>
+              </div>
+              <Button onClick={() => setShowNewLesson(!showNewLesson)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Lesson
+              </Button>
             </CardHeader>
             <CardContent>
+              {showNewLesson && (
+                <Card className="mb-6 border-2">
+                  <CardHeader>
+                    <CardTitle>Create New Lesson</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Level *</label>
+                        <select
+                          className="w-full px-3 py-2 border rounded-md"
+                          value={newLesson.levelId}
+                          onChange={(e) => setNewLesson({ ...newLesson, levelId: e.target.value })}
+                        >
+                          <option value="">Select Level</option>
+                          {levels.map((level) => (
+                            <option key={level._id} value={level._id}>
+                              {level.title} (Level {level.levelNumber})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Lesson Number *</label>
+                        <Input
+                          type="number"
+                          placeholder="Lesson Number"
+                          value={newLesson.lessonNumber}
+                          onChange={(e) => setNewLesson({ ...newLesson, lessonNumber: parseInt(e.target.value) || 1 })}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Title *</label>
+                      <Input
+                        placeholder="Lesson Title"
+                        value={newLesson.title}
+                        onChange={(e) => setNewLesson({ ...newLesson, title: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Content</label>
+                      <textarea
+                        className="w-full p-2 border rounded-lg"
+                        rows={6}
+                        placeholder="Lesson content (markdown supported)"
+                        value={newLesson.content}
+                        onChange={(e) => setNewLesson({ ...newLesson, content: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Code Example</label>
+                      <textarea
+                        className="w-full p-2 border rounded-lg font-mono text-sm"
+                        rows={4}
+                        placeholder="Code example"
+                        value={newLesson.codeExample}
+                        onChange={(e) => setNewLesson({ ...newLesson, codeExample: e.target.value })}
+                      />
+                    </div>
+                    
+                    {/* Quiz Section */}
+                    <div className="border-t pt-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <label className="text-sm font-medium">Quiz Questions</label>
+                          <p className="text-xs text-muted-foreground">Add multiple-choice or code questions</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Input
+                            type="number"
+                            min="0"
+                            max="10"
+                            className="w-24"
+                            placeholder="Passing Score"
+                            value={newLesson.quiz.passingScore}
+                            onChange={(e) => setNewLesson({
+                              ...newLesson,
+                              quiz: { ...newLesson.quiz, passingScore: parseFloat(e.target.value) || 7 }
+                            })}
+                          />
+                          <Button size="sm" variant="outline" onClick={addQuizQuestion}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Question
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        {newLesson.quiz.questions.map((q, qIndex) => (
+                          <Card key={qIndex} className="p-4 border-2">
+                            <div className="flex justify-between items-center mb-3">
+                              <span className="font-medium">Question {qIndex + 1}</span>
+                              <div className="flex gap-2">
+                                <select
+                                  className="text-sm px-2 py-1 border rounded"
+                                  value={q.type || 'multiple-choice'}
+                                  onChange={(e) => updateQuizQuestion(qIndex, 'type', e.target.value)}
+                                >
+                                  <option value="multiple-choice">Multiple Choice</option>
+                                  <option value="code">Code Question</option>
+                                </select>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => duplicateQuizQuestion(qIndex)}
+                                  title="Duplicate question"
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => removeQuizQuestion(qIndex)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-3">
+                              <Input
+                                placeholder="Question text"
+                                value={q.question || ''}
+                                onChange={(e) => updateQuizQuestion(qIndex, 'question', e.target.value)}
+                              />
+                              
+                              {q.type === 'multiple-choice' ? (
+                                <>
+                                  <div className="space-y-2">
+                                    <label className="text-xs font-medium">Options (select correct answer)</label>
+                                    {q.options?.map((opt: string, optIndex: number) => (
+                                      <div key={optIndex} className="flex items-center gap-2">
+                                        <input
+                                          type="radio"
+                                          name={`correct-${qIndex}`}
+                                          checked={q.correctAnswer === optIndex}
+                                          onChange={() => updateQuizQuestion(qIndex, 'correctAnswer', optIndex)}
+                                          className="w-4 h-4"
+                                        />
+                                        <Input
+                                          placeholder={`Option ${optIndex + 1}`}
+                                          value={opt}
+                                          onChange={(e) => {
+                                            const newOptions = [...(q.options || [])]
+                                            newOptions[optIndex] = e.target.value
+                                            updateQuizQuestion(qIndex, 'options', newOptions)
+                                          }}
+                                        />
+                                        {q.options && q.options.length > 2 && (
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => removeQuizQuestionOption(qIndex, optIndex)}
+                                          >
+                                            <X className="h-4 w-4" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                    ))}
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => addQuizQuestionOption(qIndex)}
+                                    >
+                                      <Plus className="h-4 w-4 mr-2" />
+                                      Add Option
+                                    </Button>
+                                  </div>
+                                  <Input
+                                    placeholder="Explanation (optional)"
+                                    value={q.explanation || ''}
+                                    onChange={(e) => updateQuizQuestion(qIndex, 'explanation', e.target.value)}
+                                  />
+                                </>
+                              ) : (
+                                <>
+                                  <div>
+                                    <label className="text-xs font-medium mb-1 block">Code Type *</label>
+                                    <select
+                                      className="w-full px-3 py-2 border rounded-md"
+                                      value={q.codeType || 'html'}
+                                      onChange={(e) => updateQuizQuestion(qIndex, 'codeType', e.target.value)}
+                                    >
+                                      <option value="html">HTML</option>
+                                      <option value="css">CSS</option>
+                                      <option value="javascript">JavaScript</option>
+                                      <option value="html-css-js">HTML + CSS + JS</option>
+                                    </select>
+                                  </div>
+                                  
+                                  {q.codeType === 'html-css-js' ? (
+                                    <div className="space-y-2">
+                                      <div>
+                                        <label className="text-xs font-medium mb-1 block">HTML Starter Code</label>
+                                        <textarea
+                                          className="w-full p-2 border rounded-lg font-mono text-sm"
+                                          rows={4}
+                                          placeholder="HTML starter code"
+                                          value={q.starterCode?.html || ''}
+                                          onChange={(e) => updateStarterCode(qIndex, 'html', e.target.value)}
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-xs font-medium mb-1 block">CSS Starter Code</label>
+                                        <textarea
+                                          className="w-full p-2 border rounded-lg font-mono text-sm"
+                                          rows={4}
+                                          placeholder="CSS starter code"
+                                          value={q.starterCode?.css || ''}
+                                          onChange={(e) => updateStarterCode(qIndex, 'css', e.target.value)}
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-xs font-medium mb-1 block">JavaScript Starter Code</label>
+                                        <textarea
+                                          className="w-full p-2 border rounded-lg font-mono text-sm"
+                                          rows={4}
+                                          placeholder="JavaScript starter code"
+                                          value={q.starterCode?.javascript || ''}
+                                          onChange={(e) => updateStarterCode(qIndex, 'javascript', e.target.value)}
+                                        />
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div>
+                                      <label className="text-xs font-medium mb-1 block">Starter Code</label>
+                                      <textarea
+                                        className="w-full p-2 border rounded-lg font-mono text-sm"
+                                        rows={6}
+                                        placeholder={`${q.codeType?.toUpperCase()} starter code`}
+                                        value={q.starterCode?.[q.codeType as 'html' | 'css' | 'javascript'] || ''}
+                                        onChange={(e) => updateStarterCode(qIndex, q.codeType as 'html' | 'css' | 'javascript', e.target.value)}
+                                      />
+                                    </div>
+                                  )}
+                                  
+                                  <div>
+                                    <label className="text-xs font-medium mb-1 block">Expected Output *</label>
+                                    <textarea
+                                      className="w-full p-2 border rounded-lg font-mono text-sm"
+                                      rows={4}
+                                      placeholder="Expected output or result (used for auto-grading)"
+                                      value={q.expectedOutput || ''}
+                                      onChange={(e) => updateQuizQuestion(qIndex, 'expectedOutput', e.target.value)}
+                                    />
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      Describe what the code should produce or output
+                                    </p>
+                                  </div>
+                                  
+                                  <Input
+                                    placeholder="Explanation (optional)"
+                                    value={q.explanation || ''}
+                                    onChange={(e) => updateQuizQuestion(qIndex, 'explanation', e.target.value)}
+                                  />
+                                </>
+                              )}
+                            </div>
+                          </Card>
+                        ))}
+                        {newLesson.quiz.questions.length === 0 && (
+                          <p className="text-center text-muted-foreground py-4">
+                            No questions yet. Click "Add Question" to get started.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button onClick={handleCreateLesson}>
+                        <Save className="h-4 w-4 mr-2" />
+                        Create Lesson
+                      </Button>
+                      <Button variant="outline" onClick={() => {
+                        setShowNewLesson(false)
+                        setNewLesson({
+                          levelId: '',
+                          lessonNumber: 1,
+                          title: '',
+                          content: '',
+                          codeExample: '',
+                          quiz: {
+                            questions: [],
+                            passingScore: 7
+                          }
+                        })
+                      }}>
+                        <X className="h-4 w-4 mr-2" />
+                        Cancel
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
               <div className="space-y-2">
                 {lessons.map((lesson) => (
                   <div key={lesson._id} className="p-4 border rounded-lg">
@@ -1900,6 +2510,11 @@ export default function AdminPage() {
                         <p className="text-sm text-muted-foreground">
                           {lesson.levelId?.title} (Level {lesson.levelId?.levelNumber})
                         </p>
+                        {lesson.quiz?.questions && (
+                          <p className="text-xs text-muted-foreground">
+                            {lesson.quiz.questions.length} quiz question(s)
+                          </p>
+                        )}
                       </div>
                       <Button
                         size="sm"

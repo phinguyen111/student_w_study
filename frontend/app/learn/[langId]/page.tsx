@@ -58,7 +58,7 @@ export default function LanguagePage() {
   if (loading || loadingLang) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
-        <p>Đang tải...</p>
+        <p>Loading...</p>
       </div>
     )
   }
@@ -66,7 +66,7 @@ export default function LanguagePage() {
   if (!language) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
-        <p>Không tìm thấy ngôn ngữ</p>
+        <p>Language not found</p>
       </div>
     )
   }
@@ -83,7 +83,7 @@ export default function LanguagePage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>
-                    Cấp độ {level.levelNumber}: {level.title}
+                    Level {level.levelNumber}: {level.title}
                   </CardTitle>
                   <CardDescription>{level.description}</CardDescription>
                 </div>
@@ -97,17 +97,17 @@ export default function LanguagePage() {
               </div>
               {level.averageScore > 0 && (
                 <p className="text-sm text-muted-foreground mt-2">
-                  Điểm trung bình: {level.averageScore.toFixed(1)}/10
+                  Average score: {level.averageScore.toFixed(1)}/10
                 </p>
               )}
             </CardHeader>
             <CardContent>
               {level.isUnlocked ? (
                 <Link href={`/learn/${params.langId}/level/${level._id}`}>
-                  <Button>Xem bài học</Button>
+                  <Button>View Lessons</Button>
                 </Link>
               ) : (
-                <Button disabled>Đã khóa - Hoàn thành cấp độ trước</Button>
+                <Button disabled>Locked - Complete previous level</Button>
               )}
             </CardContent>
           </Card>

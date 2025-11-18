@@ -220,6 +220,57 @@ router.put('/users/:userId/role', async (req, res) => {
   }
 });
 
+// Bulk create users
+router.post('/users/bulk', async (req, res) => {
+  try {
+    const { users } = req.body;
+    
+    if (!Array.isArray(users) || users.length === 0) {
+      return res.status(400).json({ message: 'Please provide an array of users' });
+    }
+
+    let created = 0;
+    let failed = 0;
+    const errors = [];
+
+    for (const userData of users) {
+      try {
+        const { name, email, password } = userData;
+        
+        if (!name || !email || !password) {
+          failed++;
+          errors.push(`User ${email || 'unknown'}: Missing required fields`);
+          continue;
+        }
+
+        // Check if user already exists
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+          failed++;
+          errors.push(`User ${email}: Already exists`);
+          continue;
+        }
+
+        // Create user
+        await User.create({ name, email, password });
+        created++;
+      } catch (error) {
+        failed++;
+        errors.push(`User ${userData.email || 'unknown'}: ${error.message}`);
+      }
+    }
+
+    res.json({
+      success: true,
+      created,
+      failed,
+      errors: errors.length > 0 ? errors : undefined
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Delete user
 router.delete('/users/:userId', async (req, res) => {
   try {

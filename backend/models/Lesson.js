@@ -5,17 +5,45 @@ const questionSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.Mixed, // Support both string and {vi, en} format
     required: true
   },
+  type: {
+    type: String,
+    enum: ['multiple-choice', 'code'],
+    default: 'multiple-choice'
+  },
   options: {
     type: [mongoose.Schema.Types.Mixed], // Support both string[] and [{vi, en}] format
-    required: true
+    required: function() {
+      return this.type === 'multiple-choice';
+    }
   },
   correctAnswer: {
     type: Number,
-    required: true,
+    required: function() {
+      return this.type === 'multiple-choice';
+    },
     min: 0
   },
   explanation: {
     type: mongoose.Schema.Types.Mixed // Support both string and {vi, en} format
+  },
+  // Code question fields
+  codeType: {
+    type: String,
+    enum: ['html', 'css', 'javascript', 'html-css-js'],
+    required: function() {
+      return this.type === 'code';
+    }
+  },
+  starterCode: {
+    html: { type: String, default: '' },
+    css: { type: String, default: '' },
+    javascript: { type: String, default: '' }
+  },
+  expectedOutput: {
+    type: String,
+    required: function() {
+      return this.type === 'code';
+    }
   }
 });
 

@@ -16,7 +16,6 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -69,29 +68,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (email: string, password: string, name: string) => {
-    try {
-      const response = await api.post('/auth/register', { email, password, name });
-      if (response.data.success && response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        setUser(response.data.user);
-        
-        // Set user ID in Google Analytics
-        if (response.data.user?.id) {
-          setUserId(response.data.user.id);
-        }
-        
-        router.push('/learn');
-      } else {
-        throw new Error(response.data.message || 'Registration failed');
-      }
-    } catch (error: any) {
-      console.error('Register error:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Registration failed';
-      throw new Error(errorMessage);
-    }
-  };
-
   const logout = () => {
     // Track logout before clearing
     if (typeof window !== 'undefined' && window.gtag) {
@@ -120,7 +96,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         loading,
         login,
-        register,
         logout,
         isAuthenticated: !!user,
       }}

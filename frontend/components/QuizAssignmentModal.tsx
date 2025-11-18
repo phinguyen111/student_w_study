@@ -101,7 +101,7 @@ export function QuizAssignmentModal({
           // User denied fullscreen or browser doesn't support
           console.warn('Fullscreen request denied or not supported:', error.message)
           // Show warning that quiz requires fullscreen for security
-          alert('⚠️ Cảnh báo: Quiz này yêu cầu chế độ fullscreen để đảm bảo tính toàn vẹn.\n\nVui lòng bật fullscreen khi làm bài. Nếu bạn rời khỏi trang, chuyển tab, hoặc thoát fullscreen, quiz sẽ tự động kết thúc và bạn không thể làm lại.')
+          alert('⚠️ Warning: This quiz requires fullscreen mode to ensure integrity.\n\nPlease enable fullscreen when taking the quiz. If you leave the page, switch tabs, or exit fullscreen, the quiz will automatically end and you cannot retake it.')
         }
       }
       
@@ -240,11 +240,23 @@ export function QuizAssignmentModal({
   const calculateScore = () => {
     let correct = 0
     questions.forEach((q, index) => {
-      if (selectedAnswers[index] === q.correctAnswer) {
+      const userAnswer = selectedAnswers[index]
+      const correctAnswer = q.correctAnswer
+      
+      // Only count as correct if both are defined and match exactly
+      if (
+        userAnswer !== undefined && 
+        userAnswer !== null &&
+        correctAnswer !== undefined && 
+        correctAnswer !== null &&
+        Number(userAnswer) === Number(correctAnswer)
+      ) {
         correct++
       }
     })
-    const finalScore = (correct / questions.length) * 10
+    const finalScore = questions.length > 0 
+      ? (correct / questions.length) * 10 
+      : 0
     setScore(finalScore)
     setShowResults(true)
   }
@@ -268,8 +280,15 @@ export function QuizAssignmentModal({
     try {
       const timeTaken = startTimeRef.current ? Math.floor((Date.now() - startTimeRef.current) / 1000) : 0
 
+      // Ensure we send a properly formatted answers array
+      // Fill undefined values with null to ensure array length matches questions length
+      const formattedAnswers = questions.map((_, index) => {
+        const answer = selectedAnswers[index]
+        return answer !== undefined ? answer : null
+      })
+
       const response = await api.post(`/progress/quiz-assignments/${assignmentId}/submit`, {
-        answers: selectedAnswers,
+        answers: formattedAnswers,
         timeTaken
       })
       
@@ -335,11 +354,11 @@ export function QuizAssignmentModal({
       // Show appropriate message based on reason
       let message = ''
       if (reason === 'tab_switch') {
-        message = 'Bạn đã chuyển tab khi làm bài. Bài quiz đã bị kết thúc.\n\nVui lòng liên hệ admin để được cấp quyền làm lại.'
+        message = 'You switched tabs while taking the quiz. The quiz has been ended.\n\nPlease contact admin to get permission to retake.'
       } else if (reason === 'browser_leave') {
-        message = 'Bạn đã rời khỏi trình duyệt khi làm bài. Bài quiz đã bị kết thúc.\n\nVui lòng liên hệ admin để được cấp quyền làm lại.'
+        message = 'You left the browser while taking the quiz. The quiz has been ended.\n\nPlease contact admin to get permission to retake.'
       } else if (reason === 'tab_close') {
-        message = 'Bạn đã đóng trang khi làm bài. Bài quiz đã bị kết thúc.\n\nVui lòng liên hệ admin để được cấp quyền làm lại.'
+        message = 'You closed the page while taking the quiz. The quiz has been ended.\n\nPlease contact admin to get permission to retake.'
       }
       
       if (message) {
@@ -356,7 +375,7 @@ export function QuizAssignmentModal({
       // Even if API fails, close modal and show message
       onClose()
       setTimeout(() => {
-        alert('Quiz đã bị kết thúc do bạn đã rời khỏi trang. Vui lòng liên hệ admin để được cấp quyền làm lại.')
+        alert('Quiz has been ended because you left the page. Please contact admin to get permission to retake.')
         onComplete()
       }, 300)
     } finally {
@@ -449,7 +468,7 @@ export function QuizAssignmentModal({
       
       // STRICT MODE: Prevent default and show warning
       e.preventDefault()
-      e.returnValue = 'Bạn đang làm quiz! Nếu bạn đóng trang này, quiz sẽ bị kết thúc và bạn không thể làm lại.'
+      e.returnValue = 'You are taking a quiz! If you close this page, the quiz will be ended and you cannot retake it.'
       
       // Abandon immediately when user tries to close
       if (!pendingAbandonRef.current && !isHandlingAbandonRef.current) {

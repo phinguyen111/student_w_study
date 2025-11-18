@@ -52,7 +52,7 @@ export default function LevelPage() {
   if (loading || loadingLessons) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
-        <p>Đang tải...</p>
+        <p>Loading...</p>
       </div>
     )
   }
@@ -60,20 +60,20 @@ export default function LevelPage() {
   return (
     <div className="container mx-auto px-4 py-16">
       <Link href={`/learn/${params.langId}`}>
-        <Button variant="ghost" className="mb-4">← Quay lại</Button>
+        <Button variant="ghost" className="mb-4">← Back</Button>
       </Link>
-      <h1 className="text-4xl font-bold mb-8">Các bài học</h1>
+      <h1 className="text-4xl font-bold mb-8">Lessons</h1>
       <div className="space-y-4">
         {lessons.map((lesson) => (
           <Card key={lesson._id}>
             <CardHeader>
               <CardTitle>
-                Bài học {lesson.lessonNumber}: {lesson.title}
+                Lesson {lesson.lessonNumber}: {lesson.title}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <Link href={`/learn/${params.langId}/lesson/${lesson._id}`}>
-                <Button>Bắt đầu bài học</Button>
+                <Button>Start Lesson</Button>
               </Link>
             </CardContent>
           </Card>

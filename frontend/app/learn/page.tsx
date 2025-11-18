@@ -48,7 +48,7 @@ export default function LearnPage() {
   if (loading || loadingLangs) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
-        <p>Đang tải...</p>
+        <p>Loading...</p>
       </div>
     )
   }
@@ -56,7 +56,7 @@ export default function LearnPage() {
   return (
     <div className="container mx-auto px-4 py-16 min-h-screen bg-gradient-to-br from-[hsl(185_80%_98%)] via-[hsl(210_60%_98%)] to-[hsl(250_60%_98%)] dark:from-[hsl(220_30%_8%)] dark:via-[hsl(230_30%_10%)] dark:to-[hsl(240_30%_12%)]">
       <h1 className="text-4xl font-bold mb-8 bg-gradient-to-r from-[hsl(185_80%_45%)] via-[hsl(210_60%_55%)] to-[hsl(250_60%_55%)] bg-clip-text text-transparent">
-        Chọn ngôn ngữ
+        Choose a Language
       </h1>
       <div className="grid md:grid-cols-3 gap-6">
         {languages.map((lang) => (
@@ -69,7 +69,7 @@ export default function LearnPage() {
             </CardHeader>
             <CardContent>
               <Link href={`/learn/${lang._id}`}>
-                <Button className="w-full">Bắt đầu học</Button>
+                <Button className="w-full">Start Learning</Button>
               </Link>
             </CardContent>
           </Card>

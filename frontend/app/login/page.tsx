@@ -41,8 +41,8 @@ export default function LoginPage() {
     <div className="container mx-auto px-4 py-16 flex justify-center min-h-screen bg-gradient-to-br from-[hsl(185_80%_98%)] via-[hsl(210_60%_98%)] to-[hsl(250_60%_98%)] dark:from-[hsl(220_30%_8%)] dark:via-[hsl(230_30%_10%)] dark:to-[hsl(240_30%_12%)]">
       <Card className="w-full max-w-md shadow-xl border-2">
         <CardHeader>
-          <CardTitle>Đăng nhập</CardTitle>
-          <CardDescription>Nhập thông tin đăng nhập để truy cập tài khoản</CardDescription>
+          <CardTitle>Login</CardTitle>
+          <CardDescription>Enter your credentials to access your account</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -65,7 +65,7 @@ export default function LoginPage() {
             </div>
             <div>
               <label htmlFor="password" className="block text-sm font-medium mb-2">
-                Mật khẩu
+                Password
               </label>
               <Input
                 id="password"
@@ -76,14 +76,8 @@ export default function LoginPage() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+              {loading ? 'Logging in...' : 'Login'}
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
-              Chưa có tài khoản?{' '}
-              <Link href="/register" className="text-primary hover:underline">
-                Đăng ký
-              </Link>
-            </p>
           </form>
         </CardContent>
       </Card>
