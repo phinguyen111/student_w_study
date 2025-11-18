@@ -2,23 +2,33 @@ import axios from 'axios';
 
 // Get API URL - check environment variable first, then try to infer from current domain
 export const getApiUrl = () => {
+  const correctBackendUrl = 'https://codecatalyst-azure.vercel.app/api';
+  const oldBackendUrl = 'https://student-swin-study-lxr73oir4-phinguyen111s-projects.vercel.app';
+  
+  // Check if NEXT_PUBLIC_API_URL is set
   if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL;
+    const envUrl = process.env.NEXT_PUBLIC_API_URL.trim();
+    
+    // If it's the old/incorrect URL, override it with the correct one
+    if (envUrl.includes('student-swin-study') || envUrl.includes('phinguyen111s-projects')) {
+      console.warn('⚠️ Detected old backend URL in environment variable. Overriding with correct URL.');
+      console.warn('Old URL:', envUrl);
+      console.warn('New URL:', correctBackendUrl);
+      console.warn('Please update NEXT_PUBLIC_API_URL in Vercel to:', correctBackendUrl);
+      return correctBackendUrl;
+    }
+    
+    return envUrl;
   }
   
   // In production, try to infer backend URL from frontend domain
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     
-    // If frontend is on Vercel, try to construct backend URL
+    // If frontend is on Vercel, use the correct backend URL
     if (hostname.includes('vercel.app')) {
-      // Default backend URL for Vercel deployments
-      const defaultBackend = 'https://codecatalyst-azure.vercel.app/api';
-      
-      // For now, return the default backend (user should set NEXT_PUBLIC_API_URL)
-      console.warn('NEXT_PUBLIC_API_URL not set. Using default backend:', defaultBackend);
-      console.warn('Please configure NEXT_PUBLIC_API_URL in Vercel environment variables.');
-      return defaultBackend;
+      console.log('✅ Using default backend URL for Vercel deployment:', correctBackendUrl);
+      return correctBackendUrl;
     }
   }
   
