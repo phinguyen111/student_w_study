@@ -70,11 +70,30 @@ interface Level {
   lessons: any[]
 }
 
+interface Question {
+  question: string
+  options?: string[]
+  correctAnswer?: number | string
+  explanation?: string
+  type?: 'multiple-choice' | 'code'
+  codeType?: 'html' | 'css' | 'javascript' | 'html-css-js'
+  starterCode?: {
+    html?: string
+    css?: string
+    javascript?: string
+  }
+  expectedOutput?: string
+}
+
 interface Lesson {
   _id: string
   lessonNumber: number
   title: string
   levelId: { _id: string; title: string; levelNumber: number }
+  quiz?: {
+    questions: Question[]
+    passingScore: number
+  }
 }
 
 interface Stats {
