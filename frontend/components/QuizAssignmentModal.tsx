@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { X, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Trophy, AlertCircle, Loader2 } from 'lucide-react'
-import api from '@/lib/api'
+import api, { getApiUrl } from '@/lib/api'
 import { useQuizTracker } from '@/hooks/useQuizTracker'
 import { useGATracking } from '@/hooks/useGATracking'
 
@@ -337,11 +337,7 @@ export function QuizAssignmentModal({
       // Try to send via sendBeacon first (more reliable when page is closing)
       try {
         const data = JSON.stringify({ reason })
-        // Get API URL - use environment variable or default backend
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 
-          (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')
-            ? 'https://codecatalyst-azure.vercel.app/api'
-            : 'http://localhost:5000/api')
+        const apiUrl = getApiUrl()
         navigator.sendBeacon(`${apiUrl}/progress/quiz-assignments/${assignmentId}/abandon`, data)
       } catch (beaconError) {
         console.log('sendBeacon failed, using regular API call')
@@ -483,8 +479,8 @@ export function QuizAssignmentModal({
         // Try to send abandon request via sendBeacon (works even when page is closing)
         try {
           const data = JSON.stringify({ reason: 'tab_close' })
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? window.location.origin : '')
-          navigator.sendBeacon(`${apiUrl}/api/progress/quiz-assignments/${assignmentId}/abandon`, data)
+          const apiUrl = getApiUrl()
+          navigator.sendBeacon(`${apiUrl}/progress/quiz-assignments/${assignmentId}/abandon`, data)
         } catch (err) {
           console.error('Error sending beacon:', err)
         }

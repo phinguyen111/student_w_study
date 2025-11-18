@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Get API URL - check environment variable first, then try to infer from current domain
-const getApiUrl = () => {
+export const getApiUrl = () => {
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;
   }
