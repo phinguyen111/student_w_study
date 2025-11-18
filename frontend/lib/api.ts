@@ -12,16 +12,13 @@ const getApiUrl = () => {
     
     // If frontend is on Vercel, try to construct backend URL
     if (hostname.includes('vercel.app')) {
-      // Try common backend patterns
-      const possibleBackends = [
-        'https://student-swin-study-lxr73oir4-phinguyen111s-projects.vercel.app/api',
-        'https://learncode-backend.vercel.app/api',
-        'https://student-backend.vercel.app/api',
-      ];
+      // Default backend URL for Vercel deployments
+      const defaultBackend = 'https://codecatalyst-azure.vercel.app/api';
       
-      // For now, return the first one (user should set NEXT_PUBLIC_API_URL)
-      console.warn('NEXT_PUBLIC_API_URL not set. Please configure it in Vercel environment variables.');
-      return possibleBackends[0] || 'http://localhost:5000/api';
+      // For now, return the default backend (user should set NEXT_PUBLIC_API_URL)
+      console.warn('NEXT_PUBLIC_API_URL not set. Using default backend:', defaultBackend);
+      console.warn('Please configure NEXT_PUBLIC_API_URL in Vercel environment variables.');
+      return defaultBackend;
     }
   }
   

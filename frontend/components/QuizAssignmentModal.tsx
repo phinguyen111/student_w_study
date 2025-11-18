@@ -337,8 +337,12 @@ export function QuizAssignmentModal({
       // Try to send via sendBeacon first (more reliable when page is closing)
       try {
         const data = JSON.stringify({ reason })
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? window.location.origin : '')
-        navigator.sendBeacon(`${apiUrl}/api/progress/quiz-assignments/${assignmentId}/abandon`, data)
+        // Get API URL - use environment variable or default backend
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 
+          (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')
+            ? 'https://codecatalyst-azure.vercel.app/api'
+            : 'http://localhost:5000/api')
+        navigator.sendBeacon(`${apiUrl}/progress/quiz-assignments/${assignmentId}/abandon`, data)
       } catch (beaconError) {
         console.log('sendBeacon failed, using regular API call')
       }

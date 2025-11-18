@@ -48,7 +48,8 @@ const corsOptions = {
           'http://localhost:3000',
           'https://codecatalyst.vercel.app',
           'https://code-catalyst-sigma.vercel.app',
-          'https://student-w-study.vercel.app', // Explicitly add the frontend domain
+          'https://student-w-study.vercel.app', // Frontend domain
+          'https://codecatalyst-azure.vercel.app', // Backend domain (for same-origin requests)
         ];
     
     // Check if origin matches allowed origins
