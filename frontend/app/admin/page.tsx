@@ -493,7 +493,7 @@ export default function AdminPage() {
       levelData = recentLesson.lessonId.levelId
       levelId = typeof levelData._id === 'string' 
         ? levelData._id 
-        : levelData._id.toString()
+        : (levelData._id as any).toString()
 
       // Check if languageId is already populated in levelId
       if (levelData.languageId && typeof levelData.languageId === 'object' && 'name' in levelData.languageId) {
@@ -503,7 +503,7 @@ export default function AdminPage() {
       // Fallback: find lesson in lessons array
       const lessonId = typeof recentLesson.lessonId._id === 'string' 
         ? recentLesson.lessonId._id 
-        : recentLesson.lessonId._id.toString()
+        : (recentLesson.lessonId._id as any).toString()
       
       const lesson = lessons.find(l => l._id === lessonId)
       if (!lesson) return null
