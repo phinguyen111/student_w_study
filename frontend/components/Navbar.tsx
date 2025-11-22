@@ -8,14 +8,88 @@ import { Moon, Sun, User, LogOut } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
 import logoImage from '@/components/logo.png'
+import api from '@/lib/api'
+
+interface QuizAssignmentSummary {
+  _id: string
+  isSubmitted?: boolean
+  isExpired?: boolean
+  canSubmit?: boolean
+}
 
 export default function Navbar() {
   const { user, logout, isAuthenticated } = useAuth()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const [pendingAssignments, setPendingAssignments] = useState<number | null>(null)
 
   useEffect(() => {
     setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    const fetchPendingAssignments = async () => {
+      if (!isAuthenticated) {
+        setPendingAssignments(null)
+        return
+      }
+
+      try {
+        const response = await api.get('/progress/quiz-assignments')
+        const assignments: QuizAssignmentSummary[] = response.data.assignments || []
+
+        const pendingCount = assignments.filter((assignment) => {
+          if (assignment.isSubmitted) return false
+          if (assignment.isExpired) return false
+          if (typeof assignment.canSubmit === 'boolean') {
+            return assignment.canSubmit
+          }
+          return true
+        }).length
+
+        setPendingAssignments(pendingCount)
+
+        // Cache value for faster perceived load on next visits
+        if (typeof window !== 'undefined') {
+          window.sessionStorage.setItem('pendingAssignments', String(pendingCount))
+        }
+      } catch (error) {
+        console.error('Error fetching pending assignments for navbar:', error)
+      }
+    }
+
+    // Try to restore cached value immediately for faster UI
+    if (typeof window !== 'undefined') {
+      const cached = window.sessionStorage.getItem('pendingAssignments')
+      if (cached !== null) {
+        const parsed = Number(cached)
+        if (!Number.isNaN(parsed)) {
+          setPendingAssignments(parsed)
+        }
+      }
+    }
+
+    // Then refresh from API in background
+    fetchPendingAssignments()
+  }, [isAuthenticated])
+
+  useEffect(() => {
+    const handleAssignmentCompleted = () => {
+      setPendingAssignments((prev) => {
+        if (prev === null || prev <= 0) return prev
+        return prev - 1
+      })
+    }
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('quiz-assignment-completed', handleAssignmentCompleted)
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('quiz-assignment-completed', handleAssignmentCompleted)
+      }
+    }
   }, [])
 
   return (
@@ -61,7 +135,14 @@ export default function Navbar() {
                   <Button variant="ghost">Learn</Button>
                 </Link>
                 <Link href="/assignments">
-                  <Button variant="ghost">Assignments</Button>
+                  <Button variant="ghost" className="relative">
+                    Assignments
+                    {pendingAssignments !== null && pendingAssignments > 0 && (
+                      <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full border border-primary bg-background text-primary text-[10px] min-w-[18px] h-[18px] px-1">
+                        {pendingAssignments > 9 ? '9+' : pendingAssignments}
+                      </span>
+                    )}
+                  </Button>
                 </Link>
                 <Link href="/profile">
                   <Button variant="ghost">

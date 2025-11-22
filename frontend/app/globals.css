@@ -130,5 +130,269 @@
   background: linear-gradient(135deg, hsl(185 80% 20%) 0%, hsl(210 60% 20%) 50%, hsl(250 60% 20%) 100%);
 }
 
+/* Animated Gradient Text for Code Catalyst */
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.6)) 
+            drop-shadow(0 0 20px rgba(59, 130, 246, 0.4)) 
+            drop-shadow(0 0 30px rgba(139, 92, 246, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 15px rgba(6, 182, 212, 0.8)) 
+            drop-shadow(0 0 30px rgba(59, 130, 246, 0.6)) 
+            drop-shadow(0 0 45px rgba(139, 92, 246, 0.4));
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.code-catalyst-text {
+  background: linear-gradient(
+    90deg,
+    hsl(185 80% 45%),
+    hsl(210 60% 55%),
+    hsl(250 60% 55%),
+    hsl(210 60% 55%),
+    hsl(185 80% 45%)
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-shift 3s ease infinite;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-block;
+  position: relative;
+  will-change: transform, filter;
+}
+
+.code-catalyst-text:hover {
+  animation: gradient-shift 1s ease infinite;
+  transform: scale(1.08);
+  filter: brightness(1.25) drop-shadow(0 0 10px rgba(6, 182, 212, 0.6)) 
+          drop-shadow(0 0 20px rgba(59, 130, 246, 0.4)) 
+          drop-shadow(0 0 30px rgba(139, 92, 246, 0.3));
+}
+
+.code-catalyst-text::after {
+  content: 'Code Catalyst';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  animation: shimmer 2s ease infinite;
+}
+
+.code-catalyst-text:hover::after {
+  opacity: 1;
+}
+
+/* Dark mode adjustments */
+.dark .code-catalyst-text {
+  background: linear-gradient(
+    90deg,
+    hsl(185 85% 55%),
+    hsl(210 65% 60%),
+    hsl(250 65% 60%),
+    hsl(210 65% 60%),
+    hsl(185 85% 55%)
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dark .code-catalyst-text:hover {
+  transform: scale(1.08);
+  filter: brightness(1.3) drop-shadow(0 0 10px rgba(6, 182, 212, 0.7)) 
+          drop-shadow(0 0 20px rgba(59, 130, 246, 0.5)) 
+          drop-shadow(0 0 30px rgba(139, 92, 246, 0.4));
+}
+
+/* Code Background for Code Catalyst */
+.code-background-wrapper {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.08;
+  transition: opacity 0.3s ease;
+  z-index: 1;
+}
+
+.code-background-wrapper:hover {
+  opacity: 0.12;
+}
+
+.code-background-container {
+  position: relative;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, 
+    hsl(var(--background) / 0.4) 0%, 
+    hsl(var(--muted) / 0.25) 100%
+  );
+  backdrop-filter: blur(2px);
+  border: 1px solid hsl(var(--border) / 0.3);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.code-background-text {
+  font-family: 'Courier New', 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 0.6rem;
+  line-height: 1.6;
+  color: hsl(var(--foreground));
+  white-space: pre;
+  text-align: left;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  pointer-events: none;
+  max-width: 85%;
+  overflow: hidden;
+  animation: code-drift 25s ease-in-out infinite;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  letter-spacing: 0.02em;
+}
+
+@keyframes code-drift {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+    opacity: 0.08;
+  }
+  25% {
+    transform: translateY(-5px) translateX(3px);
+    opacity: 0.1;
+  }
+  50% {
+    transform: translateY(-3px) translateX(-2px);
+    opacity: 0.09;
+  }
+  75% {
+    transform: translateY(-7px) translateX(2px);
+    opacity: 0.11;
+  }
+}
+
+/* Syntax highlighting colors for code background */
+.code-background-text {
+  --code-keyword: hsl(185 80% 45%);
+  --code-function: hsl(210 60% 55%);
+  --code-string: hsl(250 60% 55%);
+  --code-comment: hsl(var(--muted-foreground) / 0.6);
+  --code-variable: hsl(var(--foreground) / 0.7);
+  --code-class: hsl(185 80% 50%);
+  --code-operator: hsl(var(--muted-foreground) / 0.8);
+  --code-punctuation: hsl(var(--muted-foreground) / 0.7);
+}
+
+.code-background-text .code-keyword {
+  color: var(--code-keyword);
+}
+
+.code-background-text .code-function {
+  color: var(--code-function);
+}
+
+.code-background-text .code-string {
+  color: var(--code-string);
+}
+
+.code-background-text .code-comment {
+  color: var(--code-comment);
+  font-style: italic;
+}
+
+.code-background-text .code-variable {
+  color: var(--code-variable);
+}
+
+.code-background-text .code-class {
+  color: var(--code-class);
+}
+
+.code-background-text .code-operator {
+  color: var(--code-operator);
+}
+
+.code-background-text .code-punctuation {
+  color: var(--code-punctuation);
+}
+
+/* Dark mode code background */
+.dark .code-background-text {
+  color: hsl(var(--foreground));
+  opacity: 0.12;
+}
+
+.dark .code-background-wrapper {
+  opacity: 0.1;
+}
+
+.dark .code-background-wrapper:hover {
+  opacity: 0.18;
+}
+
+.dark .code-background-container {
+  background: linear-gradient(135deg, 
+    hsl(var(--background) / 0.5) 0%, 
+    hsl(var(--muted) / 0.35) 100%
+  );
+  border: 1px solid hsl(var(--border) / 0.4);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+}
+
+.dark .code-background-text {
+  --code-keyword: hsl(185 85% 55%);
+  --code-function: hsl(210 65% 60%);
+  --code-string: hsl(250 65% 60%);
+  --code-comment: hsl(var(--muted-foreground) / 0.7);
+  --code-variable: hsl(var(--foreground) / 0.8);
+  --code-class: hsl(185 85% 60%);
+  --code-operator: hsl(var(--muted-foreground) / 0.9);
+  --code-punctuation: hsl(var(--muted-foreground) / 0.8);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .code-background-text {
+    font-size: 0.5rem;
+    max-width: 95%;
+  }
+}
+
 
 

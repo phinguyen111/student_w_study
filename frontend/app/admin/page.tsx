@@ -112,6 +112,8 @@ interface Lesson {
   _id: string
   lessonNumber: number
   title: string
+  content?: string
+  codeExample?: string
   levelId: { _id: string; title: string; levelNumber: number }
   quiz?: {
     questions: Question[]
@@ -296,6 +298,21 @@ export default function AdminPage() {
   const [selectedLanguageId, setSelectedLanguageId] = useState<string>('')
   const [selectedLevelId, setSelectedLevelId] = useState<string>('')
   
+  // Sort states for different user lists
+  const [topUsersSort, setTopUsersSort] = useState<'score' | 'name' | 'email' | 'lessons' | 'streak'>('score')
+  const [topUsersSortOrder, setTopUsersSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [recentUsersSort, setRecentUsersSort] = useState<'date' | 'name' | 'email' | 'role'>('date')
+  const [recentUsersSortOrder, setRecentUsersSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [usersTabSort, setUsersTabSort] = useState<'name' | 'email' | 'role' | 'date'>('name')
+  const [usersTabSortOrder, setUsersTabSortOrder] = useState<'asc' | 'desc'>('asc')
+  const [userProgressTabSort, setUserProgressTabSort] = useState<'name' | 'email'>('name')
+  const [userProgressTabSortOrder, setUserProgressTabSortOrder] = useState<'asc' | 'desc'>('asc')
+  
+  // Search states
+  const [usersTabSearch, setUsersTabSearch] = useState<string>('')
+  const [userProgressTabSearch, setUserProgressTabSearch] = useState<string>('')
+  const [userProgressSummaries, setUserProgressSummaries] = useState<Record<string, { level: string; language: string; score: number; completedLessons: number }>>({})
+  
   // Content Management
   const [languages, setLanguages] = useState<Language[]>([])
   const [levels, setLevels] = useState<Level[]>([])
@@ -304,8 +321,31 @@ export default function AdminPage() {
   // Editing states
   const [editingUser, setEditingUser] = useState<string | null>(null)
   const [editingLanguage, setEditingLanguage] = useState<string | null>(null)
+  const [editingLanguageData, setEditingLanguageData] = useState<{
+    name: string
+    slug: string
+    description: string
+    icon: string
+  } | null>(null)
   const [editingLevel, setEditingLevel] = useState<string | null>(null)
+  const [editingLevelData, setEditingLevelData] = useState<{
+    languageId: string
+    levelNumber: number
+    title: string
+    description: string
+  } | null>(null)
   const [editingLesson, setEditingLesson] = useState<string | null>(null)
+  const [editingLessonData, setEditingLessonData] = useState<{
+    levelId: string
+    lessonNumber: number
+    title: string
+    content: string
+    codeExample: string
+    quiz: {
+      questions: any[]
+      passingScore: number
+    }
+  } | null>(null)
   
   // Form states
   const [newLanguage, setNewLanguage] = useState({ name: '', slug: '', description: '', icon: '🌐' })
@@ -462,6 +502,275 @@ export default function AdminPage() {
     return levels.filter(level => level.languageId._id === selectedLanguageId)
   }
 
+  // Sort functions for different user lists
+  const getSortedTopUsers = () => {
+    const sorted = [...topUsers].sort((a, b) => {
+      let aValue: any, bValue: any
+      switch (topUsersSort) {
+        case 'score':
+          aValue = a.totalAverage
+          bValue = b.totalAverage
+          break
+        case 'name':
+          aValue = a.name.toLowerCase()
+          bValue = b.name.toLowerCase()
+          break
+        case 'email':
+          aValue = a.email.toLowerCase()
+          bValue = b.email.toLowerCase()
+          break
+        case 'lessons':
+          aValue = a.completedLessons
+          bValue = b.completedLessons
+          break
+        case 'streak':
+          aValue = a.currentStreak
+          bValue = b.currentStreak
+          break
+        default:
+          aValue = a.totalAverage
+          bValue = b.totalAverage
+      }
+      if (aValue < bValue) return topUsersSortOrder === 'asc' ? -1 : 1
+      if (aValue > bValue) return topUsersSortOrder === 'asc' ? 1 : -1
+      return 0
+    })
+    return sorted
+  }
+
+  const getSortedRecentUsers = () => {
+    const sorted = [...recentUsers].sort((a, b) => {
+      let aValue: any, bValue: any
+      switch (recentUsersSort) {
+        case 'date':
+          aValue = new Date(a.createdAt).getTime()
+          bValue = new Date(b.createdAt).getTime()
+          break
+        case 'name':
+          aValue = a.name.toLowerCase()
+          bValue = b.name.toLowerCase()
+          break
+        case 'email':
+          aValue = a.email.toLowerCase()
+          bValue = b.email.toLowerCase()
+          break
+        case 'role':
+          aValue = a.role
+          bValue = b.role
+          break
+        default:
+          aValue = new Date(a.createdAt).getTime()
+          bValue = new Date(b.createdAt).getTime()
+      }
+      if (aValue < bValue) return recentUsersSortOrder === 'asc' ? -1 : 1
+      if (aValue > bValue) return recentUsersSortOrder === 'asc' ? 1 : -1
+      return 0
+    })
+    return sorted
+  }
+
+  const getSortedUsersTab = () => {
+    const sorted = [...users].sort((a, b) => {
+      let aValue: any, bValue: any
+      switch (usersTabSort) {
+        case 'name':
+          aValue = a.name.toLowerCase()
+          bValue = b.name.toLowerCase()
+          break
+        case 'email':
+          aValue = a.email.toLowerCase()
+          bValue = b.email.toLowerCase()
+          break
+        case 'role':
+          aValue = a.role
+          bValue = b.role
+          break
+        case 'date':
+          aValue = new Date(a.createdAt).getTime()
+          bValue = new Date(b.createdAt).getTime()
+          break
+        default:
+          aValue = a.name.toLowerCase()
+          bValue = b.name.toLowerCase()
+      }
+      if (aValue < bValue) return usersTabSortOrder === 'asc' ? -1 : 1
+      if (aValue > bValue) return usersTabSortOrder === 'asc' ? 1 : -1
+      return 0
+    })
+    return sorted
+  }
+
+  const getSortedUserProgressTab = () => {
+    const sorted = [...users].sort((a, b) => {
+      let aValue: any, bValue: any
+      switch (userProgressTabSort) {
+        case 'name':
+          aValue = a.name.toLowerCase()
+          bValue = b.name.toLowerCase()
+          break
+        case 'email':
+          aValue = a.email.toLowerCase()
+          bValue = b.email.toLowerCase()
+          break
+        default:
+          aValue = a.name.toLowerCase()
+          bValue = b.name.toLowerCase()
+      }
+      if (aValue < bValue) return userProgressTabSortOrder === 'asc' ? -1 : 1
+      if (aValue > bValue) return userProgressTabSortOrder === 'asc' ? 1 : -1
+      return 0
+    })
+    return sorted
+  }
+
+  // Helper to get current language and level from progress object
+  const getCurrentLanguageAndLevelFromProgress = (progress: UserProgress) => {
+    if (!progress || !progress.lessonScores || progress.lessonScores.length === 0) {
+      return null
+    }
+
+    const recentLessons = [...progress.lessonScores]
+      .filter(ls => ls.totalScore > 0)
+      .sort((a, b) => {
+        if (a.completedAt && b.completedAt) {
+          return new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
+        }
+        return (b.totalScore || 0) - (a.totalScore || 0)
+      })
+
+    if (recentLessons.length === 0) return null
+
+    const recentLesson = recentLessons[0]
+    if (recentLesson.lessonId && typeof recentLesson.lessonId === 'object' && 'levelId' in recentLesson.lessonId) {
+      const levelData = (recentLesson.lessonId as any).levelId
+      if (levelData) {
+        const levelName = levelData.title || `Level ${levelData.levelNumber || ''}`
+        const languageName = levelData.languageId?.name || ''
+        return { level: levelName, language: languageName }
+      }
+    }
+
+    return null
+  }
+
+  // Fetch user progress summaries for search functionality
+  const fetchUserProgressSummaries = async () => {
+    try {
+      const summaries: Record<string, { level: string; language: string; score: number; completedLessons: number }> = {}
+      
+      // Use topUsers for initial data
+      if (topUsers && topUsers.length > 0) {
+        topUsers.forEach(topUser => {
+          if (topUser.userId?._id) {
+            summaries[topUser.userId._id] = {
+              score: topUser.totalAverage || 0,
+              level: '',
+              language: '',
+              completedLessons: topUser.completedLessons || 0
+            }
+          }
+        })
+      }
+
+      // Fetch progress for users not in topUsers (limit to first 50 to avoid too many requests)
+      const currentUsers = users.length > 0 ? users : []
+      const userIdsToFetch = currentUsers
+        .filter(u => !summaries[u._id])
+        .slice(0, 50)
+        .map(u => u._id)
+
+      for (const userId of userIdsToFetch) {
+        try {
+          const response = await api.get(`/admin/users/${userId}/progress?lang=en`)
+          const progress = response.data.progress
+          if (progress) {
+            const currentInfo = getCurrentLanguageAndLevelFromProgress(progress)
+            const completedLessons = progress.lessonScores?.filter((ls: any) => ls.totalScore > 0).length || 0
+            summaries[userId] = {
+              score: summaries[userId]?.score || 0,
+              level: currentInfo?.level || '',
+              language: currentInfo?.language || '',
+              completedLessons: completedLessons
+            }
+          }
+        } catch (error) {
+          // Ignore errors for individual users
+        }
+      }
+
+      setUserProgressSummaries(summaries)
+    } catch (error) {
+      console.error('Error fetching user progress summaries:', error)
+    }
+  }
+
+  // Get user info for search
+  const getUserInfoForSearch = (userId: string) => {
+    const topUser = topUsers.find(u => u.userId?._id === userId)
+    const summary = userProgressSummaries[userId]
+    
+    return {
+      score: topUser?.totalAverage || summary?.score || 0,
+      level: summary?.level || '',
+      language: summary?.language || '',
+      completedLessons: topUser?.completedLessons || summary?.completedLessons || 0
+    }
+  }
+
+  // Filter and sort users for Users Tab
+  const getFilteredAndSortedUsersTab = () => {
+    let filtered = getSortedUsersTab()
+
+    if (usersTabSearch.trim()) {
+      const query = usersTabSearch.toLowerCase().trim()
+      filtered = filtered.filter(u => {
+        const nameMatch = u.name.toLowerCase().includes(query)
+        const emailMatch = u.email.toLowerCase().includes(query)
+        
+        // Search by language
+        const userInfo = getUserInfoForSearch(u._id)
+        const languageMatch = userInfo.language.toLowerCase().includes(query)
+        
+        // Search by progress (số bài đã làm, điểm số)
+        const progressMatch = 
+          userInfo.completedLessons.toString().includes(query) ||
+          userInfo.score.toFixed(1).includes(query) ||
+          (query.includes('bài') && userInfo.completedLessons > 0) ||
+          (query.includes('điểm') && userInfo.score > 0)
+        
+        return nameMatch || emailMatch || languageMatch || progressMatch
+      })
+    }
+
+    return filtered
+  }
+
+  // Filter and sort users for Progress Tab
+  const getFilteredAndSortedUserProgressTab = () => {
+    let filtered = getSortedUserProgressTab()
+
+    if (userProgressTabSearch.trim()) {
+      const query = userProgressTabSearch.toLowerCase().trim()
+      filtered = filtered.filter(u => {
+        const nameMatch = u.name.toLowerCase().includes(query)
+        const emailMatch = u.email.toLowerCase().includes(query)
+        
+        // Search by language
+        const userInfo = getUserInfoForSearch(u._id)
+        const languageMatch = userInfo.language.toLowerCase().includes(query)
+        
+        // Search by progress
+        const progressMatch = 
+          userInfo.completedLessons.toString().includes(query) ||
+          userInfo.score.toFixed(1).includes(query)
+        
+        return nameMatch || emailMatch || languageMatch || progressMatch
+      })
+    }
+
+    return filtered
+  }
+
   // Get current language and level info for user
   const getCurrentLanguageAndLevel = () => {
     if (!userProgress || !userProgress.lessonScores || userProgress.lessonScores.length === 0) {
@@ -608,14 +917,26 @@ export default function AdminPage() {
     }
   }
 
-  const handleUpdateLanguage = async (languageId: string, data: Partial<Language>) => {
+  const handleStartEditLanguage = (language: Language) => {
+    setEditingLanguage(language._id)
+    setEditingLanguageData({
+      name: language.name,
+      slug: language.slug,
+      description: language.description,
+      icon: language.icon
+    })
+  }
+
+  const handleUpdateLanguage = async () => {
+    if (!editingLanguage || !editingLanguageData) return
     try {
-      await api.put(`/admin/languages/${languageId}`, data)
+      await api.put(`/admin/languages/${editingLanguage}`, editingLanguageData)
       fetchLanguages()
       setEditingLanguage(null)
-    } catch (error) {
+      setEditingLanguageData(null)
+    } catch (error: any) {
       console.error('Error updating language:', error)
-      alert('Error updating language')
+      alert(error.response?.data?.message || 'Error updating language')
     }
   }
 
@@ -647,14 +968,26 @@ export default function AdminPage() {
     }
   }
 
-  const handleUpdateLevel = async (levelId: string, data: Partial<Level>) => {
+  const handleStartEditLevel = (level: Level) => {
+    setEditingLevel(level._id)
+    setEditingLevelData({
+      languageId: typeof level.languageId === 'object' ? level.languageId._id : level.languageId,
+      levelNumber: level.levelNumber,
+      title: level.title,
+      description: level.description
+    })
+  }
+
+  const handleUpdateLevel = async () => {
+    if (!editingLevel || !editingLevelData) return
     try {
-      await api.put(`/admin/levels/${levelId}`, data)
+      await api.put(`/admin/levels/${editingLevel}`, editingLevelData)
       fetchLevels()
       setEditingLevel(null)
-    } catch (error) {
+      setEditingLevelData(null)
+    } catch (error: any) {
       console.error('Error updating level:', error)
-      alert('Error updating level')
+      alert(error.response?.data?.message || 'Error updating level')
     }
   }
 
@@ -710,6 +1043,47 @@ export default function AdminPage() {
     } catch (error) {
       console.error('Error deleting lesson:', error)
       alert('Error deleting lesson')
+    }
+  }
+
+  const handleStartEditLesson = async (lessonId: string) => {
+    try {
+      const response = await api.get(`/lessons/${lessonId}`)
+      const lesson = response.data.lesson
+      setEditingLesson(lessonId)
+      setEditingLessonData({
+        levelId: lesson.levelId._id || lesson.levelId,
+        lessonNumber: lesson.lessonNumber,
+        title: lesson.title || '',
+        content: lesson.content || '',
+        codeExample: lesson.codeExample || '',
+        quiz: lesson.quiz || {
+          questions: [],
+          passingScore: 7
+        }
+      })
+    } catch (error) {
+      console.error('Error loading lesson:', error)
+      alert('Error loading lesson data')
+    }
+  }
+
+  const handleUpdateLesson = async () => {
+    if (!editingLesson || !editingLessonData) return
+    try {
+      if (!editingLessonData.title) {
+        alert('Please fill in all required fields')
+        return
+      }
+      await api.put(`/admin/lessons/${editingLesson}`, editingLessonData)
+      fetchLessons()
+      fetchLevels()
+      fetchDashboard()
+      setEditingLesson(null)
+      setEditingLessonData(null)
+    } catch (error: any) {
+      console.error('Error updating lesson:', error)
+      alert(error.response?.data?.message || 'Error updating lesson')
     }
   }
 
@@ -862,6 +1236,143 @@ export default function AdminPage() {
     })
   }
 
+  // Helper functions for editing lesson
+  const addEditQuizQuestion = () => {
+    if (!editingLessonData) return
+    setEditingLessonData({
+      ...editingLessonData,
+      quiz: {
+        ...editingLessonData.quiz,
+        questions: [
+          ...editingLessonData.quiz.questions,
+          {
+            type: 'multiple-choice',
+            question: '',
+            options: ['', '', '', ''],
+            correctAnswer: 0,
+            explanation: ''
+          }
+        ]
+      }
+    })
+  }
+
+  const removeEditQuizQuestion = (index: number) => {
+    if (!editingLessonData) return
+    const newQuestions = [...editingLessonData.quiz.questions]
+    newQuestions.splice(index, 1)
+    setEditingLessonData({
+      ...editingLessonData,
+      quiz: {
+        ...editingLessonData.quiz,
+        questions: newQuestions
+      }
+    })
+  }
+
+  const updateEditQuizQuestion = (index: number, field: string, value: any) => {
+    if (!editingLessonData) return
+    const newQuestions = [...editingLessonData.quiz.questions]
+    if (field === 'type' && value === 'code') {
+      newQuestions[index] = {
+        type: 'code',
+        question: newQuestions[index].question || '',
+        codeType: 'html',
+        starterCode: {
+          html: '',
+          css: '',
+          javascript: ''
+        },
+        expectedOutput: '',
+        explanation: ''
+      }
+    } else if (field === 'type' && value === 'multiple-choice') {
+      newQuestions[index] = {
+        type: 'multiple-choice',
+        question: newQuestions[index].question || '',
+        options: ['', '', '', ''],
+        correctAnswer: 0,
+        explanation: ''
+      }
+    } else {
+      newQuestions[index] = {
+        ...newQuestions[index],
+        [field]: value
+      }
+    }
+    setEditingLessonData({
+      ...editingLessonData,
+      quiz: {
+        ...editingLessonData.quiz,
+        questions: newQuestions
+      }
+    })
+  }
+
+  const updateEditQuizQuestionOption = (qIndex: number, optIndex: number, value: string) => {
+    if (!editingLessonData) return
+    const newQuestions = [...editingLessonData.quiz.questions]
+    const newOptions = [...(newQuestions[qIndex].options || [])]
+    newOptions[optIndex] = value
+    newQuestions[qIndex].options = newOptions
+    setEditingLessonData({
+      ...editingLessonData,
+      quiz: {
+        ...editingLessonData.quiz,
+        questions: newQuestions
+      }
+    })
+  }
+
+  const updateEditStarterCode = (qIndex: number, lang: 'html' | 'css' | 'javascript', value: string) => {
+    if (!editingLessonData) return
+    const newQuestions = [...editingLessonData.quiz.questions]
+    newQuestions[qIndex] = {
+      ...newQuestions[qIndex],
+      starterCode: {
+        ...(newQuestions[qIndex].starterCode || { html: '', css: '', javascript: '' }),
+        [lang]: value
+      }
+    }
+    setEditingLessonData({
+      ...editingLessonData,
+      quiz: {
+        ...editingLessonData.quiz,
+        questions: newQuestions
+      }
+    })
+  }
+
+  const addEditQuizQuestionOption = (qIndex: number) => {
+    if (!editingLessonData) return
+    const newQuestions = [...editingLessonData.quiz.questions]
+    const newOptions = [...(newQuestions[qIndex].options || [])]
+    newOptions.push('')
+    newQuestions[qIndex].options = newOptions
+    setEditingLessonData({
+      ...editingLessonData,
+      quiz: {
+        ...editingLessonData.quiz,
+        questions: newQuestions
+      }
+    })
+  }
+
+  const removeEditQuizQuestionOption = (qIndex: number, optIndex: number) => {
+    if (!editingLessonData) return
+    const newQuestions = [...editingLessonData.quiz.questions]
+    const newOptions = [...(newQuestions[qIndex].options || [])]
+    newOptions.splice(optIndex, 1)
+    newQuestions[qIndex].options = newOptions
+    setEditingLessonData({
+      ...editingLessonData,
+      quiz: {
+        ...editingLessonData.quiz,
+        questions: newQuestions
+      }
+    })
+  }
+
   // Quiz Assignment functions
   const fetchQuizAssignments = async () => {
     try {
@@ -916,6 +1427,14 @@ export default function AdminPage() {
       fetchActivityLog()
     }
   }, [isAuthenticated, user, activeTab, fetchActivityLog])
+
+  // Fetch user progress summaries when users or progress tab is active
+  useEffect(() => {
+    if (isAuthenticated && user?.role === 'admin' && (activeTab === 'users' || activeTab === 'progress') && users.length > 0) {
+      fetchUserProgressSummaries()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, user?.role, activeTab, users.length, topUsers.length])
 
   const fetchAssignmentDetails = async (assignmentId: string) => {
     try {
@@ -976,11 +1495,35 @@ export default function AdminPage() {
     }
   }
 
-  const addQuestion = () => {
-    setNewAssignment({
-      ...newAssignment,
-      questions: [...newAssignment.questions, { question: '', options: ['', '', '', ''], correctAnswer: 0, explanation: '' }]
-    })
+  const addQuestion = (type: 'multiple-choice' | 'code' = 'multiple-choice') => {
+    if (type === 'code') {
+      setNewAssignment({
+        ...newAssignment,
+        questions: [...newAssignment.questions, {
+          type: 'code',
+          question: '',
+          codeType: 'html',
+          starterCode: {
+            html: '',
+            css: '',
+            javascript: ''
+          },
+          expectedOutput: '',
+          explanation: ''
+        }]
+      })
+    } else {
+      setNewAssignment({
+        ...newAssignment,
+        questions: [...newAssignment.questions, { 
+          type: 'multiple-choice',
+          question: '', 
+          options: ['', '', '', ''], 
+          correctAnswer: 0, 
+          explanation: '' 
+        }]
+      })
+    }
   }
 
   const removeQuestion = (index: number) => {
@@ -992,7 +1535,68 @@ export default function AdminPage() {
 
   const updateQuestion = (index: number, field: string, value: any) => {
     const updatedQuestions = [...newAssignment.questions]
-    updatedQuestions[index] = { ...updatedQuestions[index], [field]: value }
+    if (field === 'type' && value === 'code') {
+      // Reset to code question structure
+      updatedQuestions[index] = {
+        type: 'code',
+        question: updatedQuestions[index].question || '',
+        codeType: 'html',
+        starterCode: {
+          html: '',
+          css: '',
+          javascript: ''
+        },
+        expectedOutput: '',
+        explanation: ''
+      }
+    } else if (field === 'type' && value === 'multiple-choice') {
+      // Reset to multiple-choice structure
+      updatedQuestions[index] = {
+        type: 'multiple-choice',
+        question: updatedQuestions[index].question || '',
+        options: ['', '', '', ''],
+        correctAnswer: 0,
+        explanation: ''
+      }
+    } else {
+      updatedQuestions[index] = { ...updatedQuestions[index], [field]: value }
+    }
+    setNewAssignment({ ...newAssignment, questions: updatedQuestions })
+  }
+
+  const updateQuestionOption = (qIndex: number, optIndex: number, value: string) => {
+    const updatedQuestions = [...newAssignment.questions]
+    const newOptions = [...(updatedQuestions[qIndex].options || [])]
+    newOptions[optIndex] = value
+    updatedQuestions[qIndex].options = newOptions
+    setNewAssignment({ ...newAssignment, questions: updatedQuestions })
+  }
+
+  const addQuestionOption = (qIndex: number) => {
+    const updatedQuestions = [...newAssignment.questions]
+    const newOptions = [...(updatedQuestions[qIndex].options || [])]
+    newOptions.push('')
+    updatedQuestions[qIndex].options = newOptions
+    setNewAssignment({ ...newAssignment, questions: updatedQuestions })
+  }
+
+  const removeQuestionOption = (qIndex: number, optIndex: number) => {
+    const updatedQuestions = [...newAssignment.questions]
+    const newOptions = [...(updatedQuestions[qIndex].options || [])]
+    newOptions.splice(optIndex, 1)
+    updatedQuestions[qIndex].options = newOptions
+    setNewAssignment({ ...newAssignment, questions: updatedQuestions })
+  }
+
+  const updateAssignmentStarterCode = (qIndex: number, lang: 'html' | 'css' | 'javascript', value: string) => {
+    const updatedQuestions = [...newAssignment.questions]
+    updatedQuestions[qIndex] = {
+      ...updatedQuestions[qIndex],
+      starterCode: {
+        ...(updatedQuestions[qIndex].starterCode || { html: '', css: '', javascript: '' }),
+        [lang]: value
+      }
+    }
     setNewAssignment({ ...newAssignment, questions: updatedQuestions })
   }
 
@@ -1467,21 +2071,46 @@ export default function AdminPage() {
               {topUsers.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Top 10 Users</CardTitle>
-                    <CardDescription>Sorted by average score</CardDescription>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>Top 10 Users</CardTitle>
+                        <CardDescription>Top performers</CardDescription>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <select
+                          className="text-sm px-2 py-1 border rounded-md"
+                          value={topUsersSort}
+                          onChange={(e) => setTopUsersSort(e.target.value as any)}
+                        >
+                          <option value="score">Điểm</option>
+                          <option value="name">Tên</option>
+                          <option value="email">Email</option>
+                          <option value="lessons">Số bài</option>
+                          <option value="streak">Streak</option>
+                        </select>
+                        <select
+                          className="text-sm px-2 py-1 border rounded-md"
+                          value={topUsersSortOrder}
+                          onChange={(e) => setTopUsersSortOrder(e.target.value as 'asc' | 'desc')}
+                        >
+                          <option value="desc">↓</option>
+                          <option value="asc">↑</option>
+                        </select>
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {topUsers.map((user, index) => (
-                        <div key={user.userId?._id || index} className="p-4 border rounded-lg">
+                      {getSortedTopUsers().map((user, index) => (
+                        <div key={user.userId?._id || index} className="p-4 border rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-primary/20 hover:border-primary/40 hover:bg-gradient-to-br hover:from-primary/10 hover:to-primary/5 hover:scale-[1.02] group cursor-pointer">
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-3">
-                              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold">
+                              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-200 group-hover:scale-110">
                                 {index + 1}
                               </div>
                               <div>
-                                <p className="font-semibold">{user.name}</p>
-                                <p className="text-sm text-muted-foreground">{user.email}</p>
+                                <p className="font-semibold group-hover:text-primary group-hover:font-bold transition-all duration-200">{user.name}</p>
+                                <p className="text-sm text-muted-foreground group-hover:text-foreground group-hover:font-medium transition-all duration-200">{user.email}</p>
                               </div>
                             </div>
                               <div className="text-right">
@@ -1524,16 +2153,41 @@ export default function AdminPage() {
               {/* Recent Users */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Recent Users</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Recent Users</CardTitle>
+                      <CardDescription>Users mới đăng ký</CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <select
+                        className="text-sm px-2 py-1 border rounded-md"
+                        value={recentUsersSort}
+                        onChange={(e) => setRecentUsersSort(e.target.value as any)}
+                      >
+                        <option value="date">Ngày đăng ký</option>
+                        <option value="name">Tên</option>
+                        <option value="email">Email</option>
+                        <option value="role">Role</option>
+                      </select>
+                      <select
+                        className="text-sm px-2 py-1 border rounded-md"
+                        value={recentUsersSortOrder}
+                        onChange={(e) => setRecentUsersSortOrder(e.target.value as 'asc' | 'desc')}
+                      >
+                        <option value="desc">↓</option>
+                        <option value="asc">↑</option>
+                      </select>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {recentUsers.map((u) => (
-                      <div key={u._id} className="flex items-center justify-between p-3 border rounded-lg">
+                    {getSortedRecentUsers().map((u) => (
+                      <div key={u._id} className="flex items-center justify-between p-3 border rounded-lg transition-all duration-200 hover:shadow-md hover:shadow-primary/10 hover:border-primary/30 hover:bg-gradient-to-br hover:from-primary/5 hover:to-primary/10 hover:scale-[1.01] group cursor-pointer">
                         <div>
-                          <p className="font-semibold">{u.name}</p>
-                          <p className="text-sm text-muted-foreground">{u.email}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="font-semibold group-hover:text-primary group-hover:font-bold transition-all duration-200">{u.name}</p>
+                          <p className="text-sm text-muted-foreground group-hover:text-foreground group-hover:font-medium transition-all duration-200">{u.email}</p>
+                          <p className="text-xs text-muted-foreground mt-1 group-hover:text-foreground/80 transition-all duration-200">
                             Joined: {new Date(u.createdAt).toLocaleDateString('en-US')}
                           </p>
                         </div>
@@ -2091,17 +2745,65 @@ export default function AdminPage() {
         <TabsContent value="users" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>All Users</CardTitle>
-              <CardDescription>Manage user accounts and permissions</CardDescription>
+              <div>
+                <CardTitle>All Users</CardTitle>
+                <CardDescription>Manage user accounts and permissions</CardDescription>
+              </div>
             </CardHeader>
             <CardContent>
+              {/* Search Input */}
+              <div className="mb-4">
+                <Input
+                  placeholder="Tìm kiếm theo tên, email, language, hoặc tiến độ học..."
+                  value={usersTabSearch}
+                  onChange={(e) => setUsersTabSearch(e.target.value)}
+                  className="w-full"
+                />
+                {usersTabSearch && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Tìm thấy {getFilteredAndSortedUsersTab().length} kết quả
+                  </p>
+                )}
+              </div>
+
+              {/* Sort Controls */}
+              <div className="mb-4 p-3 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg border border-primary/20">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 text-primary">
+                    <Filter className="h-4 w-4" />
+                    <span className="text-sm font-semibold">Sắp xếp:</span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-1">
+                    <select
+                      className="flex-1 px-3 py-2 border border-primary/30 rounded-md bg-background text-sm font-medium hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      value={usersTabSort}
+                      onChange={(e) => setUsersTabSort(e.target.value as any)}
+                    >
+                      <option value="name">Tên</option>
+                      <option value="email">Email</option>
+                      <option value="role">Role</option>
+                      <option value="date">Ngày đăng ký</option>
+                    </select>
+                    <select
+                      className="px-3 py-2 border border-primary/30 rounded-md bg-background text-sm font-medium hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20 min-w-[80px]"
+                      value={usersTabSortOrder}
+                      onChange={(e) => setUsersTabSortOrder(e.target.value as 'asc' | 'desc')}
+                    >
+                      <option value="asc">↑ Tăng dần</option>
+                      <option value="desc">↓ Giảm dần</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
               <div className="space-y-2">
-                {users.map((u) => (
-                  <div key={u._id} className="p-4 border rounded-lg">
+                {getFilteredAndSortedUsersTab().map((u) => {
+                  const userInfo = getUserInfoForSearch(u._id)
+                  return (
+                    <div key={u._id} className="p-4 border rounded-lg transition-all duration-200 hover:shadow-md hover:shadow-primary/10 hover:border-primary/30 hover:bg-gradient-to-br hover:from-primary/5 hover:to-primary/10 group cursor-pointer">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <p className="font-semibold">{u.name}</p>
+                          <p className="font-semibold group-hover:text-primary group-hover:font-bold transition-all duration-200">{u.name}</p>
                           {editingUser === u._id ? (
                             <select
                               className="ml-2 px-2 py-1 border rounded text-sm"
@@ -2122,9 +2824,18 @@ export default function AdminPage() {
                           )}
                         </div>
                         <p className="text-sm text-muted-foreground">{u.email}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Joined: {new Date(u.createdAt).toLocaleDateString()}
-                        </p>
+                        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground flex-wrap">
+                          <p>Joined: {new Date(u.createdAt).toLocaleDateString()}</p>
+                          {userInfo.language && (
+                            <p>Language: <span className="font-medium">{userInfo.language}</span></p>
+                          )}
+                          {userInfo.completedLessons > 0 && (
+                            <p>Đã làm: <span className="font-medium">{userInfo.completedLessons} bài</span></p>
+                          )}
+                          {userInfo.score > 0 && (
+                            <p>Điểm TB: <span className="font-medium">{userInfo.score.toFixed(1)}</span></p>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         {editingUser !== u._id && (
@@ -2161,7 +2872,8 @@ export default function AdminPage() {
                       </div>
                     </div>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             </CardContent>
           </Card>
@@ -2219,32 +2931,70 @@ export default function AdminPage() {
               <div className="space-y-2">
                 {languages.map((lang) => (
                   <div key={lang._id} className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">{lang.icon}</span>
-                        <div>
-                          <p className="font-semibold">{lang.name}</p>
-                          <p className="text-sm text-muted-foreground">{lang.description}</p>
-                          <p className="text-xs text-muted-foreground">{lang.levels?.length || 0} levels</p>
+                    {editingLanguage === lang._id && editingLanguageData ? (
+                      <div className="space-y-3">
+                        <Input
+                          placeholder="Language Name"
+                          value={editingLanguageData.name}
+                          onChange={(e) => setEditingLanguageData({ ...editingLanguageData, name: e.target.value })}
+                        />
+                        <Input
+                          placeholder="Slug (e.g., web-development)"
+                          value={editingLanguageData.slug}
+                          onChange={(e) => setEditingLanguageData({ ...editingLanguageData, slug: e.target.value })}
+                        />
+                        <Input
+                          placeholder="Description"
+                          value={editingLanguageData.description}
+                          onChange={(e) => setEditingLanguageData({ ...editingLanguageData, description: e.target.value })}
+                        />
+                        <Input
+                          placeholder="Icon (emoji)"
+                          value={editingLanguageData.icon}
+                          onChange={(e) => setEditingLanguageData({ ...editingLanguageData, icon: e.target.value })}
+                        />
+                        <div className="flex gap-2">
+                          <Button onClick={handleUpdateLanguage}>
+                            <Save className="h-4 w-4 mr-2" />
+                            Save Changes
+                          </Button>
+                          <Button variant="outline" onClick={() => {
+                            setEditingLanguage(null)
+                            setEditingLanguageData(null)
+                          }}>
+                            <X className="h-4 w-4 mr-2" />
+                            Cancel
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setEditingLanguage(editingLanguage === lang._id ? null : lang._id)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleDeleteLanguage(lang._id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">{lang.icon}</span>
+                          <div>
+                            <p className="font-semibold">{lang.name}</p>
+                            <p className="text-sm text-muted-foreground">{lang.description}</p>
+                            <p className="text-xs text-muted-foreground">{lang.levels?.length || 0} levels</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleStartEditLanguage(lang)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteLanguage(lang._id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -2309,33 +3059,79 @@ export default function AdminPage() {
               <div className="space-y-2">
                 {levels.map((level) => (
                   <div key={level._id} className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold">
-                          Level {level.levelNumber}: {level.title}
-                        </p>
-                        <p className="text-sm text-muted-foreground">{level.description}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {level.languageId?.name} • {level.lessons?.length || 0} lessons
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setEditingLevel(editingLevel === level._id ? null : level._id)}
+                    {editingLevel === level._id && editingLevelData ? (
+                      <div className="space-y-3">
+                        <select
+                          className="w-full px-3 py-2 border rounded-md"
+                          value={editingLevelData.languageId}
+                          onChange={(e) => setEditingLevelData({ ...editingLevelData, languageId: e.target.value })}
                         >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleDeleteLevel(level._id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                          <option value="">Select Language</option>
+                          {languages.map((lang) => (
+                            <option key={lang._id} value={lang._id}>
+                              {lang.name}
+                            </option>
+                          ))}
+                        </select>
+                        <Input
+                          type="number"
+                          placeholder="Level Number"
+                          value={editingLevelData.levelNumber}
+                          onChange={(e) => setEditingLevelData({ ...editingLevelData, levelNumber: parseInt(e.target.value) || 1 })}
+                        />
+                        <Input
+                          placeholder="Title"
+                          value={editingLevelData.title}
+                          onChange={(e) => setEditingLevelData({ ...editingLevelData, title: e.target.value })}
+                        />
+                        <Input
+                          placeholder="Description"
+                          value={editingLevelData.description}
+                          onChange={(e) => setEditingLevelData({ ...editingLevelData, description: e.target.value })}
+                        />
+                        <div className="flex gap-2">
+                          <Button onClick={handleUpdateLevel}>
+                            <Save className="h-4 w-4 mr-2" />
+                            Save Changes
+                          </Button>
+                          <Button variant="outline" onClick={() => {
+                            setEditingLevel(null)
+                            setEditingLevelData(null)
+                          }}>
+                            <X className="h-4 w-4 mr-2" />
+                            Cancel
+                          </Button>
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold">
+                            Level {level.levelNumber}: {level.title}
+                          </p>
+                          <p className="text-sm text-muted-foreground">{level.description}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {level.languageId?.name} • {level.lessons?.length || 0} lessons
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleStartEditLevel(level)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteLevel(level._id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -2653,28 +3449,304 @@ export default function AdminPage() {
               <div className="space-y-2">
                 {lessons.map((lesson) => (
                   <div key={lesson._id} className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold">
-                          Lesson {lesson.lessonNumber}: {lesson.title}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {lesson.levelId?.title} (Level {lesson.levelId?.levelNumber})
-                        </p>
-                        {lesson.quiz?.questions && (
-                          <p className="text-xs text-muted-foreground">
-                            {lesson.quiz.questions.length} quiz question(s)
+                    {editingLesson === lesson._id && editingLessonData ? (
+                      <Card className="border-2">
+                        <CardHeader>
+                          <CardTitle>Edit Lesson</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-sm font-medium mb-2 block">Level *</label>
+                              <select
+                                className="w-full px-3 py-2 border rounded-md"
+                                value={editingLessonData.levelId}
+                                onChange={(e) => setEditingLessonData({ ...editingLessonData, levelId: e.target.value })}
+                              >
+                                <option value="">Select Level</option>
+                                {levels.map((level) => (
+                                  <option key={level._id} value={level._id}>
+                                    {level.title} (Level {level.levelNumber})
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium mb-2 block">Lesson Number *</label>
+                              <Input
+                                type="number"
+                                placeholder="Lesson Number"
+                                value={editingLessonData.lessonNumber}
+                                onChange={(e) => setEditingLessonData({ ...editingLessonData, lessonNumber: parseInt(e.target.value) || 1 })}
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium mb-2 block">Title *</label>
+                            <Input
+                              placeholder="Lesson Title"
+                              value={editingLessonData.title}
+                              onChange={(e) => setEditingLessonData({ ...editingLessonData, title: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium mb-2 block">Content</label>
+                            <textarea
+                              className="w-full p-2 border rounded-lg"
+                              rows={6}
+                              placeholder="Lesson content (markdown supported)"
+                              value={editingLessonData.content}
+                              onChange={(e) => setEditingLessonData({ ...editingLessonData, content: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium mb-2 block">Code Example</label>
+                            <textarea
+                              className="w-full p-2 border rounded-lg font-mono text-sm"
+                              rows={4}
+                              placeholder="Code example"
+                              value={editingLessonData.codeExample}
+                              onChange={(e) => setEditingLessonData({ ...editingLessonData, codeExample: e.target.value })}
+                            />
+                          </div>
+                          
+                          {/* Quiz Section */}
+                          <div className="border-t pt-4">
+                            <div className="flex items-center justify-between mb-4">
+                              <div>
+                                <label className="text-sm font-medium">Quiz Questions</label>
+                                <p className="text-xs text-muted-foreground">Add multiple-choice or code questions</p>
+                              </div>
+                              <div className="flex gap-2">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max="10"
+                                  className="w-24"
+                                  placeholder="Passing Score"
+                                  value={editingLessonData.quiz.passingScore}
+                                  onChange={(e) => setEditingLessonData({
+                                    ...editingLessonData,
+                                    quiz: { ...editingLessonData.quiz, passingScore: parseFloat(e.target.value) || 7 }
+                                  })}
+                                />
+                                <Button size="sm" variant="outline" onClick={addEditQuizQuestion}>
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  Add Question
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="space-y-4">
+                              {editingLessonData.quiz.questions.map((q, qIndex) => (
+                                <Card key={qIndex} className="p-4 border-2">
+                                  <div className="flex justify-between items-center mb-3">
+                                    <span className="font-medium">Question {qIndex + 1}</span>
+                                    <div className="flex gap-2">
+                                      <select
+                                        className="text-sm px-2 py-1 border rounded"
+                                        value={q.type || 'multiple-choice'}
+                                        onChange={(e) => updateEditQuizQuestion(qIndex, 'type', e.target.value)}
+                                      >
+                                        <option value="multiple-choice">Multiple Choice</option>
+                                        <option value="code">Code Question</option>
+                                      </select>
+                                      <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        onClick={() => removeEditQuizQuestion(qIndex)}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="space-y-3">
+                                    <Input
+                                      placeholder="Question text"
+                                      value={q.question || ''}
+                                      onChange={(e) => updateEditQuizQuestion(qIndex, 'question', e.target.value)}
+                                    />
+                                    
+                                    {q.type === 'multiple-choice' ? (
+                                      <>
+                                        <div className="space-y-2">
+                                          <label className="text-xs font-medium">Options (select correct answer)</label>
+                                          {q.options?.map((opt: string, optIndex: number) => (
+                                            <div key={optIndex} className="flex items-center gap-2">
+                                              <input
+                                                type="radio"
+                                                name={`edit-correct-${qIndex}`}
+                                                checked={q.correctAnswer === optIndex}
+                                                onChange={() => updateEditQuizQuestion(qIndex, 'correctAnswer', optIndex)}
+                                                className="w-4 h-4"
+                                              />
+                                              <Input
+                                                placeholder={`Option ${optIndex + 1}`}
+                                                value={opt}
+                                                onChange={(e) => updateEditQuizQuestionOption(qIndex, optIndex, e.target.value)}
+                                              />
+                                              {q.options && q.options.length > 2 && (
+                                                <Button
+                                                  size="sm"
+                                                  variant="ghost"
+                                                  onClick={() => removeEditQuizQuestionOption(qIndex, optIndex)}
+                                                >
+                                                  <X className="h-4 w-4" />
+                                                </Button>
+                                              )}
+                                            </div>
+                                          ))}
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => addEditQuizQuestionOption(qIndex)}
+                                          >
+                                            <Plus className="h-4 w-4 mr-2" />
+                                            Add Option
+                                          </Button>
+                                        </div>
+                                        <Input
+                                          placeholder="Explanation (optional)"
+                                          value={q.explanation || ''}
+                                          onChange={(e) => updateEditQuizQuestion(qIndex, 'explanation', e.target.value)}
+                                        />
+                                      </>
+                                    ) : (
+                                      <>
+                                        <div>
+                                          <label className="text-xs font-medium mb-1 block">Code Type *</label>
+                                          <select
+                                            className="w-full px-2 py-1 border rounded text-sm"
+                                            value={q.codeType || 'html'}
+                                            onChange={(e) => updateEditQuizQuestion(qIndex, 'codeType', e.target.value)}
+                                          >
+                                            <option value="html">HTML</option>
+                                            <option value="css">CSS</option>
+                                            <option value="javascript">JavaScript</option>
+                                            <option value="html-css-js">HTML + CSS + JS</option>
+                                          </select>
+                                        </div>
+                                        {q.codeType === 'html-css-js' ? (
+                                          <div className="space-y-2">
+                                            <div>
+                                              <label className="text-xs font-medium mb-1 block">HTML Starter Code</label>
+                                              <textarea
+                                                className="w-full p-2 border rounded font-mono text-xs"
+                                                rows={3}
+                                                value={q.starterCode?.html || ''}
+                                                onChange={(e) => updateEditStarterCode(qIndex, 'html', e.target.value)}
+                                              />
+                                            </div>
+                                            <div>
+                                              <label className="text-xs font-medium mb-1 block">CSS Starter Code</label>
+                                              <textarea
+                                                className="w-full p-2 border rounded font-mono text-xs"
+                                                rows={3}
+                                                value={q.starterCode?.css || ''}
+                                                onChange={(e) => updateEditStarterCode(qIndex, 'css', e.target.value)}
+                                              />
+                                            </div>
+                                            <div>
+                                              <label className="text-xs font-medium mb-1 block">JavaScript Starter Code</label>
+                                              <textarea
+                                                className="w-full p-2 border rounded font-mono text-xs"
+                                                rows={3}
+                                                value={q.starterCode?.javascript || ''}
+                                                onChange={(e) => updateEditStarterCode(qIndex, 'javascript', e.target.value)}
+                                              />
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <div>
+                                            <label className="text-xs font-medium mb-1 block">
+                                              {q.codeType?.toUpperCase()} Starter Code
+                                            </label>
+                                            <textarea
+                                              className="w-full p-2 border rounded font-mono text-xs"
+                                              rows={4}
+                                              value={q.starterCode?.[q.codeType as 'html' | 'css' | 'javascript'] || ''}
+                                              onChange={(e) => updateEditStarterCode(qIndex, q.codeType as 'html' | 'css' | 'javascript', e.target.value)}
+                                            />
+                                          </div>
+                                        )}
+                                        <div>
+                                          <label className="text-xs font-medium mb-1 block">Expected Output *</label>
+                                          <textarea
+                                            className="w-full p-2 border rounded text-xs"
+                                            rows={2}
+                                            placeholder="Expected output or result (used for auto-grading)"
+                                            value={q.expectedOutput || ''}
+                                            onChange={(e) => updateEditQuizQuestion(qIndex, 'expectedOutput', e.target.value)}
+                                          />
+                                          <p className="text-xs text-muted-foreground mt-1">
+                                            Describe what the code should produce or output
+                                          </p>
+                                        </div>
+                                        <Input
+                                          placeholder="Explanation (optional)"
+                                          value={q.explanation || ''}
+                                          onChange={(e) => updateEditQuizQuestion(qIndex, 'explanation', e.target.value)}
+                                        />
+                                      </>
+                                    )}
+                                  </div>
+                                </Card>
+                              ))}
+                            </div>
+                          </div>
+                          
+                          <div className="flex gap-2">
+                            <Button onClick={handleUpdateLesson}>
+                              <Save className="h-4 w-4 mr-2" />
+                              Save Changes
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setEditingLesson(null)
+                                setEditingLessonData(null)
+                              }}
+                            >
+                              <X className="h-4 w-4 mr-2" />
+                              Cancel
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold">
+                            Lesson {lesson.lessonNumber}: {lesson.title}
                           </p>
-                        )}
+                          <p className="text-sm text-muted-foreground">
+                            {lesson.levelId?.title} (Level {lesson.levelId?.levelNumber})
+                          </p>
+                          {lesson.quiz?.questions && (
+                            <p className="text-xs text-muted-foreground">
+                              {lesson.quiz.questions.length} quiz question(s)
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleStartEditLesson(lesson._id)}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteLesson(lesson._id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDeleteLesson(lesson._id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -2744,7 +3816,7 @@ export default function AdminPage() {
                       <label className="text-sm font-medium mb-2 block">Assign To Users *</label>
                       <div className="max-h-40 overflow-y-auto border rounded-lg p-2 space-y-2">
                         {users.filter(u => u.role !== 'admin').map((user) => (
-                          <label key={user._id} className="flex items-center gap-2 cursor-pointer hover:bg-accent p-2 rounded">
+                          <label key={user._id} className="flex items-center gap-2 cursor-pointer p-2 rounded transition-all duration-200 hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:shadow-sm hover:shadow-primary/10 hover:scale-[1.02] group">
                             <input
                               type="checkbox"
                               checked={newAssignment.assignedTo.includes(user._id)}
@@ -2758,23 +3830,39 @@ export default function AdminPage() {
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <label className="text-sm font-medium">Questions *</label>
-                        <Button size="sm" variant="outline" onClick={addQuestion}>
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Question
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" onClick={() => addQuestion('multiple-choice')}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Text Question
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => addQuestion('code')}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Code Question
+                          </Button>
+                        </div>
                       </div>
                       <div className="space-y-4">
                         {newAssignment.questions.map((q, qIndex) => (
-                          <Card key={qIndex} className="p-4">
-                            <div className="flex justify-between items-center mb-2">
+                          <Card key={qIndex} className="p-4 border-2">
+                            <div className="flex justify-between items-center mb-3">
                               <span className="font-medium">Question {qIndex + 1}</span>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => removeQuestion(qIndex)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              <div className="flex gap-2">
+                                <select
+                                  className="text-sm px-2 py-1 border rounded"
+                                  value={q.type || 'multiple-choice'}
+                                  onChange={(e) => updateQuestion(qIndex, 'type', e.target.value)}
+                                >
+                                  <option value="multiple-choice">Text Question</option>
+                                  <option value="code">Code Question</option>
+                                </select>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => removeQuestion(qIndex)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
                             <div className="space-y-3">
                               <Input
@@ -2782,31 +3870,129 @@ export default function AdminPage() {
                                 value={typeof q.question === 'string' ? q.question : ''}
                                 onChange={(e) => updateQuestion(qIndex, 'question', e.target.value)}
                               />
-                              {q.options.map((opt: string, optIndex: number) => (
-                                <div key={optIndex} className="flex items-center gap-2">
-                                  <input
-                                    type="radio"
-                                    name={`correct-${qIndex}`}
-                                    checked={q.correctAnswer === optIndex}
-                                    onChange={() => updateQuestion(qIndex, 'correctAnswer', optIndex)}
-                                    className="w-4 h-4"
-                                  />
+                              
+                              {q.type === 'code' ? (
+                                <>
+                                  <div>
+                                    <label className="text-xs font-medium mb-1 block">Code Type *</label>
+                                    <select
+                                      className="w-full px-2 py-1 border rounded text-sm"
+                                      value={q.codeType || 'html'}
+                                      onChange={(e) => updateQuestion(qIndex, 'codeType', e.target.value)}
+                                    >
+                                      <option value="html">HTML</option>
+                                      <option value="css">CSS</option>
+                                      <option value="javascript">JavaScript</option>
+                                      <option value="html-css-js">HTML + CSS + JS</option>
+                                    </select>
+                                  </div>
+                                  {q.codeType === 'html-css-js' ? (
+                                    <div className="space-y-2">
+                                      <div>
+                                        <label className="text-xs font-medium mb-1 block">HTML Starter Code</label>
+                                        <textarea
+                                          className="w-full p-2 border rounded font-mono text-xs"
+                                          rows={3}
+                                          value={q.starterCode?.html || ''}
+                                          onChange={(e) => updateAssignmentStarterCode(qIndex, 'html', e.target.value)}
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-xs font-medium mb-1 block">CSS Starter Code</label>
+                                        <textarea
+                                          className="w-full p-2 border rounded font-mono text-xs"
+                                          rows={3}
+                                          value={q.starterCode?.css || ''}
+                                          onChange={(e) => updateAssignmentStarterCode(qIndex, 'css', e.target.value)}
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-xs font-medium mb-1 block">JavaScript Starter Code</label>
+                                        <textarea
+                                          className="w-full p-2 border rounded font-mono text-xs"
+                                          rows={3}
+                                          value={q.starterCode?.javascript || ''}
+                                          onChange={(e) => updateAssignmentStarterCode(qIndex, 'javascript', e.target.value)}
+                                        />
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div>
+                                      <label className="text-xs font-medium mb-1 block">
+                                        {q.codeType?.toUpperCase()} Starter Code
+                                      </label>
+                                      <textarea
+                                        className="w-full p-2 border rounded font-mono text-xs"
+                                        rows={4}
+                                        value={q.starterCode?.[q.codeType as 'html' | 'css' | 'javascript'] || ''}
+                                        onChange={(e) => updateAssignmentStarterCode(qIndex, q.codeType as 'html' | 'css' | 'javascript', e.target.value)}
+                                      />
+                                    </div>
+                                  )}
+                                  <div>
+                                    <label className="text-xs font-medium mb-1 block">Expected Output *</label>
+                                    <textarea
+                                      className="w-full p-2 border rounded text-xs"
+                                      rows={2}
+                                      placeholder="Expected output or result (used for auto-grading)"
+                                      value={q.expectedOutput || ''}
+                                      onChange={(e) => updateQuestion(qIndex, 'expectedOutput', e.target.value)}
+                                    />
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      Describe what the code should produce or output
+                                    </p>
+                                  </div>
                                   <Input
-                                    placeholder={`Option ${optIndex + 1}`}
-                                    value={opt}
-                                    onChange={(e) => {
-                                      const newOptions = [...q.options]
-                                      newOptions[optIndex] = e.target.value
-                                      updateQuestion(qIndex, 'options', newOptions)
-                                    }}
+                                    placeholder="Explanation (optional)"
+                                    value={q.explanation || ''}
+                                    onChange={(e) => updateQuestion(qIndex, 'explanation', e.target.value)}
                                   />
-                                </div>
-                              ))}
-                              <Input
-                                placeholder="Explanation (optional)"
-                                value={q.explanation || ''}
-                                onChange={(e) => updateQuestion(qIndex, 'explanation', e.target.value)}
-                              />
+                                </>
+                              ) : (
+                                <>
+                                  <div className="space-y-2">
+                                    <label className="text-xs font-medium">Options (select correct answer)</label>
+                                    {q.options?.map((opt: string, optIndex: number) => (
+                                      <div key={optIndex} className="flex items-center gap-2">
+                                        <input
+                                          type="radio"
+                                          name={`correct-${qIndex}`}
+                                          checked={q.correctAnswer === optIndex}
+                                          onChange={() => updateQuestion(qIndex, 'correctAnswer', optIndex)}
+                                          className="w-4 h-4"
+                                        />
+                                        <Input
+                                          placeholder={`Option ${optIndex + 1}`}
+                                          value={opt}
+                                          onChange={(e) => updateQuestionOption(qIndex, optIndex, e.target.value)}
+                                        />
+                                        {q.options && q.options.length > 2 && (
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => removeQuestionOption(qIndex, optIndex)}
+                                          >
+                                            <X className="h-4 w-4" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                    ))}
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => addQuestionOption(qIndex)}
+                                    >
+                                      <Plus className="h-4 w-4 mr-2" />
+                                      Add Option
+                                    </Button>
+                                  </div>
+                                  <Input
+                                    placeholder="Explanation (optional)"
+                                    value={q.explanation || ''}
+                                    onChange={(e) => updateQuestion(qIndex, 'explanation', e.target.value)}
+                                  />
+                                </>
+                              )}
                             </div>
                           </Card>
                         ))}
@@ -3086,25 +4272,85 @@ export default function AdminPage() {
           <div className="grid md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Select User</CardTitle>
-                <CardDescription>Choose a user to view their progress</CardDescription>
+                <div>
+                  <CardTitle>Select User</CardTitle>
+                  <CardDescription>Choose a user to view their progress</CardDescription>
+                </div>
               </CardHeader>
               <CardContent>
+                {/* Search Input */}
+                <div className="mb-4">
+                  <Input
+                    placeholder="Tìm kiếm theo tên, email, language, hoặc tiến độ học..."
+                    value={userProgressTabSearch}
+                    onChange={(e) => setUserProgressTabSearch(e.target.value)}
+                    className="w-full"
+                  />
+                  {userProgressTabSearch && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Tìm thấy {getFilteredAndSortedUserProgressTab().length} kết quả
+                    </p>
+                  )}
+                </div>
+
+                {/* Sort Controls */}
+                <div className="mb-4 p-3 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg border border-primary/20">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 text-primary">
+                      <Filter className="h-4 w-4" />
+                      <span className="text-sm font-semibold">Sắp xếp:</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-1">
+                      <select
+                        className="flex-1 px-3 py-2 border border-primary/30 rounded-md bg-background text-sm font-medium hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        value={userProgressTabSort}
+                        onChange={(e) => setUserProgressTabSort(e.target.value as any)}
+                      >
+                        <option value="name">Tên</option>
+                        <option value="email">Email</option>
+                      </select>
+                      <select
+                        className="px-3 py-2 border border-primary/30 rounded-md bg-background text-sm font-medium hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20 min-w-[80px]"
+                        value={userProgressTabSortOrder}
+                        onChange={(e) => setUserProgressTabSortOrder(e.target.value as 'asc' | 'desc')}
+                      >
+                        <option value="asc">↑ Tăng dần</option>
+                        <option value="desc">↓ Giảm dần</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
                 <div className="space-y-2">
-                  {users.map((u) => (
+                  {getFilteredAndSortedUserProgressTab().map((u) => {
+                    const userInfo = getUserInfoForSearch(u._id)
+                    return (
                     <button
                       key={u._id}
                       onClick={() => fetchUserProgress(u._id)}
-                      className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                      className={`w-full text-left p-3 rounded-lg border transition-all duration-200 ${
                         selectedUser === u._id
-                          ? 'border-primary bg-primary/10'
-                          : 'border-border hover:bg-accent'
+                          ? 'border-primary bg-primary/10 shadow-md shadow-primary/20'
+                          : 'border-border hover:bg-gradient-to-br hover:from-primary/10 hover:to-primary/5 hover:border-primary/40 hover:shadow-md hover:shadow-primary/10 hover:scale-[1.02] group'
                       }`}
                     >
-                      <p className="font-semibold">{u.name}</p>
-                      <p className="text-sm text-muted-foreground">{u.email}</p>
+                      <p className={`font-semibold transition-all duration-200 ${selectedUser !== u._id ? 'group-hover:text-primary group-hover:font-bold' : ''}`}>{u.name}</p>
+                      <p className={`text-sm text-muted-foreground transition-all duration-200 ${selectedUser !== u._id ? 'group-hover:text-foreground group-hover:font-medium' : ''}`}>{u.email}</p>
+                      {(userInfo.language || userInfo.completedLessons > 0 || userInfo.score > 0) && (
+                        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                          {userInfo.language && (
+                            <span>Language: <span className="font-medium">{userInfo.language}</span></span>
+                          )}
+                          {userInfo.completedLessons > 0 && (
+                            <span>Đã làm: <span className="font-medium">{userInfo.completedLessons} bài</span></span>
+                          )}
+                          {userInfo.score > 0 && (
+                            <span>Điểm: <span className="font-medium">{userInfo.score.toFixed(1)}</span></span>
+                          )}
+                        </div>
+                      )}
                     </button>
-                  ))}
+                    )
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -3199,10 +4445,10 @@ export default function AdminPage() {
                   </CardContent>
                 </Card>
 
-                {/* User Progress List */}
+                {/* User Progress List - Levels */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>User Progress</CardTitle>
+                    <CardTitle>Level Progress</CardTitle>
                     <CardDescription>
                       {userProgress.userId.name} ({userProgress.userId.email})
                     </CardDescription>
@@ -3272,10 +4518,165 @@ export default function AdminPage() {
                         ))
                       ) : (
                         <p className="text-muted-foreground text-center py-4">
-                          No progress data available
+                          No level progress data available
                         </p>
                       )}
                     </div>
+                  </CardContent>
+                </Card>
+
+                {/* User Progress List - Lessons */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Completed Lessons</CardTitle>
+                    <CardDescription>
+                      Danh sách các bài học đã hoàn thành
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {userProgress.lessonScores && userProgress.lessonScores.length > 0 ? (
+                        userProgress.lessonScores
+                          .filter(ls => ls.totalScore > 0)
+                          .sort((a, b) => {
+                            if (a.completedAt && b.completedAt) {
+                              return new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
+                            }
+                            return (b.totalScore || 0) - (a.totalScore || 0)
+                          })
+                          .map((lessonScore, index) => (
+                            <div key={index} className="p-4 border rounded-lg transition-all duration-200 hover:bg-gradient-to-br hover:from-primary/10 hover:to-primary/5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 hover:scale-[1.01] group cursor-pointer">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    {lessonScore.lessonId.levelId && (
+                                      <>
+                                        {lessonScore.lessonId.levelId.languageId && (
+                                          <span className="text-lg">
+                                            {lessonScore.lessonId.levelId.languageId.icon}
+                                          </span>
+                                        )}
+                                        <span className="text-xs px-2 py-1 bg-muted rounded">
+                                          Level {lessonScore.lessonId.levelId.levelNumber}
+                                        </span>
+                                        {lessonScore.lessonId.levelId.languageId && (
+                                          <span className="text-xs text-muted-foreground">
+                                            {lessonScore.lessonId.levelId.languageId.name}
+                                          </span>
+                                        )}
+                                      </>
+                                    )}
+                                  </div>
+                                  <p className="font-semibold text-lg mb-1 group-hover:text-primary group-hover:font-bold transition-all duration-200">
+                                    Lesson {lessonScore.lessonId.lessonNumber}: {lessonScore.lessonId.title}
+                                  </p>
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Quiz Score</p>
+                                      <p className="font-medium">
+                                        {lessonScore.quizScore !== null ? lessonScore.quizScore.toFixed(1) : 'N/A'}/10
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Code Score</p>
+                                      <p className="font-medium">
+                                        {lessonScore.codeScore !== null ? lessonScore.codeScore.toFixed(1) : 'N/A'}/10
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Total Score</p>
+                                      <p className="font-medium text-primary">
+                                        {lessonScore.totalScore.toFixed(1)}/20
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Attempts</p>
+                                      <p className="font-medium">
+                                        Quiz: {lessonScore.quizAttempts || 0} | Code: {lessonScore.codeAttempts || 0}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  {lessonScore.completedAt && (
+                                    <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                                      <Clock className="h-3 w-3" />
+                                      Completed: {new Date(lessonScore.completedAt).toLocaleString('vi-VN')}
+                                    </p>
+                                  )}
+                                </div>
+                                <div className="ml-4">
+                                  <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                    lessonScore.totalScore >= 18 
+                                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                                      : lessonScore.totalScore >= 14
+                                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+                                      : lessonScore.totalScore >= 10
+                                      ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                      : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                                  }`}>
+                                    {lessonScore.totalScore >= 18 ? 'Excellent' 
+                                      : lessonScore.totalScore >= 14 ? 'Good'
+                                      : lessonScore.totalScore >= 10 ? 'Average'
+                                      : 'Needs Improvement'}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                      ) : (
+                        <p className="text-muted-foreground text-center py-4">
+                          Chưa có bài học nào được hoàn thành
+                        </p>
+                      )}
+                    </div>
+                    {userProgress.lessonScores && userProgress.lessonScores.length > 0 && (
+                      <div className="mt-4 p-3 bg-muted rounded-lg">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div>
+                            <p className="text-muted-foreground">Total Lessons</p>
+                            <p className="font-semibold text-lg">{userProgress.lessonScores.filter(ls => ls.totalScore > 0).length}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Avg Quiz Score</p>
+                            <p className="font-semibold text-lg">
+                              {(() => {
+                                const quizScores = userProgress.lessonScores
+                                  .filter(ls => ls.quizScore !== null)
+                                  .map(ls => ls.quizScore!)
+                                return quizScores.length > 0 
+                                  ? (quizScores.reduce((a, b) => a + b, 0) / quizScores.length).toFixed(1)
+                                  : 'N/A'
+                              })()}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Avg Code Score</p>
+                            <p className="font-semibold text-lg">
+                              {(() => {
+                                const codeScores = userProgress.lessonScores
+                                  .filter(ls => ls.codeScore !== null)
+                                  .map(ls => ls.codeScore!)
+                                return codeScores.length > 0 
+                                  ? (codeScores.reduce((a, b) => a + b, 0) / codeScores.length).toFixed(1)
+                                  : 'N/A'
+                              })()}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Avg Total Score</p>
+                            <p className="font-semibold text-lg">
+                              {(() => {
+                                const totalScores = userProgress.lessonScores
+                                  .filter(ls => ls.totalScore > 0)
+                                  .map(ls => ls.totalScore)
+                                return totalScores.length > 0 
+                                  ? (totalScores.reduce((a, b) => a + b, 0) / totalScores.length).toFixed(1)
+                                  : 'N/A'
+                              })()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>

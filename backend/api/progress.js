@@ -6,8 +6,175 @@ import QuizAssignment from '../models/QuizAssignment.js';
 import QuizAssignmentResult from '../models/QuizAssignmentResult.js';
 import { authenticate } from '../middleware/auth.js';
 import { localizeData } from '../utils/i18n.js';
+import Language from '../models/Language.js';
+
+const resolveLocalizedString = (value, fallback = 'Unknown') => {
+  if (!value) return fallback;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') {
+    return value.en || value.vi || Object.values(value)[0] || fallback;
+  }
+  return fallback;
+};
 
 const router = express.Router();
+
+// Public leaderboard by language
+router.get('/leaderboard', async (req, res) => {
+  try {
+    const requestedLimit = parseInt(req.query.limit, 10);
+    const limit = Math.min(Math.max(isNaN(requestedLimit) ? 5 : requestedLimit, 1), 20);
+
+    const [languages, lessons, progresses] = await Promise.all([
+      Language.find().select('name slug icon description').lean(),
+      Lesson.find()
+        .select('_id levelId')
+        .populate({
+          path: 'levelId',
+          select: 'languageId',
+        })
+        .lean(),
+      UserProgress.find()
+        .select('userId lessonScores completedLessonIds totalStudyTime currentStreak updatedAt')
+        .populate('userId', 'name email createdAt')
+        .lean(),
+    ]);
+
+    const languageMap = new Map();
+    languages.forEach((lang) => {
+      languageMap.set(lang._id.toString(), lang);
+    });
+
+    const lessonLanguageMap = new Map();
+    lessons.forEach((lesson) => {
+      const level = lesson.levelId;
+      const languageId =
+        level?.languageId?._id?.toString() || level?.languageId?.toString();
+      if (languageId) {
+        lessonLanguageMap.set(lesson._id.toString(), languageId);
+        if (
+          typeof level?.languageId === 'object' &&
+          level.languageId?._id &&
+          !languageMap.has(languageId)
+        ) {
+          languageMap.set(languageId, level.languageId);
+        }
+      }
+    });
+
+    const leaderboardMap = new Map();
+
+    progresses.forEach((progress) => {
+      if (!progress.userId) return;
+
+      const perLanguage = new Map();
+
+      (progress.lessonScores || []).forEach((score) => {
+        const lessonId =
+          score.lessonId?._id?.toString() || score.lessonId?.toString();
+        const languageId = lessonLanguageMap.get(lessonId);
+        if (!languageId) return;
+
+        if (!perLanguage.has(languageId)) {
+          perLanguage.set(languageId, {
+            totalScore: 0,
+            lessonCount: 0,
+            completedLessons: 0,
+          });
+        }
+
+        const stats = perLanguage.get(languageId);
+        const rawScore =
+          typeof score.totalScore === 'number'
+            ? score.totalScore
+            : (score.quizScore || 0) + (score.codeScore || 0);
+        stats.totalScore += rawScore;
+        stats.lessonCount += 1;
+      });
+
+      (progress.completedLessonIds || []).forEach((lessonIdObj) => {
+        const lessonId =
+          lessonIdObj?._id?.toString() || lessonIdObj?.toString();
+        const languageId = lessonLanguageMap.get(lessonId);
+        if (!languageId) return;
+
+        if (!perLanguage.has(languageId)) {
+          perLanguage.set(languageId, {
+            totalScore: 0,
+            lessonCount: 0,
+            completedLessons: 0,
+          });
+        }
+
+        perLanguage.get(languageId).completedLessons += 1;
+      });
+
+      perLanguage.forEach((stats, languageId) => {
+        if (stats.lessonCount === 0 && stats.completedLessons === 0) {
+          return;
+        }
+
+        const learners = leaderboardMap.get(languageId) || [];
+        const totalPoints = stats.totalScore / 2; // convert to 10-scale points
+        const averageScore =
+          stats.lessonCount > 0
+            ? (stats.totalScore / stats.lessonCount) / 2
+            : 0;
+
+        learners.push({
+          userId:
+            progress.userId._id?.toString() || progress.userId?.toString(),
+          name: progress.userId.name,
+          email: progress.userId.email,
+          totalPoints: Number(totalPoints.toFixed(2)),
+          averageScore: Number(averageScore.toFixed(2)),
+          lessonCount: stats.lessonCount,
+          completedLessons: stats.completedLessons,
+          currentStreak: progress.currentStreak || 0,
+          totalStudyTime: progress.totalStudyTime || 0,
+          lastUpdated: progress.updatedAt,
+        });
+        leaderboardMap.set(languageId, learners);
+      });
+    });
+
+    const leaderboard = Array.from(leaderboardMap.entries())
+      .map(([languageId, learners]) => {
+        const languageInfo = languageMap.get(languageId) || {};
+        const sortedLearners = learners
+          .sort((a, b) => {
+            if (b.averageScore === a.averageScore) {
+              if (b.completedLessons === a.completedLessons) {
+                return (b.totalPoints || 0) - (a.totalPoints || 0);
+              }
+              return (b.completedLessons || 0) - (a.completedLessons || 0);
+            }
+            return (b.averageScore || 0) - (a.averageScore || 0);
+          })
+          .slice(0, limit)
+          .map((learner, index) => ({
+            ...learner,
+            rank: index + 1,
+          }));
+
+        return {
+          languageId,
+          languageName: resolveLocalizedString(languageInfo.name, 'Unknown'),
+          languageSlug: resolveLocalizedString(languageInfo.slug, ''),
+          languageIcon: resolveLocalizedString(languageInfo.icon, ''),
+          totalLearners: learners.length,
+          topLearners: sortedLearners,
+        };
+      })
+      .filter((entry) => entry.topLearners.length > 0)
+      .sort((a, b) => b.totalLearners - a.totalLearners);
+
+    res.json({ success: true, leaderboard });
+  } catch (error) {
+    console.error('Error generating leaderboard:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
 
 // Get user progress
 router.get('/', authenticate, async (req, res) => {
@@ -157,8 +324,8 @@ router.post('/quiz/:lessonId', authenticate, async (req, res) => {
         if (existingLevelScoreIndex >= 0) {
           progress.levelScores[existingLevelScoreIndex].averageScore = averageScore;
           
-          // Auto unlock next level if average >= 7
-          if (averageScore >= 7 && !progress.levelScores[existingLevelScoreIndex].isUnlocked) {
+          // Auto unlock next level if average >= 9
+          if (averageScore >= 9 && !progress.levelScores[existingLevelScoreIndex].isUnlocked) {
             progress.levelScores[existingLevelScoreIndex].isUnlocked = true;
             progress.levelScores[existingLevelScoreIndex].unlockedBy = 'auto';
             progress.levelScores[existingLevelScoreIndex].unlockedAt = new Date();
@@ -167,9 +334,9 @@ router.post('/quiz/:lessonId', authenticate, async (req, res) => {
           progress.levelScores.push({
             levelId: level._id,
             averageScore,
-            isUnlocked: averageScore >= 7,
-            unlockedBy: averageScore >= 7 ? 'auto' : null,
-            unlockedAt: averageScore >= 7 ? new Date() : null
+            isUnlocked: averageScore >= 9,
+            unlockedBy: averageScore >= 9 ? 'auto' : null,
+            unlockedAt: averageScore >= 9 ? new Date() : null
           });
         }
       }
@@ -257,7 +424,7 @@ router.post('/code/:lessonId', authenticate, async (req, res) => {
         if (existingLevelScoreIndex >= 0) {
           progress.levelScores[existingLevelScoreIndex].averageScore = averageScore;
           
-          if (averageScore >= 7 && !progress.levelScores[existingLevelScoreIndex].isUnlocked) {
+          if (averageScore >= 9 && !progress.levelScores[existingLevelScoreIndex].isUnlocked) {
             progress.levelScores[existingLevelScoreIndex].isUnlocked = true;
             progress.levelScores[existingLevelScoreIndex].unlockedBy = 'auto';
             progress.levelScores[existingLevelScoreIndex].unlockedAt = new Date();
@@ -266,9 +433,9 @@ router.post('/code/:lessonId', authenticate, async (req, res) => {
           progress.levelScores.push({
             levelId: level._id,
             averageScore,
-            isUnlocked: averageScore >= 7,
-            unlockedBy: averageScore >= 7 ? 'auto' : null,
-            unlockedAt: averageScore >= 7 ? new Date() : null
+            isUnlocked: averageScore >= 9,
+            unlockedBy: averageScore >= 9 ? 'auto' : null,
+            unlockedAt: averageScore >= 9 ? new Date() : null
           });
         }
       }

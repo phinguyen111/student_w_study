@@ -281,6 +281,11 @@ export default function AssignmentsPage() {
               setShowQuiz(false)
               setSelectedAssignment(null)
               fetchAssignments()
+
+              // Notify navbar to decrease pending assignments badge by 1
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('quiz-assignment-completed'))
+              }
             }}
             onClose={() => {
               setShowQuiz(false)

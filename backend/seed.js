@@ -57,7 +57,7 @@ const seedData = async () => {
       levelNumber: 1,
       title: {
         vi: 'Cơ Bản về HTML',
-        en: 'HTML Fundamentals'
+        en: 'basic HTML,CSS,JAVASCRIPT'
       },
       description: {
         vi: 'Học các kiến thức cơ bản và cấu trúc HTML',
@@ -71,7 +71,7 @@ const seedData = async () => {
       levelNumber: 2,
       title: {
         vi: 'HTML Nâng Cao',
-        en: 'Advanced HTML'
+        en: 'Advanced HTML.CSS'
       },
       description: {
         vi: 'Học các kỹ thuật HTML nâng cao và tổ chức nội dung',
@@ -281,8 +281,6 @@ Congratulations on completing this introductory HTML lesson! You've grasped the 
     3. Thêm một đoạn văn (p) giới thiệu về bản thân bạn
     4. Thêm một liên kết (a) đến "https://www.example.com" với text "Visit Example"
     5. Thêm một hình ảnh (img) với src="https://via.placeholder.com/300" và alt="Placeholder Image"
-    
-    Gợi ý: Sử dụng các thẻ <h1>, <h2>, <p>, <a href="...">, và <img src="..." alt="...">
     -->
 </body>
 </html>`,
@@ -703,8 +701,6 @@ Great job! Through this lesson, you've learned to organize and structure **HTML*
        - Sử dụng <strong> cho text quan trọng
        - Sử dụng <em> cho text nhấn mạnh
        - Thêm một horizontal rule (hr)
-    
-    Gợi ý: Sử dụng <ol>, <ul>, <li>, <table>, <tr>, <th>, <td>, <strong>, <em>, <hr>
     -->
     
     <h2>Steps</h2>
@@ -3110,7 +3106,7 @@ Buckle up and let's continue to explore the wonderful and exciting world of Java
            - Thêm class "highlight" bằng classList.add('highlight')
         
         3. Tạo function addNewElement():
-           - Tạo một thẻ <p> mới bằng createElement('p')
+           - Tạo một thẻ p mới bằng createElement('p')
            - Set innerHTML của thẻ mới thành "This is a new paragraph"
            - Append thẻ mới vào element có id "container" bằng appendChild
         
@@ -3238,451 +3234,940 @@ Buckle up and let's continue to explore the wonderful and exciting world of Java
       }
     });
 
-    webDevLevel1.lessons = [htmlLesson1._id, htmlLesson2._id, cssLesson1._id, cssLesson2._id, cssLesson3._id, cssLesson4._id, jsLesson1._id];
-    await webDevLevel1.save();
-
-    // Create Level 2 Lesson 1 - Structuring and Organizing Web Content with HTML Lists, Tables, and Formatting
-    const level2Lesson1 = await Lesson.create({
+    const level2Lesson2 = await Lesson.create({
       levelId: webDevLevel2._id,
-      lessonNumber: 1,
+      lessonNumber: 2,
       title: {
-        vi: 'Structuring and Organizing Web Content with HTML Lists, Tables, and Formatting',
-        en: 'Structuring and Organizing Web Content with HTML Lists, Tables, and Formatting'
+        vi: 'HTML5 Semantic Elements',
+        en: 'HTML5 Semantic Elements'
       },
       content: {
-        vi: `# Structuring and Organizing Web Content with HTML Lists, Tables, and Formatting
+        vi: `# HTML5 Semantic Elements
+
+## Giới thiệu
+
+HTML5 giới thiệu các **semantic elements** - các thẻ có ý nghĩa rõ ràng về nội dung mà chúng chứa. Thay vì chỉ sử dụng \`<div>\` và \`<span>\`, semantic elements giúp code dễ đọc hơn, cải thiện SEO, và hỗ trợ accessibility tốt hơn.
+
+## Tại sao sử dụng Semantic Elements?
+
+- **SEO tốt hơn**: Search engines hiểu rõ cấu trúc trang
+- **Accessibility**: Screen readers dễ dàng điều hướng
+- **Maintainability**: Code dễ đọc và bảo trì hơn
+- **Semantic meaning**: Mỗi element có ý nghĩa rõ ràng
+
+## Các Semantic Elements chính
+
+### Header
+Phần đầu trang, thường chứa logo, navigation, hoặc tiêu đề:
+\`\`\`html
+<header>
+  <h1>Website Title</h1>
+  <nav>Navigation links</nav>
+</header>
+\`\`\`
+
+### Nav
+Phần điều hướng chính của trang:
+\`\`\`html
+<nav>
+  <ul>
+    <li><a href="/">Home</a></li>
+    <li><a href="/about">About</a></li>
+    <li><a href="/contact">Contact</a></li>
+  </ul>
+</nav>
+\`\`\`
+
+### Main
+Nội dung chính của trang (chỉ nên có một \`<main>\`):
+\`\`\`html
+<main>
+  <h2>Main Content</h2>
+  <p>This is the main content of the page.</p>
+</main>
+\`\`\`
+
+### Article
+Nội dung độc lập, có thể phân phối riêng (blog post, news article):
+\`\`\`html
+<article>
+  <h2>Article Title</h2>
+  <p>Article content...</p>
+</article>
+\`\`\`
+
+### Section
+Phần nội dung có chủ đề riêng:
+\`\`\`html
+<section>
+  <h2>Section Title</h2>
+  <p>Section content...</p>
+</section>
+\`\`\`
+
+### Aside
+Nội dung phụ, sidebar (quảng cáo, links liên quan):
+\`\`\`html
+<aside>
+  <h3>Related Links</h3>
+  <ul>
+    <li><a href="#">Link 1</a></li>
+  </ul>
+</aside>
+\`\`\`
+
+### Footer
+Phần cuối trang (copyright, links, contact info):
+\`\`\`html
+<footer>
+  <p>&copy; 2024 My Website. All rights reserved.</p>
+</footer>
+\`\`\`
+
+## Ví dụ Layout hoàn chỉnh
+
+\`\`\`html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Semantic HTML Layout</title>
+</head>
+<body>
+    <header>
+        <h1>My Website</h1>
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/about">About</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main>
+        <article>
+            <h2>Article Title</h2>
+            <p>Article content goes here...</p>
+        </article>
+        
+        <section>
+            <h2>Related Section</h2>
+            <p>Section content...</p>
+        </section>
+    </main>
+    
+    <aside>
+        <h3>Sidebar</h3>
+        <p>Additional information...</p>
+    </aside>
+    
+    <footer>
+        <p>&copy; 2024 My Website</p>
+    </footer>
+</body>
+</html>
+\`\`\`
+
+## So sánh với Div
+
+**Trước (không semantic):**
+\`\`\`html
+<div id="header">...</div>
+<div id="main">...</div>
+<div id="footer">...</div>
+\`\`\`
+
+**Sau (semantic):**
+\`\`\`html
+<header>...</header>
+<main>...</main>
+<footer>...</footer>
+\`\`\`
+
+## Tóm tắt
+
+Semantic elements giúp code HTML rõ ràng, dễ hiểu hơn, và cải thiện SEO cùng accessibility. Hãy sử dụng chúng thay vì \`<div>\` khi có thể!`,
+        en: `# HTML5 Semantic Elements
 
 ## Introduction
 
-Excited about diving deeper into **HTML**? Our focus today is structuring web content using HTML. In this lesson, we'll explore HTML lists, tables, and formatting tags. These elements organize and clarify your web pages, enhancing the user experience. Let's get started.
+HTML5 introduces **semantic elements** - tags with clear meaning about the content they contain. Instead of just using \`<div>\` and \`<span>\`, semantic elements make code more readable, improve SEO, and better support accessibility.
 
-## Exploring HTML Lists
+## Why Use Semantic Elements?
 
-Lists offer an efficient presentation of organized information. HTML includes both unordered (with bullet points) and ordered (numbered) lists.
+- **Better SEO**: Search engines understand page structure better
+- **Accessibility**: Screen readers can navigate more easily
+- **Maintainability**: Code is easier to read and maintain
+- **Semantic meaning**: Each element has clear meaning
 
-### Unordered Lists
+## Main Semantic Elements
 
-Often, we use unordered lists for text items of equal importance. The \`<ul>\` tag signifies the list, and the \`<li>\` tag encloses each item.
-
-Consider this shopping list example:
-
+### Header
+Page header, usually contains logo, navigation, or title:
 \`\`\`html
-<ul>
-  <li>Milk</li>
-  <li>Bread</li>
-  <li>Eggs</li>
-</ul>
+<header>
+  <h1>Website Title</h1>
+  <nav>Navigation links</nav>
+</header>
 \`\`\`
 
-This code produces a list with bullet points. Each bullet point introduces a new item, signifying an unordered list.
-
-### Ordered Lists
-
-When sequence matters, like in instructions, we use ordered lists. The tag for ordered lists is \`<ol>\` while \`<li>\` is for the list items.
-
-Here's an ordered list example representing a cooking recipe:
-
+### Nav
+Main navigation section of the page:
 \`\`\`html
-<ol>
-  <li>Preheat the oven</li>
-  <li>Mix ingredients</li>
-  <li>Bake for 30 minutes</li>
-</ol>
+<nav>
+  <ul>
+    <li><a href="/">Home</a></li>
+    <li><a href="/about">About</a></li>
+    <li><a href="/contact">Contact</a></li>
+  </ul>
+</nav>
 \`\`\`
 
-Executing this code results in numbered items — a perfect fit for step-by-step instructions.
-
-### Nesting Lists
-
-When you need a hierarchical structure, nested lists are handy. For example, a categorized shopping list could utilize nested lists.
-
-Here's how:
-
+### Main
+Main content of the page (should only have one \`<main>\`):
 \`\`\`html
-<ul>
-  <li>Fruits
-    <ul>
-      <li>Apples</li>
-      <li>Bananas</li>
-    </ul>
-  </li>
-  <li>Vegetables
-    <ul>
-      <li>Carrots</li>
-      <li>Broccoli</li>
-    </ul>
-  </li>
-</ul>
+<main>
+  <h2>Main Content</h2>
+  <p>This is the main content of the page.</p>
+</main>
 \`\`\`
 
-Each nested \`<ul>\` forms subcategories under the main list items.
-
-## Understanding HTML Tables
-
-Tables, invaluable for displaying data in a structured manner, simplify the organization and reading of complex data.
-
-In HTML, tables use the \`<table>\` tag. The \`<tr>\` tag facilitates new rows, and \`<td>\` is for cells within the rows. Headers use the \`<th>\` tag.
-
-Let's construct a student grade table:
-
+### Article
+Independent content that can be distributed separately (blog post, news article):
 \`\`\`html
-<table>
-  <tr>
-    <th>Student</th>
-    <th>Grade</th>
-  </tr>
-  <tr>
-    <td>Alice</td>
-    <td>A</td>
-  </tr>
-  <tr>
-    <td>Bob</td>
-    <td>B</td>
-  </tr>
-</table>
+<article>
+  <h2>Article Title</h2>
+  <p>Article content...</p>
+</article>
 \`\`\`
 
-This creates a clear, tabulated display of students and their grades.
-
-## Formatting Text with HTML
-
-Webpages often need to display formatted text, perhaps for a heading or to emphasize a word. HTML offers tags to achieve this:
-
-* **\`<b>\`** makes text bold.
-* **\`<i>\`** italicizes text.
-* **\`<u>\`** underlines text.
-* **\`<s>\`** strikes through text.
-* **\`<br>\`** inserts a line break.
-* **\`<hr>\`** draws a horizontal line.
-
-For example:
-
+### Section
+Content section with its own theme:
 \`\`\`html
-<p>This is <b>bold</b> and this is <i>italic</i>.</p>
-<p>This is <u>underlined</u> and this is <s>strikethrough</s>.</p>
-<p>Line 1<br>Line 2</p>
-<hr>
-<p>Above is a horizontal rule</p>
+<section>
+  <h2>Section Title</h2>
+  <p>Section content...</p>
+</section>
 \`\`\`
 
-However, \`<b>\` and \`<i>\` tags are presentational. For a more modern approach, use the \`<strong>\` and \`<em>\` semantic tags instead.
-
-## HTML Entities
-
-Special characters like \`<\` or \`&\` require HTML entities to display.
-
-* \`&lt;\` for \`<\`
-* \`&gt;\` for \`>\`
-* \`&amp;\` for \`&\`
-* \`&deg;\` for \`°\`
-* \`&copy;\` for \`©\`
-
-Here's an example:
-
+### Aside
+Side content, sidebar (ads, related links):
 \`\`\`html
-<p>The temperature is 25&deg;C</p>
-<p>&copy; 2024 My Company</p>
-<p>Use &lt;div&gt; for containers</p>
+<aside>
+  <h3>Related Links</h3>
+  <ul>
+    <li><a href="#">Link 1</a></li>
+  </ul>
+</aside>
 \`\`\`
 
-## Lesson Summary and Practice
-
-Great job! Through this lesson, you've learned to organize and structure **HTML** content using lists, tables, and formatting. Now's the time to cement this learning through real-life exercises — a critical step toward becoming an efficient web developer. Let's start practicing!`,
-        en: `# Structuring and Organizing Web Content with HTML Lists, Tables, and Formatting
-
-## Introduction
-
-Excited about diving deeper into **HTML**? Our focus today is structuring web content using HTML. In this lesson, we'll explore HTML lists, tables, and formatting tags. These elements organize and clarify your web pages, enhancing the user experience. Let's get started.
-
-## Exploring HTML Lists
-
-Lists offer an efficient presentation of organized information. HTML includes both unordered (with bullet points) and ordered (numbered) lists.
-
-### Unordered Lists
-
-Often, we use unordered lists for text items of equal importance. The \`<ul>\` tag signifies the list, and the \`<li>\` tag encloses each item.
-
-Consider this shopping list example:
-
+### Footer
+Page footer (copyright, links, contact info):
 \`\`\`html
-<ul>
-  <li>Milk</li>
-  <li>Bread</li>
-  <li>Eggs</li>
-</ul>
+<footer>
+  <p>&copy; 2024 My Website. All rights reserved.</p>
+</footer>
 \`\`\`
 
-This code produces a list with bullet points. Each bullet point introduces a new item, signifying an unordered list.
-
-### Ordered Lists
-
-When sequence matters, like in instructions, we use ordered lists. The tag for ordered lists is \`<ol>\` while \`<li>\` is for the list items.
-
-Here's an ordered list example representing a cooking recipe:
+## Complete Layout Example
 
 \`\`\`html
-<ol>
-  <li>Preheat the oven</li>
-  <li>Mix ingredients</li>
-  <li>Bake for 30 minutes</li>
-</ol>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Semantic HTML Layout</title>
+</head>
+<body>
+    <header>
+        <h1>My Website</h1>
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/about">About</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main>
+        <article>
+            <h2>Article Title</h2>
+            <p>Article content goes here...</p>
+        </article>
+        
+        <section>
+            <h2>Related Section</h2>
+            <p>Section content...</p>
+        </section>
+    </main>
+    
+    <aside>
+        <h3>Sidebar</h3>
+        <p>Additional information...</p>
+    </aside>
+    
+    <footer>
+        <p>&copy; 2024 My Website</p>
+    </footer>
+</body>
+</html>
 \`\`\`
 
-Executing this code results in numbered items — a perfect fit for step-by-step instructions.
+## Comparison with Div
 
-### Nesting Lists
-
-When you need a hierarchical structure, nested lists are handy. For example, a categorized shopping list could utilize nested lists.
-
-Here's how:
-
+**Before (non-semantic):**
 \`\`\`html
-<ul>
-  <li>Fruits
-    <ul>
-      <li>Apples</li>
-      <li>Bananas</li>
-    </ul>
-  </li>
-  <li>Vegetables
-    <ul>
-      <li>Carrots</li>
-      <li>Broccoli</li>
-    </ul>
-  </li>
-</ul>
+<div id="header">...</div>
+<div id="main">...</div>
+<div id="footer">...</div>
 \`\`\`
 
-Each nested \`<ul>\` forms subcategories under the main list items.
-
-## Understanding HTML Tables
-
-Tables, invaluable for displaying data in a structured manner, simplify the organization and reading of complex data.
-
-In HTML, tables use the \`<table>\` tag. The \`<tr>\` tag facilitates new rows, and \`<td>\` is for cells within the rows. Headers use the \`<th>\` tag.
-
-Let's construct a student grade table:
-
+**After (semantic):**
 \`\`\`html
-<table>
-  <tr>
-    <th>Student</th>
-    <th>Grade</th>
-  </tr>
-  <tr>
-    <td>Alice</td>
-    <td>A</td>
-  </tr>
-  <tr>
-    <td>Bob</td>
-    <td>B</td>
-  </tr>
-</table>
+<header>...</header>
+<main>...</main>
+<footer>...</footer>
 \`\`\`
 
-This creates a clear, tabulated display of students and their grades.
+## Summary
 
-## Formatting Text with HTML
-
-Webpages often need to display formatted text, perhaps for a heading or to emphasize a word. HTML offers tags to achieve this:
-
-* **\`<b>\`** makes text bold.
-* **\`<i>\`** italicizes text.
-* **\`<u>\`** underlines text.
-* **\`<s>\`** strikes through text.
-* **\`<br>\`** inserts a line break.
-* **\`<hr>\`** draws a horizontal line.
-
-For example:
-
-\`\`\`html
-<p>This is <b>bold</b> and this is <i>italic</i>.</p>
-<p>This is <u>underlined</u> and this is <s>strikethrough</s>.</p>
-<p>Line 1<br>Line 2</p>
-<hr>
-<p>Above is a horizontal rule</p>
-\`\`\`
-
-However, \`<b>\` and \`<i>\` tags are presentational. For a more modern approach, use the \`<strong>\` and \`<em>\` semantic tags instead.
-
-## HTML Entities
-
-Special characters like \`<\` or \`&\` require HTML entities to display.
-
-* \`&lt;\` for \`<\`
-* \`&gt;\` for \`>\`
-* \`&amp;\` for \`&\`
-* \`&deg;\` for \`°\`
-* \`&copy;\` for \`©\`
-
-Here's an example:
-
-\`\`\`html
-<p>The temperature is 25&deg;C</p>
-<p>&copy; 2024 My Company</p>
-<p>Use &lt;div&gt; for containers</p>
-\`\`\`
-
-## Lesson Summary and Practice
-
-Great job! Through this lesson, you've learned to organize and structure **HTML** content using lists, tables, and formatting. Now's the time to cement this learning through real-life exercises — a critical step toward becoming an efficient web developer. Let's start practicing!`
+Semantic elements make HTML code clearer, easier to understand, and improve SEO and accessibility. Use them instead of \`<div>\` when possible!`
       },
       codeExample: `<!DOCTYPE html>
 <html>
 <head>
-    <title>Lists, Tables, and Formatting</title>
+    <title>Semantic HTML</title>
 </head>
 <body>
-    <h1>My Shopping List</h1>
-    <ul>
-        <li>Fruits
+    <header>
+        <h1>My Blog</h1>
+        <nav>
             <ul>
-                <li>Apples</li>
-                <li>Bananas</li>
+                <li><a href="/">Home</a></li>
+                <li><a href="/about">About</a></li>
+                <li><a href="/contact">Contact</a></li>
             </ul>
-        </li>
-        <li>Vegetables
-            <ul>
-                <li>Carrots</li>
-                <li>Broccoli</li>
-            </ul>
-        </li>
-    </ul>
+        </nav>
+    </header>
     
-    <h2>Student Grades</h2>
-    <table>
-        <tr>
-            <th>Student</th>
-            <th>Grade</th>
-        </tr>
-        <tr>
-            <td>Alice</td>
-            <td>A</td>
-        </tr>
-        <tr>
-            <td>Bob</td>
-            <td>B</td>
-        </tr>
-    </table>
+    <main>
+        <article>
+            <h2>Blog Post Title</h2>
+            <p>This is the main content of the blog post...</p>
+        </article>
+        
+        <section>
+            <h2>Comments</h2>
+            <p>User comments go here...</p>
+        </section>
+    </main>
     
-    <h2>Text Formatting</h2>
-    <p>This is <strong>bold</strong> and this is <em>italic</em>.</p>
-    <p>Temperature: 25&deg;C</p>
-    <hr>
-    <p>&copy; 2024 LearnCode</p>
+    <aside>
+        <h3>Related Posts</h3>
+        <ul>
+            <li><a href="#">Post 1</a></li>
+            <li><a href="#">Post 2</a></li>
+        </ul>
+    </aside>
+    
+    <footer>
+        <p>&copy; 2024 My Blog. All rights reserved.</p>
+    </footer>
 </body>
 </html>`,
       codeExercise: {
         starterCode: `<!DOCTYPE html>
 <html>
 <head>
-    <title>My Recipe Book</title>
+    <title>Semantic Layout</title>
 </head>
 <body>
-    <h1>My Recipe</h1>
-    
     <!-- 
-    BÀI TẬP: Tạo trang recipe với lists, tables và formatting
+    BÀI TẬP: Tạo layout semantic HTML
     
     Yêu cầu:
-    1. Tạo một ordered list (ol) với 3 bước làm coffee:
-       - Bước 1: Boil water
-       - Bước 2: Add coffee
-       - Bước 3: Stir and serve
-    
-    2. Tạo một unordered list (ul) cho ingredients với ít nhất 3 nguyên liệu
-    
-    3. Tạo một table với 2 cột: "Nutrient" và "Amount"
-       Thêm ít nhất 2 dòng dữ liệu
-    
-    4. Trong phần Notes:
-       - Sử dụng <strong> cho text quan trọng
-       - Sử dụng <em> cho text nhấn mạnh
-       - Thêm một horizontal rule (hr)
-    
-    Gợi ý: Sử dụng <ol>, <ul>, <li>, <table>, <tr>, <th>, <td>, <strong>, <em>, <hr>
+    1. Thêm <header> với <h1> "My Website" và <nav> với 2 links: Home, About
+    2. Thêm <main> chứa một <article> với <h2> "Article Title" và một paragraph
+    3. Thêm <aside> với <h3> "Sidebar" và một paragraph
+    4. Thêm <footer> với copyright text
     -->
-    
-    <h2>Steps</h2>
-    
-    <h2>Ingredients</h2>
-    
-    <h2>Nutrition Facts</h2>
-    
-    <h2>Notes</h2>
 </body>
 </html>`,
-        language: 'html',
-        description: {
-          vi: '🎯 Bài tập: Tạo trang recipe hoàn chỉnh! Sử dụng ordered list cho các bước, unordered list cho nguyên liệu, table cho thông tin dinh dưỡng, và các thẻ formatting.',
-          en: '🎯 Exercise: Create a complete recipe page! Use ordered list for steps, unordered list for ingredients, table for nutrition facts, and formatting tags.'
-        }
+        expectedOutput: 'Complete semantic HTML layout with header, nav, main, article, aside, and footer'
       },
       quiz: {
         questions: [
           {
-            question: 'Which tag is used to create an unordered list?',
-            options: ['<ol>', '<ul>', '<li>', '<list>'],
-            correctAnswer: 1,
-            explanation: '<ul> is used to create unordered lists with bullet points.'
-          },
-          {
-            question: 'Which tag is used to create table rows?',
-            options: ['<td>', '<tr>', '<th>', '<table>'],
-            correctAnswer: 1,
-            explanation: '<tr> is used to create table rows in HTML.'
-          },
-          {
-            question: 'What is the difference between <b> and <strong>?',
+            question: 'What is the main purpose of semantic HTML elements?',
             options: [
-              'They are identical',
-              '<b> is semantic, <strong> is presentational',
-              '<strong> is semantic, <b> is presentational',
-              'Neither exists in HTML'
+              'To make pages load faster',
+              'To give meaning to content and improve SEO/accessibility',
+              'To add styling',
+              'To create animations'
+            ],
+            correctAnswer: 1,
+            explanation: 'Semantic elements give meaning to content, making it easier for search engines and screen readers to understand the page structure.'
+          },
+          {
+            question: 'How many <main> elements should a page typically have?',
+            options: ['One', 'Two', 'As many as needed', 'None'],
+            correctAnswer: 0,
+            explanation: 'A page should typically have only one <main> element containing the main content.'
+          },
+          {
+            question: 'Which semantic element is best for a blog post?',
+            options: ['<section>', '<article>', '<div>', '<aside>'],
+            correctAnswer: 1,
+            explanation: '<article> is designed for independent, distributable content like blog posts.'
+          },
+          {
+            question: 'What is the difference between <section> and <article>?',
+            options: [
+              '<section> is for independent content, <article> is for themed sections',
+              '<article> is for independent content, <section> is for themed sections',
+              'They are the same',
+              '<section> is for headers, <article> is for footers'
+            ],
+            correctAnswer: 1,
+            explanation: '<article> is for independent, distributable content, while <section> is for thematically grouped content.'
+          },
+          {
+            question: 'Which element is typically used for navigation links?',
+            options: ['<nav>', '<header>', '<menu>', '<links>'],
+            correctAnswer: 0,
+            explanation: 'The <nav> element is specifically designed for navigation links.'
+          },
+          {
+            question: 'What should be placed in the <footer> element?',
+            options: [
+              'Main content',
+              'Navigation links',
+              'Copyright, contact info, and related links',
+              'Only images'
             ],
             correctAnswer: 2,
-            explanation: '<strong> is semantic (meaningful), while <b> is presentational (visual only).'
+            explanation: 'The <footer> typically contains copyright information, contact details, and related links.'
           },
           {
-            question: 'Which HTML entity represents the copyright symbol?',
-            options: ['&copy;', '&copyright;', '&c;', '&copy'],
+            question: 'Which semantic element is best for sidebar content?',
+            options: ['<section>', '<aside>', '<div>', '<sidebar>'],
+            correctAnswer: 1,
+            explanation: 'The <aside> element is designed for sidebar content, related information, or advertisements.'
+          }
+        ],
+        passingScore: 7
+      }
+    });
+    await webDevLevel1.save();
+
+    // Create Level 2 Lessons - Advanced HTML.CSS
+    const level2Lesson1 = await Lesson.create({
+      levelId: webDevLevel2._id,
+      lessonNumber: 1,
+      title: {
+        vi: 'Advanced HTML Forms và Input Types',
+        en: 'Advanced HTML Forms and Input Types'
+      },
+      content: {
+        vi: `# Advanced HTML Forms và Input Types
+
+## Giới thiệu
+
+Sau khi đã nắm vững HTML cơ bản, bây giờ chúng ta sẽ học về **HTML Forms** - một trong những thành phần quan trọng nhất để tương tác với người dùng. Forms cho phép người dùng nhập dữ liệu, gửi thông tin, và tương tác với website.
+
+## Cấu trúc Form cơ bản
+
+Form trong HTML được tạo bằng thẻ \`<form>\`. Thẻ này chứa các input fields và có các thuộc tính quan trọng:
+
+- **\`action\`**: URL nơi form sẽ được gửi đến
+- **\`method\`**: Phương thức gửi (GET hoặc POST)
+
+\`\`\`html
+<form action="/submit" method="POST">
+  <!-- Input fields sẽ được đặt ở đây -->
+</form>
+\`\`\`
+
+## Các loại Input Types
+
+HTML5 cung cấp nhiều loại input khác nhau để thu thập dữ liệu phù hợp:
+
+### Text Input
+\`\`\`html
+<input type="text" name="username" placeholder="Enter your username">
+\`\`\`
+
+### Email Input
+Tự động validate định dạng email:
+\`\`\`html
+<input type="email" name="email" placeholder="Enter your email" required>
+\`\`\`
+
+### Password Input
+Ẩn ký tự khi nhập:
+\`\`\`html
+<input type="password" name="password" placeholder="Enter password">
+\`\`\`
+
+### Number Input
+Chỉ cho phép nhập số:
+\`\`\`html
+<input type="number" name="age" min="1" max="120" value="18">
+\`\`\`
+
+### Date Input
+Chọn ngày tháng:
+\`\`\`html
+<input type="date" name="birthday">
+\`\`\`
+
+### Checkbox
+Cho phép chọn nhiều lựa chọn:
+\`\`\`html
+<input type="checkbox" name="hobby" value="reading"> Reading
+<input type="checkbox" name="hobby" value="sports"> Sports
+\`\`\`
+
+### Radio Button
+Chỉ cho phép chọn một lựa chọn:
+\`\`\`html
+<input type="radio" name="gender" value="male" id="male">
+<label for="male">Male</label>
+<input type="radio" name="gender" value="female" id="female">
+<label for="female">Female</label>
+\`\`\`
+
+### Select Dropdown
+Danh sách lựa chọn:
+\`\`\`html
+<select name="country">
+  <option value="">Select a country</option>
+  <option value="us">United States</option>
+  <option value="vn">Vietnam</option>
+  <option value="uk">United Kingdom</option>
+</select>
+\`\`\`
+
+### Textarea
+Vùng nhập văn bản nhiều dòng:
+\`\`\`html
+<textarea name="message" rows="4" cols="50" placeholder="Enter your message"></textarea>
+\`\`\`
+
+## Form Attributes quan trọng
+
+- **\`required\`**: Bắt buộc phải điền
+- **\`placeholder\`**: Gợi ý nội dung
+- **\`value\`**: Giá trị mặc định
+- **\`name\`**: Tên field (quan trọng khi submit form)
+- **\`id\`**: Định danh duy nhất
+- **\`min\` / \`max\`**: Giới hạn giá trị (cho number, date)
+
+## Label và Form Accessibility
+
+Luôn sử dụng \`<label>\` để liên kết với input, giúp cải thiện accessibility:
+
+\`\`\`html
+<label for="email">Email Address:</label>
+<input type="email" id="email" name="email" required>
+\`\`\`
+
+## Submit Button
+
+Button để gửi form:
+\`\`\`html
+<button type="submit">Submit</button>
+<!-- hoặc -->
+<input type="submit" value="Submit Form">
+\`\`\`
+
+## Ví dụ Form hoàn chỉnh
+
+\`\`\`html
+<form action="/register" method="POST">
+  <div>
+    <label for="username">Username:</label>
+    <input type="text" id="username" name="username" required>
+  </div>
+  
+  <div>
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required>
+  </div>
+  
+  <div>
+    <label for="age">Age:</label>
+    <input type="number" id="age" name="age" min="13" max="100">
+  </div>
+  
+  <div>
+    <label>Gender:</label>
+    <input type="radio" id="male" name="gender" value="male">
+    <label for="male">Male</label>
+    <input type="radio" id="female" name="gender" value="female">
+    <label for="female">Female</label>
+  </div>
+  
+  <button type="submit">Register</button>
+</form>
+\`\`\`
+
+## Tóm tắt
+
+Bạn đã học về các loại input types trong HTML, cách tạo form hoàn chỉnh, và các attributes quan trọng. Forms là cầu nối giữa người dùng và website, vì vậy việc hiểu rõ chúng rất quan trọng!`,
+        en: `# Advanced HTML Forms and Input Types
+
+## Introduction
+
+After mastering basic HTML, we'll now learn about **HTML Forms** - one of the most important components for user interaction. Forms allow users to input data, submit information, and interact with websites.
+
+## Basic Form Structure
+
+Forms in HTML are created using the \`<form>\` tag. This tag contains input fields and has important attributes:
+
+- **\`action\`**: URL where the form will be submitted
+- **\`method\`**: Submission method (GET or POST)
+
+\`\`\`html
+<form action="/submit" method="POST">
+  <!-- Input fields will be placed here -->
+</form>
+\`\`\`
+
+## Input Types
+
+HTML5 provides many different input types to collect appropriate data:
+
+### Text Input
+\`\`\`html
+<input type="text" name="username" placeholder="Enter your username">
+\`\`\`
+
+### Email Input
+Automatically validates email format:
+\`\`\`html
+<input type="email" name="email" placeholder="Enter your email" required>
+\`\`\`
+
+### Password Input
+Hides characters when typing:
+\`\`\`html
+<input type="password" name="password" placeholder="Enter password">
+\`\`\`
+
+### Number Input
+Only allows numeric input:
+\`\`\`html
+<input type="number" name="age" min="1" max="120" value="18">
+\`\`\`
+
+### Date Input
+Select date:
+\`\`\`html
+<input type="date" name="birthday">
+\`\`\`
+
+### Checkbox
+Allows multiple selections:
+\`\`\`html
+<input type="checkbox" name="hobby" value="reading"> Reading
+<input type="checkbox" name="hobby" value="sports"> Sports
+\`\`\`
+
+### Radio Button
+Allows only one selection:
+\`\`\`html
+<input type="radio" name="gender" value="male" id="male">
+<label for="male">Male</label>
+<input type="radio" name="gender" value="female" id="female">
+<label for="female">Female</label>
+\`\`\`
+
+### Select Dropdown
+Selection list:
+\`\`\`html
+<select name="country">
+  <option value="">Select a country</option>
+  <option value="us">United States</option>
+  <option value="vn">Vietnam</option>
+  <option value="uk">United Kingdom</option>
+</select>
+\`\`\`
+
+### Textarea
+Multi-line text input area:
+\`\`\`html
+<textarea name="message" rows="4" cols="50" placeholder="Enter your message"></textarea>
+\`\`\`
+
+## Important Form Attributes
+
+- **\`required\`**: Field must be filled
+- **\`placeholder\`**: Hint text
+- **\`value\`**: Default value
+- **\`name\`**: Field name (important when submitting form)
+- **\`id\`**: Unique identifier
+- **\`min\` / \`max\`**: Value limits (for number, date)
+
+## Label and Form Accessibility
+
+Always use \`<label>\` to link with input, improving accessibility:
+
+\`\`\`html
+<label for="email">Email Address:</label>
+<input type="email" id="email" name="email" required>
+\`\`\`
+
+## Submit Button
+
+Button to submit form:
+\`\`\`html
+<button type="submit">Submit</button>
+<!-- or -->
+<input type="submit" value="Submit Form">
+\`\`\`
+
+## Complete Form Example
+
+\`\`\`html
+<form action="/register" method="POST">
+  <div>
+    <label for="username">Username:</label>
+    <input type="text" id="username" name="username" required>
+  </div>
+  
+  <div>
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required>
+  </div>
+  
+  <div>
+    <label for="age">Age:</label>
+    <input type="number" id="age" name="age" min="13" max="100">
+  </div>
+  
+  <div>
+    <label>Gender:</label>
+    <input type="radio" id="male" name="gender" value="male">
+    <label for="male">Male</label>
+    <input type="radio" id="female" name="gender" value="female">
+    <label for="female">Female</label>
+  </div>
+  
+  <button type="submit">Register</button>
+</form>
+\`\`\`
+
+## Summary
+
+You've learned about different input types in HTML, how to create complete forms, and important attributes. Forms are the bridge between users and websites, so understanding them is crucial!`
+      },
+      codeExample: `<!DOCTYPE html>
+<html>
+<head>
+    <title>Advanced Forms</title>
+</head>
+<body>
+    <h1>Registration Form</h1>
+    <form action="/register" method="POST">
+        <div>
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" placeholder="Enter username" required>
+        </div>
+        
+        <div>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" placeholder="your@email.com" required>
+        </div>
+        
+        <div>
+            <label for="age">Age:</label>
+            <input type="number" id="age" name="age" min="13" max="100" value="18">
+        </div>
+        
+        <div>
+            <label>Gender:</label>
+            <input type="radio" id="male" name="gender" value="male">
+            <label for="male">Male</label>
+            <input type="radio" id="female" name="gender" value="female">
+            <label for="female">Female</label>
+        </div>
+        
+        <div>
+            <label for="country">Country:</label>
+            <select id="country" name="country">
+                <option value="">Select country</option>
+                <option value="us">United States</option>
+                <option value="vn">Vietnam</option>
+            </select>
+        </div>
+        
+        <button type="submit">Register</button>
+    </form>
+</body>
+</html>`,
+      codeExercise: {
+        starterCode: `<!DOCTYPE html>
+<html>
+<head>
+    <title>Contact Form</title>
+</head>
+<body>
+    <h1>Contact Us</h1>
+    <form>
+        <!-- 
+        BÀI TẬP: Tạo form liên hệ hoàn chỉnh
+        
+        Yêu cầu:
+        1. Thêm input text cho tên (name="name") với label "Name:" và required
+        2. Thêm input email cho email (name="email") với label "Email:" và required
+        3. Thêm textarea cho message (name="message") với label "Message:" và rows="5"
+        4. Thêm checkbox với value="newsletter" và label "Subscribe to newsletter"
+        5. Thêm submit button với text "Send Message"
+        -->
+    </form>
+</body>
+</html>`,
+        expectedOutput: 'Form with name input, email input, message textarea, newsletter checkbox, and submit button'
+      },
+      quiz: {
+        questions: [
+          {
+            question: 'Which input type automatically validates email format?',
+            options: ['type="text"', 'type="email"', 'type="mail"', 'type="emailaddress"'],
+            correctAnswer: 1,
+            explanation: 'The type="email" input automatically validates that the entered value is a valid email format.'
+          },
+          {
+            question: 'Which attribute makes an input field required?',
+            options: ['mandatory', 'required', 'must', 'needed'],
+            correctAnswer: 1,
+            explanation: 'The required attribute makes an input field mandatory and prevents form submission if empty.'
+          },
+          {
+            question: 'What is the difference between checkbox and radio buttons?',
+            options: [
+              'Checkbox allows multiple selections, radio allows only one',
+              'Radio allows multiple selections, checkbox allows only one',
+              'They are the same',
+              'Checkbox is for text, radio is for numbers'
+            ],
             correctAnswer: 0,
-            explanation: '&copy; is the HTML entity for the copyright symbol ©.'
+            explanation: 'Checkboxes allow multiple selections, while radio buttons allow only one selection from a group.'
           },
           {
-            question: 'How do you create a nested list in HTML?',
+            question: 'Which tag is used to create a dropdown selection list?',
+            options: ['<dropdown>', '<select>', '<list>', '<option>'],
+            correctAnswer: 1,
+            explanation: 'The <select> tag creates a dropdown list, with <option> tags for each choice.'
+          },
+          {
+            question: 'What does the "name" attribute do in form inputs?',
             options: [
-              'You cannot nest lists',
-              'Place a <ul> or <ol> inside an <li>',
-              'Use the <nest> tag',
-              'Use special attributes'
+              'Sets the placeholder text',
+              'Identifies the field when the form is submitted',
+              'Sets the default value',
+              'Makes the field required'
             ],
             correctAnswer: 1,
-            explanation: 'You can nest lists by placing a <ul> or <ol> inside an <li> element.'
+            explanation: 'The name attribute identifies the field when the form is submitted, allowing the server to process the data.'
           },
           {
-            question: 'What does the <hr> tag do?',
+            question: 'Which input type hides the characters as the user types?',
+            options: ['type="text"', 'type="hidden"', 'type="password"', 'type="secret"'],
+            correctAnswer: 2,
+            explanation: 'The type="password" input hides characters as the user types for security purposes.'
+          },
+          {
+            question: 'What is the purpose of the <label> tag in forms?',
             options: [
-              'Creates a hyperlink',
-              'Creates a horizontal rule/line',
-              'Creates a header',
-              'Creates a row'
+              'To style the form',
+              'To improve accessibility and link text to input fields',
+              'To submit the form',
+              'To validate the input'
             ],
             correctAnswer: 1,
-            explanation: '<hr> creates a horizontal rule, which is a horizontal line across the page.'
-          },
-          {
-            question: 'Which tag is used for table header cells?',
-            options: ['<td>', '<th>', '<thead>', '<header>'],
-            correctAnswer: 1,
-            explanation: '<th> is used for table header cells, which are typically bold and centered.'
+            explanation: 'The <label> tag improves accessibility by linking descriptive text to input fields, making forms more user-friendly.'
           }
         ],
         passingScore: 7
       }
     });
 
-    webDevLevel2.lessons = [level2Lesson1._id];
+    const level2Lesson3 = await Lesson.create({
+      levelId: webDevLevel2._id,
+      lessonNumber: 3,
+      title: { vi: 'Advanced CSS Selectors và Pseudo-classes', en: 'Advanced CSS Selectors and Pseudo-classes' },
+      content: {
+        vi: `# Advanced CSS Selectors và Pseudo-classes\n\n## Giới thiệu\n\nSau khi đã nắm vững CSS cơ bản, bây giờ chúng ta sẽ học về **Advanced Selectors** và **Pseudo-classes**.\n\n## Advanced Selectors\n\n### Descendant Selector\n\`\`\`css\ndiv p { color: blue; }\n\`\`\`\n\n### Child Selector (>)\n\`\`\`css\ndiv > p { color: red; }\n\`\`\`\n\n### Attribute Selectors\n\`\`\`css\n[type="text"] { border: 1px solid #ccc; }\n[href^="https"] { color: green; }\n\`\`\`\n\n## Pseudo-classes\n\n\`\`\`css\na:hover { color: red; }\ninput:focus { border: 2px solid blue; }\np:first-child { font-weight: bold; }\nli:nth-child(even) { background-color: #f0f0f0; }\n\`\`\`\n\n## Pseudo-elements\n\n\`\`\`css\np::before { content: "Note: "; }\np::first-letter { font-size: 2em; color: red; }\n\`\`\`\n\n## Tóm tắt\n\nAdvanced selectors và pseudo-classes giúp bạn target elements chính xác hơn!`,
+        en: `# Advanced CSS Selectors and Pseudo-classes\n\n## Introduction\n\nAfter mastering basic CSS, we'll learn about **Advanced Selectors** and **Pseudo-classes**.\n\n## Advanced Selectors\n\n### Descendant Selector\n\`\`\`css\ndiv p { color: blue; }\n\`\`\`\n\n### Child Selector (>)\n\`\`\`css\ndiv > p { color: red; }\n\`\`\`\n\n### Attribute Selectors\n\`\`\`css\n[type="text"] { border: 1px solid #ccc; }\n[href^="https"] { color: green; }\n\`\`\`\n\n## Pseudo-classes\n\n\`\`\`css\na:hover { color: red; }\ninput:focus { border: 2px solid blue; }\np:first-child { font-weight: bold; }\nli:nth-child(even) { background-color: #f0f0f0; }\n\`\`\`\n\n## Pseudo-elements\n\n\`\`\`css\np::before { content: "Note: "; }\np::first-letter { font-size: 2em; color: red; }\n\`\`\`\n\n## Summary\n\nAdvanced selectors and pseudo-classes help you target elements more precisely!`
+      },
+      codeExample: `<!DOCTYPE html>\n<html>\n<head><title>Advanced CSS Selectors</title>\n<style>\ndiv p { color: blue; }\nul > li { font-weight: bold; }\ninput[type="text"] { border: 2px solid blue; }\na:hover { color: red; }\nli:nth-child(odd) { background-color: #f0f0f0; }\np::first-letter { font-size: 2em; color: red; }\n</style>\n</head>\n<body>\n<div><p>Paragraph in div</p></div>\n<ul><li>Item 1</li><li>Item 2</li></ul>\n<input type="text" placeholder="Type here">\n<a href="#">Hover me</a>\n</body>\n</html>`,
+      codeExercise: { starterCode: `<!DOCTYPE html>\n<html>\n<head><title>CSS Selectors Practice</title>\n<style>\n/* Style div p, ul > li, input[type="email"], a:hover, li:nth-child(even), p::before */\n</style>\n</head>\n<body>\n<div><p>Paragraph 1</p><p>Paragraph 2</p></div>\n<ul><li>Item 1</li><li>Item 2</li><li>Item 3</li></ul>\n<input type="email" placeholder="Email">\n<a href="#">Hover Link</a>\n</body>\n</html>`, expectedOutput: 'Styled elements using advanced selectors and pseudo-classes' },
+      quiz: {
+        questions: [
+          { question: 'What is the difference between "div p" and "div > p"?', options: ['"div p" selects direct children, "div > p" selects all descendants', '"div p" selects all descendants, "div > p" selects direct children', 'They are the same', '"div p" is invalid syntax'], correctAnswer: 1, explanation: '"div p" selects all <p> inside <div> at any level, while "div > p" only selects direct children.' },
+          { question: 'Which pseudo-class styles a link when hovering?', options: [':active', ':hover', ':focus', ':visited'], correctAnswer: 1, explanation: ':hover styles an element when the user hovers over it.' },
+          { question: 'What does [href^="https"] select?', options: ['Links ending with "https"', 'Links containing "https"', 'Links starting with "https"', 'Links with exact value "https"'], correctAnswer: 2, explanation: 'The ^= operator selects elements whose attribute value starts with the specified value.' },
+          { question: 'Which selector targets the second child element?', options: [':first-child', ':second-child', ':nth-child(2)', ':child(2)'], correctAnswer: 2, explanation: ':nth-child(2) targets the second child element.' },
+          { question: 'What is the purpose of ::before pseudo-element?', options: ['To add content before an element', 'To select elements before', 'To create animations', 'To hide elements'], correctAnswer: 0, explanation: '::before is used to insert content before an element\'s content.' },
+          { question: 'Which selector selects all paragraphs that are siblings following h2?', options: ['h2 p', 'h2 > p', 'h2 + p', 'h2 ~ p'], correctAnswer: 3, explanation: 'h2 ~ p (general sibling selector) selects all <p> elements that are siblings following <h2>.' },
+          { question: 'What does :not(.class) selector do?', options: ['Selects elements with the class', 'Selects all elements except those with the class', 'Selects elements without any class', 'It is invalid syntax'], correctAnswer: 1, explanation: ':not(.class) selects all elements except those that have the specified class.' }
+        ],
+        passingScore: 7
+      }
+    });
+
+    const level2Lesson4 = await Lesson.create({
+      levelId: webDevLevel2._id,
+      lessonNumber: 4,
+      title: { vi: 'CSS Flexbox Layout', en: 'CSS Flexbox Layout' },
+      content: {
+        vi: `# CSS Flexbox Layout\n\n## Giới thiệu\n\n**Flexbox** là một layout model mạnh mẽ trong CSS, giúp bạn dễ dàng tạo các layout responsive và flexible.\n\n## Flex Container\n\n\`\`\`css\n.container { display: flex; }\n\`\`\`\n\n## Flex Direction\n\n\`\`\`css\n.container {\n  flex-direction: row;        /* Mặc định: ngang */\n  flex-direction: column;     /* Dọc */\n}\n\`\`\`\n\n## Justify Content\n\n\`\`\`css\n.container {\n  justify-content: flex-start;   /* Bên trái */\n  justify-content: center;       /* Giữa */\n  justify-content: space-between; /* Cách đều */\n}\n\`\`\`\n\n## Align Items\n\n\`\`\`css\n.container {\n  align-items: center;      /* Giữa cross axis */\n  align-items: stretch;     /* Mặc định */\n}\n\`\`\`\n\n## Flex Properties\n\n\`\`\`css\n.item {\n  flex: 1; /* Grow và shrink */\n}\n\`\`\`\n\n## Tóm tắt\n\nFlexbox giúp tạo layout linh hoạt và responsive một cách dễ dàng!`,
+        en: `# CSS Flexbox Layout\n\n## Introduction\n\n**Flexbox** is a powerful CSS layout model that makes it easy to create responsive and flexible layouts.\n\n## Flex Container\n\n\`\`\`css\n.container { display: flex; }\n\`\`\`\n\n## Flex Direction\n\n\`\`\`css\n.container {\n  flex-direction: row;        /* Default: horizontal */\n  flex-direction: column;     /* Vertical */\n}\n\`\`\`\n\n## Justify Content\n\n\`\`\`css\n.container {\n  justify-content: flex-start;   /* Left */\n  justify-content: center;       /* Center */\n  justify-content: space-between; /* Even spacing */\n}\n\`\`\`\n\n## Align Items\n\n\`\`\`css\n.container {\n  align-items: center;      /* Center of cross axis */\n  align-items: stretch;     /* Default */\n}\n\`\`\`\n\n## Flex Properties\n\n\`\`\`css\n.item {\n  flex: 1; /* Grow and shrink */\n}\n\`\`\`\n\n## Summary\n\nFlexbox makes it easy to create flexible and responsive layouts!`
+      },
+      codeExample: `<!DOCTYPE html>\n<html>\n<head><title>Flexbox Layout</title>\n<style>\n.container { display: flex; justify-content: space-between; align-items: center; height: 200px; border: 2px solid #333; }\n.item { flex: 1; padding: 20px; background-color: lightblue; margin: 10px; }\n</style>\n</head>\n<body>\n<div class="container">\n<div class="item">Item 1</div>\n<div class="item">Item 2</div>\n<div class="item">Item 3</div>\n</div>\n</body>\n</html>`,
+      codeExercise: { starterCode: `<!DOCTYPE html>\n<html>\n<head><title>Flexbox Practice</title>\n<style>\n.container { /* Set display: flex, justify-content: center, align-items: center */ }\n.item { /* Set flex: 1, padding: 20px, background-color: lightblue */ }\n</style>\n</head>\n<body>\n<div class="container">\n<div class="item">Item 1</div>\n<div class="item">Item 2</div>\n<div class="item">Item 3</div>\n</div>\n</body>\n</html>`, expectedOutput: 'Flexbox container with centered items' },
+      quiz: {
+        questions: [
+          { question: 'What property is used to create a flex container?', options: ['flex: 1', 'display: flex', 'flex-container: true', 'layout: flex'], correctAnswer: 1, explanation: 'display: flex creates a flex container, enabling flexbox layout for its children.' },
+          { question: 'What does justify-content: space-between do?', options: ['Centers items', 'Distributes space evenly with no space at ends', 'Distributes space evenly with space at ends', 'Aligns items to the start'], correctAnswer: 1, explanation: 'space-between distributes items evenly with space between them but no space at the ends.' },
+          { question: 'What is the default flex-direction?', options: ['column', 'row', 'row-reverse', 'column-reverse'], correctAnswer: 1, explanation: 'The default flex-direction is row, which arranges items horizontally.' },
+          { question: 'What does flex: 1 mean?', options: ['Item cannot grow or shrink', 'Item can grow and shrink, with basis of 0', 'Item has fixed width of 1px', 'Item is hidden'], correctAnswer: 1, explanation: 'flex: 1 is shorthand for flex: 1 1 0, meaning the item can grow and shrink with a basis of 0.' },
+          { question: 'Which property aligns items along the cross axis?', options: ['justify-content', 'align-items', 'align-content', 'flex-align'], correctAnswer: 1, explanation: 'align-items aligns items along the cross axis (perpendicular to the main axis).' },
+          { question: 'What does flex-wrap: wrap do?', options: ['Prevents items from wrapping', 'Allows items to wrap to new lines', 'Reverses the order of items', 'Centers items'], correctAnswer: 1, explanation: 'flex-wrap: wrap allows flex items to wrap to new lines when they don\'t fit in one line.' },
+          { question: 'How do you center content both horizontally and vertically with flexbox?', options: ['justify-content: center', 'align-items: center', 'Both justify-content: center and align-items: center', 'flex-center: true'], correctAnswer: 2, explanation: 'You need both justify-content: center (horizontal) and align-items: center (vertical) to center content in both directions.' }
+        ],
+        passingScore: 7
+      }
+    });
+
+    const level2Lesson5 = await Lesson.create({
+      levelId: webDevLevel2._id,
+      lessonNumber: 5,
+      title: { vi: 'CSS Grid Layout', en: 'CSS Grid Layout' },
+      content: {
+        vi: `# CSS Grid Layout\n\n## Giới thiệu\n\n**CSS Grid** là một layout system mạnh mẽ cho phép bạn tạo các layout phức tạp với rows và columns.\n\n## Grid Container\n\n\`\`\`css\n.container { display: grid; }\n\`\`\`\n\n## Grid Template Columns\n\n\`\`\`css\n.container {\n  grid-template-columns: 200px 200px 200px; /* 3 columns */\n  grid-template-columns: 1fr 2fr 1fr;        /* 3 columns: 1:2:1 ratio */\n  grid-template-columns: repeat(3, 1fr);    /* 3 columns, mỗi 1fr */\n}\n\`\`\`\n\n## Gap\n\n\`\`\`css\n.container {\n  gap: 20px; /* Khoảng cách giữa items */\n}\n\`\`\`\n\n## Grid Item Placement\n\n\`\`\`css\n.item {\n  grid-column: 1 / 3;  /* Từ column 1 đến 3 */\n  grid-row: 1 / 2;     /* Từ row 1 đến 2 */\n}\n\`\`\`\n\n## Grid Areas\n\n\`\`\`css\n.container {\n  grid-template-areas:\n    "header header header"\n    "sidebar main main"\n    "footer footer footer";\n}\n.header { grid-area: header; }\n\`\`\`\n\n## Tóm tắt\n\nCSS Grid là công cụ mạnh mẽ để tạo layout 2D phức tạp!`,
+        en: `# CSS Grid Layout\n\n## Introduction\n\n**CSS Grid** is a powerful layout system that allows you to create complex layouts with rows and columns.\n\n## Grid Container\n\n\`\`\`css\n.container { display: grid; }\n\`\`\`\n\n## Grid Template Columns\n\n\`\`\`css\n.container {\n  grid-template-columns: 200px 200px 200px; /* 3 columns */\n  grid-template-columns: 1fr 2fr 1fr;        /* 3 columns: 1:2:1 ratio */\n  grid-template-columns: repeat(3, 1fr);     /* 3 columns, each 1fr */\n}\n\`\`\`\n\n## Gap\n\n\`\`\`css\n.container {\n  gap: 20px; /* Space between items */\n}\n\`\`\`\n\n## Grid Item Placement\n\n\`\`\`css\n.item {\n  grid-column: 1 / 3;  /* From column 1 to 3 */\n  grid-row: 1 / 2;     /* From row 1 to 2 */\n}\n\`\`\`\n\n## Grid Areas\n\n\`\`\`css\n.container {\n  grid-template-areas:\n    "header header header"\n    "sidebar main main"\n    "footer footer footer";\n}\n.header { grid-area: header; }\n\`\`\`\n\n## Summary\n\nCSS Grid is a powerful tool for creating complex 2D layouts!`
+      },
+      codeExample: `<!DOCTYPE html>\n<html>\n<head><title>Grid Layout</title>\n<style>\n.container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }\n.item { padding: 20px; background-color: lightblue; }\n</style>\n</head>\n<body>\n<div class="container">\n<div class="item">Item 1</div>\n<div class="item">Item 2</div>\n<div class="item">Item 3</div>\n<div class="item">Item 4</div>\n<div class="item">Item 5</div>\n<div class="item">Item 6</div>\n</div>\n</body>\n</html>`,
+      codeExercise: { starterCode: `<!DOCTYPE html>\n<html>\n<head><title>Grid Practice</title>\n<style>\n.container { /* Set display: grid, grid-template-columns: repeat(3, 1fr), gap: 20px */ }\n.item { /* Set padding: 20px, background-color: lightblue */ }\n</style>\n</head>\n<body>\n<div class="container">\n<div class="item">Item 1</div>\n<div class="item">Item 2</div>\n<div class="item">Item 3</div>\n<div class="item">Item 4</div>\n<div class="item">Item 5</div>\n<div class="item">Item 6</div>\n</div>\n</body>\n</html>`, expectedOutput: 'Grid layout with 3 columns and 6 items' },
+      quiz: {
+        questions: [
+          { question: 'What property is used to create a grid container?', options: ['grid: 1', 'display: grid', 'grid-container: true', 'layout: grid'], correctAnswer: 1, explanation: 'display: grid creates a grid container, enabling CSS Grid layout.' },
+          { question: 'What does "fr" unit mean in grid-template-columns?', options: ['Fixed pixels', 'Fraction of available space', 'Font size', 'Frame rate'], correctAnswer: 1, explanation: '"fr" stands for fraction and represents a fraction of the available space in the grid container.' },
+          { question: 'What does repeat(3, 1fr) create?', options: ['3 rows with 1fr each', '3 columns with 1fr each', '1 column with 3fr', '3 grids'], correctAnswer: 1, explanation: 'repeat(3, 1fr) creates 3 columns, each taking 1 fraction of the available space.' },
+          { question: 'What does grid-column: 1 / 3 mean?', options: ['Item spans from column 1 to column 3', 'Item is in column 1 and row 3', 'Item has 1 column and 3 rows', 'Item is hidden'], correctAnswer: 0, explanation: 'grid-column: 1 / 3 means the item spans from grid line 1 to grid line 3 (columns 1 and 2).' },
+          { question: 'What is the purpose of grid-template-areas?', options: ['To define grid gaps', 'To create named grid areas for easier layout', 'To set grid item sizes', 'To animate the grid'], correctAnswer: 1, explanation: 'grid-template-areas allows you to define named areas in the grid, making complex layouts easier to manage.' },
+          { question: 'What does gap: 20px do?', options: ['Sets margin between items', 'Sets space between grid rows and columns', 'Sets padding inside items', 'Creates a gap in the layout'], correctAnswer: 1, explanation: 'gap: 20px sets the space between grid rows and columns to 20px.' },
+          { question: 'What is the difference between justify-items and justify-content in grid?', options: ['They are the same', 'justify-items aligns items within their cells, justify-content aligns the grid within the container', 'justify-content aligns items, justify-items aligns the grid', 'Neither exists in grid'], correctAnswer: 1, explanation: 'justify-items aligns grid items within their grid cells, while justify-content aligns the entire grid within its container.' }
+        ],
+        passingScore: 7
+      }
+    });
+
+    webDevLevel1.lessons = [htmlLesson1._id, htmlLesson2._id, cssLesson1._id, cssLesson2._id, cssLesson3._id, cssLesson4._id, jsLesson1._id];
+    await webDevLevel1.save();
+
+    webDevLevel2.lessons = [level2Lesson1._id, level2Lesson2._id, level2Lesson3._id, level2Lesson4._id, level2Lesson5._id];
     await webDevLevel2.save();
 
     console.log('Seed data created successfully!');

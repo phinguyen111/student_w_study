@@ -9,7 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { MarkdownContent } from '@/components/MarkdownContent'
 import { CodeEditor } from '@/components/CodeEditor'
-import { ArrowLeft, Code, Loader2, FileCode, Play, RotateCcw, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, Code, Loader2, FileCode, Play, RotateCcw, CheckCircle2, FileText, Palette, Zap, AlertCircle } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useTimeTracker } from '@/hooks/useTimeTracker'
 import { useGATracking } from '@/hooks/useGATracking'
 
@@ -30,10 +31,113 @@ export default function CodeExercisePage() {
   const [lesson, setLesson] = useState<Lesson | null>(null)
   const [loadingLesson, setLoadingLesson] = useState(true)
   const [code, setCode] = useState('')
+  const [htmlCode, setHtmlCode] = useState('')
+  const [cssCode, setCssCode] = useState('')
+  const [jsCode, setJsCode] = useState('')
   const [output, setOutput] = useState('')
   const [isRunning, setIsRunning] = useState(false)
   const [iframeKey, setIframeKey] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [activeTab, setActiveTab] = useState<'single' | 'multi'>('single')
+  const [previewContent, setPreviewContent] = useState('')
+  const [htmlErrors, setHtmlErrors] = useState<any[]>([])
+  const [cssErrors, setCssErrors] = useState<any[]>([])
+  const [jsErrors, setJsErrors] = useState<any[]>([])
+  const [codeErrors, setCodeErrors] = useState<any[]>([])
+
+  const combineCode = () => {
+    const html = htmlCode.trim() || '<p>No HTML content yet</p>'
+    const css = cssCode.trim() || '/* Add your CSS here */'
+    const js = jsCode.trim() || '// Add your JavaScript here'
+    
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview</title>
+    <style>
+${css}
+    </style>
+</head>
+<body>
+${html}
+    <script>
+${js}
+    </script>
+</body>
+</html>`
+  }
+
+  // Clean description: remove all HTML tags and angle brackets
+  const escapeDescription = (text: string) => {
+    if (!text) return ''
+    
+    // Split by lines and filter out lines containing "Gợi ý:" with HTML tags
+    const lines = text.split('\n')
+    const cleanedLines = lines.filter(line => {
+      const trimmed = line.trim()
+      // Remove lines that start with "Gợi ý:" and contain HTML tags
+      if (trimmed.toLowerCase().includes('gợi ý:') && /<[^>]+>/.test(trimmed)) {
+        return false
+      }
+      // Remove lines that are just HTML tag suggestions
+      if (/^Gợi ý:.*<[^>]+>/.test(trimmed)) {
+        return false
+      }
+      return true
+    })
+    
+    // Join back and remove all HTML tags completely
+    let cleaned = cleanedLines.join('\n')
+    
+    // Remove all HTML tags completely (including attributes)
+    cleaned = cleaned
+      .replace(/&lt;/g, '') // Remove &lt;
+      .replace(/&gt;/g, '') // Remove &gt;
+      .replace(/<[^>]+>/g, '') // Remove all <tag> and <tag attr="...">
+      .replace(/<[^>]*$/g, '') // Remove incomplete tags at end of line
+    
+    // Clean up extra spaces and newlines
+    cleaned = cleaned
+      .replace(/\n{3,}/g, '\n\n') // Replace 3+ newlines with 2
+      .replace(/[ \t]+/g, ' ') // Replace multiple spaces with single space
+      .trim()
+    
+    return cleaned
+  }
+
+  // Auto-update preview when code changes
+  useEffect(() => {
+    if (lesson?.codeExercise) {
+      const lang = lesson.codeExercise.language
+      if (lang === 'html' || lang === 'css' || lang === 'html-css-js' || activeTab === 'multi') {
+        if (activeTab === 'multi' || lang === 'html-css-js') {
+          setPreviewContent(combineCode())
+        } else if (lang === 'html') {
+          setPreviewContent(code || '<!DOCTYPE html><html><head><title>Preview</title></head><body><p>No content yet</p></body></html>')
+        } else if (lang === 'css') {
+          setPreviewContent(`<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>${code || '/* Add your CSS here */'}</style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1>CSS Demo</h1>
+        <p>This is a paragraph styled with your CSS.</p>
+        <div class="box">Box Element</div>
+        <button>Button Element</button>
+        <input type="text" placeholder="Input field">
+        <textarea placeholder="Textarea"></textarea>
+    </div>
+</body>
+</html>`)
+        }
+      }
+    }
+  }, [code, htmlCode, cssCode, jsCode, activeTab, lesson?.codeExercise?.language])
   const { stopTracking } = useTimeTracker()
   const { trackLessonAction, trackButtonClick } = useGATracking()
 
@@ -57,7 +161,24 @@ export default function CodeExercisePage() {
       console.log('CodeExercise:', lessonData.codeExercise)
       setLesson(lessonData)
       if (lessonData.codeExercise?.starterCode) {
-        setCode(lessonData.codeExercise.starterCode)
+        const starterCode = lessonData.codeExercise.starterCode
+        
+        // Check if it's multi-language format (HTML + CSS + JS)
+        if (lessonData.codeExercise.language === 'html-css-js') {
+          // Try to parse HTML, CSS, JS from starter code
+          const htmlMatch = starterCode.match(/<html[^>]*>([\s\S]*?)<\/html>/i) || 
+                          starterCode.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
+          const cssMatch = starterCode.match(/<style[^>]*>([\s\S]*?)<\/style>/i)
+          const jsMatch = starterCode.match(/<script[^>]*>([\s\S]*?)<\/script>/i)
+          
+          setHtmlCode(htmlMatch ? htmlMatch[1] : starterCode)
+          setCssCode(cssMatch ? cssMatch[1] : '')
+          setJsCode(jsMatch ? jsMatch[1] : '')
+          setActiveTab('multi')
+        } else {
+          setCode(starterCode)
+          setActiveTab('single')
+        }
       } else {
         console.warn('No codeExercise found in lesson data')
       }
@@ -81,9 +202,38 @@ export default function CodeExercisePage() {
     trackButtonClick('Run Code', window.location.pathname)
 
     try {
-      if (lesson?.codeExercise?.language === 'javascript') {
+      const currentCode = activeTab === 'multi' ? combineCode() : code
+      const lang = lesson?.codeExercise?.language || 'html'
+      
+      // Force update preview content
+      if (activeTab === 'multi' || lang === 'html-css-js') {
+        setPreviewContent(combineCode())
+      } else if (lang === 'html') {
+        setPreviewContent(code || '<!DOCTYPE html><html><head><title>Preview</title></head><body><p>No content yet</p></body></html>')
+      } else if (lang === 'css') {
+        setPreviewContent(`<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>${code || '/* Add your CSS here */'}</style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1>CSS Demo</h1>
+        <p>This is a paragraph styled with your CSS.</p>
+        <div class="box">Box Element</div>
+        <button>Button Element</button>
+        <input type="text" placeholder="Input field">
+        <textarea placeholder="Textarea"></textarea>
+    </div>
+</body>
+</html>`)
+      }
+      
+      if (lang === 'javascript' && activeTab === 'single') {
+        // Pure JavaScript execution
         try {
-          const result = eval(code)
+          const result = eval(currentCode)
           if (result !== undefined) {
             setOutput(String(result))
           } else {
@@ -93,9 +243,22 @@ export default function CodeExercisePage() {
           setOutput(`Error: ${error.message}`)
         }
       } else {
-        // For HTML and CSS, update iframe by changing key
-        setOutput('Code executed successfully!')
+        // For HTML, CSS, or multi-language (HTML+CSS+JS), update preview
+        setOutput('Preview updated!')
         setIframeKey(prev => prev + 1)
+        
+        // Also try to execute JavaScript if present
+        if (activeTab === 'multi' && jsCode.trim()) {
+          try {
+            // Create a safe execution context
+            const result = eval(jsCode)
+            if (result !== undefined) {
+              setOutput(`Preview updated! JavaScript output: ${String(result)}`)
+            }
+          } catch (error: any) {
+            setOutput(`Preview updated! JavaScript error: ${error.message}`)
+          }
+        }
       }
     } catch (error: any) {
       setOutput(`Error: ${error.message}`)
@@ -106,7 +269,19 @@ export default function CodeExercisePage() {
 
   const handleReset = () => {
     if (lesson?.codeExercise?.starterCode) {
-      setCode(lesson.codeExercise.starterCode)
+      const starterCode = lesson.codeExercise.starterCode
+      if (lesson.codeExercise.language === 'html-css-js') {
+        const htmlMatch = starterCode.match(/<html[^>]*>([\s\S]*?)<\/html>/i) || 
+                         starterCode.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
+        const cssMatch = starterCode.match(/<style[^>]*>([\s\S]*?)<\/style>/i)
+        const jsMatch = starterCode.match(/<script[^>]*>([\s\S]*?)<\/script>/i)
+        
+        setHtmlCode(htmlMatch ? htmlMatch[1] : starterCode)
+        setCssCode(cssMatch ? cssMatch[1] : '')
+        setJsCode(jsMatch ? jsMatch[1] : '')
+      } else {
+        setCode(starterCode)
+      }
     }
     setOutput('')
   }
@@ -269,9 +444,11 @@ export default function CodeExercisePage() {
       console.log('=== FINAL SCORE:', codeScore, '/ 10 ===')
       console.log('=== SCORING DEBUG END ===')
       
+      const finalCode = activeTab === 'multi' ? combineCode() : code
+      
       await api.post(`/progress/code/${params.lessonId}`, { 
         codeScore,
-        code
+        code: finalCode
       })
       
       // Track code submission
@@ -338,13 +515,6 @@ export default function CodeExercisePage() {
               <Code className="h-6 w-6 text-primary" />
               <CardTitle className="text-2xl">Code Exercise</CardTitle>
             </div>
-            {lesson.codeExercise.description && (
-              <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                  {lesson.codeExercise.description}
-                </p>
-              </div>
-            )}
           </CardHeader>
         </Card>
 
@@ -365,13 +535,158 @@ export default function CodeExercisePage() {
                 </Button>
               </div>
 
-              <CodeEditor
-                value={code}
-                onChange={setCode}
-                language={lesson.codeExercise.language}
-                height="500px"
-                placeholder="Write your code here..."
-              />
+              {/* Exercise Description/Instructions - Moved here for better visibility */}
+              {lesson.codeExercise.description && (
+                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-l-4 border-blue-500 dark:border-blue-400 rounded-lg shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <Code className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-bold text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
+                        <span>📋</span>
+                        <span>Yêu cầu bài tập:</span>
+                      </h4>
+                      <div className="text-sm text-blue-900 dark:text-blue-100 whitespace-pre-wrap font-mono bg-white/50 dark:bg-black/20 p-3 rounded border border-blue-200 dark:border-blue-800">
+                        {escapeDescription(
+                          typeof lesson.codeExercise.description === 'string' 
+                            ? lesson.codeExercise.description 
+                            : lesson.codeExercise.description?.vi || lesson.codeExercise.description?.en || ''
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Code Editor - Takes 2 columns */}
+                <div className="lg:col-span-2">
+                  {lesson.codeExercise.language === 'html-css-js' || activeTab === 'multi' ? (
+                    <Tabs defaultValue="html" className="w-full">
+                      <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="html">
+                          <FileText className="h-4 w-4 mr-2" />
+                          HTML
+                        </TabsTrigger>
+                        <TabsTrigger value="css">
+                          <Palette className="h-4 w-4 mr-2" />
+                          CSS
+                        </TabsTrigger>
+                        <TabsTrigger value="javascript">
+                          <Zap className="h-4 w-4 mr-2" />
+                          JavaScript
+                        </TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="html" className="mt-4">
+                        <CodeEditor
+                          value={htmlCode}
+                          onChange={setHtmlCode}
+                          language="html"
+                          height="400px"
+                          placeholder="Write your HTML here..."
+                          showErrors={true}
+                          onErrorsChange={setHtmlErrors}
+                        />
+                      </TabsContent>
+                      <TabsContent value="css" className="mt-4">
+                        <CodeEditor
+                          value={cssCode}
+                          onChange={setCssCode}
+                          language="css"
+                          height="400px"
+                          placeholder="Write your CSS here..."
+                          showErrors={true}
+                          onErrorsChange={setCssErrors}
+                        />
+                      </TabsContent>
+                      <TabsContent value="javascript" className="mt-4">
+                        <CodeEditor
+                          value={jsCode}
+                          onChange={setJsCode}
+                          language="javascript"
+                          height="400px"
+                          placeholder="Write your JavaScript here..."
+                          showErrors={true}
+                          onErrorsChange={setJsErrors}
+                        />
+                      </TabsContent>
+                    </Tabs>
+                  ) : (
+                    <CodeEditor
+                      value={code}
+                      onChange={setCode}
+                      language={lesson.codeExercise.language}
+                      height="500px"
+                      placeholder="Write your code here..."
+                      showErrors={true}
+                      onErrorsChange={setCodeErrors}
+                    />
+                  )}
+                </div>
+
+                {/* Errors Panel - Takes 1 column, fixed position */}
+                <div className="lg:col-span-1">
+                  <Card className="sticky top-4">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                        Syntax Errors
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {(() => {
+                        const allErrors = activeTab === 'multi' 
+                          ? [...htmlErrors, ...cssErrors, ...jsErrors]
+                          : codeErrors
+                        const totalErrors = allErrors.length
+
+                        if (totalErrors === 0 && (code.trim().length > 0 || htmlCode.trim().length > 0 || cssCode.trim().length > 0 || jsCode.trim().length > 0)) {
+                          return (
+                            <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                              <CheckCircle2 className="h-4 w-4" />
+                              <span>No syntax errors</span>
+                            </div>
+                          )
+                        }
+
+                        if (totalErrors === 0) {
+                          return (
+                            <div className="text-sm text-muted-foreground p-3 text-center">
+                              Start typing to see syntax errors
+                            </div>
+                          )
+                        }
+
+                        return (
+                          <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                            <div className="text-xs font-semibold text-red-600 dark:text-red-400 mb-2">
+                              {totalErrors} error{totalErrors > 1 ? 's' : ''} found
+                            </div>
+                            {allErrors.map((error, index) => (
+                              <div 
+                                key={index} 
+                                className={`text-xs p-2 rounded border ${
+                                  error.severity === 'error' 
+                                    ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200' 
+                                    : 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200'
+                                }`}
+                              >
+                                <div className="font-medium mb-1">
+                                  Line {error.line}
+                                </div>
+                                <div className="text-xs">
+                                  {error.message}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )
+                      })()}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
 
               <div className="flex gap-2">
                 <Button
@@ -422,43 +737,18 @@ export default function CodeExercisePage() {
                   </div>
                 </div>
               )}
-              {(lesson.codeExercise.language === 'html' || lesson.codeExercise.language === 'css') && (
+              {/* Preview - Always show for HTML, CSS, or multi-language */}
+              {(lesson.codeExercise.language === 'html' || lesson.codeExercise.language === 'css' || lesson.codeExercise.language === 'html-css-js' || activeTab === 'multi') && (
                 <div className="space-y-2">
                   <h3 className="font-semibold text-sm">Preview:</h3>
                   <div className="border rounded-lg overflow-hidden bg-white dark:bg-[hsl(220_30%_8%)]">
                     <iframe
-                      key={`${iframeKey}-${code.length}`}
-                      onLoad={(e) => {
-                        const iframe = e.currentTarget
-                        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document
-                        if (iframeDoc && lesson.codeExercise) {
-                          iframeDoc.open()
-                          if (lesson.codeExercise.language === 'html') {
-                            iframeDoc.write(code)
-                          } else {
-                            iframeDoc.write(`
-                              <!DOCTYPE html>
-                              <html>
-                              <head>
-                                <style>${code}</style>
-                              </head>
-                              <body>
-                                <div class="demo-container">
-                                  <h1>CSS Demo</h1>
-                                  <p>This is a paragraph styled with your CSS.</p>
-                                  <div class="box">Box Element</div>
-                                  <button>Button Element</button>
-                                </div>
-                              </body>
-                              </html>
-                            `)
-                          }
-                          iframeDoc.close()
-                        }
-                      }}
+                      key={`preview-${iframeKey}-${activeTab === 'multi' ? htmlCode.length + cssCode.length + jsCode.length : code.length}`}
+                      srcDoc={previewContent}
                       className="w-full h-96 border-0"
-                      sandbox="allow-scripts allow-same-origin"
-                      title="Code Output"
+                      sandbox="allow-scripts allow-same-origin allow-forms"
+                      title="Code Preview"
+                      style={{ minHeight: '400px' }}
                     />
                   </div>
                 </div>
