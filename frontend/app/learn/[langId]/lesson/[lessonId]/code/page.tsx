@@ -44,6 +44,7 @@ export default function CodeExercisePage() {
   const [cssErrors, setCssErrors] = useState<any[]>([])
   const [jsErrors, setJsErrors] = useState<any[]>([])
   const [codeErrors, setCodeErrors] = useState<any[]>([])
+  const [exerciseInstructions, setExerciseInstructions] = useState<string>('')
 
   const combineCode = () => {
     const html = htmlCode.trim() || '<p>No HTML content yet</p>'
@@ -67,6 +68,59 @@ ${js}
     </script>
 </body>
 </html>`
+  }
+
+  // Extract comment instructions from starter code
+  const extractInstructions = (starterCode: string) => {
+    if (!starterCode) return ''
+    
+    // Match HTML comments <!-- ... -->
+    const commentMatch = starterCode.match(/<!--\s*([\s\S]*?)\s*-->/)
+    if (commentMatch) {
+      let instructions = commentMatch[1]
+      
+      // Remove HTML tags from instructions
+      instructions = instructions
+        .replace(/&lt;/g, '')
+        .replace(/&gt;/g, '')
+        .replace(/<[^>]+>/g, '')
+        .trim()
+      
+      return instructions
+    }
+    
+    // Match JavaScript comments /* ... */
+    const jsCommentMatch = starterCode.match(/\/\*\s*([\s\S]*?)\s*\*\//)
+    if (jsCommentMatch) {
+      let instructions = jsCommentMatch[1]
+      
+      // Remove HTML tags from instructions
+      instructions = instructions
+        .replace(/&lt;/g, '')
+        .replace(/&gt;/g, '')
+        .replace(/<[^>]+>/g, '')
+        .trim()
+      
+      return instructions
+    }
+    
+    return ''
+  }
+
+  // Remove comments from starter code
+  const removeComments = (code: string) => {
+    if (!code) return ''
+    
+    // Remove HTML comments <!-- ... -->
+    let cleaned = code.replace(/<!--\s*[\s\S]*?\s*-->/g, '')
+    
+    // Remove JavaScript multi-line comments /* ... */
+    cleaned = cleaned.replace(/\/\*\s*[\s\S]*?\s*\*\//g, '')
+    
+    // Clean up extra newlines
+    cleaned = cleaned.replace(/\n{3,}/g, '\n\n').trim()
+    
+    return cleaned
   }
 
   // Clean description: remove all HTML tags and angle brackets
@@ -163,20 +217,27 @@ ${js}
       if (lessonData.codeExercise?.starterCode) {
         const starterCode = lessonData.codeExercise.starterCode
         
+        // Extract instructions from comment
+        const instructions = extractInstructions(starterCode)
+        setExerciseInstructions(instructions)
+        
+        // Remove comments from starter code before displaying
+        const cleanedStarterCode = removeComments(starterCode)
+        
         // Check if it's multi-language format (HTML + CSS + JS)
         if (lessonData.codeExercise.language === 'html-css-js') {
           // Try to parse HTML, CSS, JS from starter code
-          const htmlMatch = starterCode.match(/<html[^>]*>([\s\S]*?)<\/html>/i) || 
-                          starterCode.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
-          const cssMatch = starterCode.match(/<style[^>]*>([\s\S]*?)<\/style>/i)
-          const jsMatch = starterCode.match(/<script[^>]*>([\s\S]*?)<\/script>/i)
+          const htmlMatch = cleanedStarterCode.match(/<html[^>]*>([\s\S]*?)<\/html>/i) || 
+                          cleanedStarterCode.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
+          const cssMatch = cleanedStarterCode.match(/<style[^>]*>([\s\S]*?)<\/style>/i)
+          const jsMatch = cleanedStarterCode.match(/<script[^>]*>([\s\S]*?)<\/script>/i)
           
-          setHtmlCode(htmlMatch ? htmlMatch[1] : starterCode)
-          setCssCode(cssMatch ? cssMatch[1] : '')
-          setJsCode(jsMatch ? jsMatch[1] : '')
+          setHtmlCode(htmlMatch ? removeComments(htmlMatch[1]) : cleanedStarterCode)
+          setCssCode(cssMatch ? removeComments(cssMatch[1]) : '')
+          setJsCode(jsMatch ? removeComments(jsMatch[1]) : '')
           setActiveTab('multi')
         } else {
-          setCode(starterCode)
+          setCode(cleanedStarterCode)
           setActiveTab('single')
         }
       } else {
@@ -270,17 +331,19 @@ ${js}
   const handleReset = () => {
     if (lesson?.codeExercise?.starterCode) {
       const starterCode = lesson.codeExercise.starterCode
+      const cleanedStarterCode = removeComments(starterCode)
+      
       if (lesson.codeExercise.language === 'html-css-js') {
-        const htmlMatch = starterCode.match(/<html[^>]*>([\s\S]*?)<\/html>/i) || 
-                         starterCode.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
-        const cssMatch = starterCode.match(/<style[^>]*>([\s\S]*?)<\/style>/i)
-        const jsMatch = starterCode.match(/<script[^>]*>([\s\S]*?)<\/script>/i)
+        const htmlMatch = cleanedStarterCode.match(/<html[^>]*>([\s\S]*?)<\/html>/i) || 
+                         cleanedStarterCode.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
+        const cssMatch = cleanedStarterCode.match(/<style[^>]*>([\s\S]*?)<\/style>/i)
+        const jsMatch = cleanedStarterCode.match(/<script[^>]*>([\s\S]*?)<\/script>/i)
         
-        setHtmlCode(htmlMatch ? htmlMatch[1] : starterCode)
-        setCssCode(cssMatch ? cssMatch[1] : '')
-        setJsCode(jsMatch ? jsMatch[1] : '')
+        setHtmlCode(htmlMatch ? removeComments(htmlMatch[1]) : cleanedStarterCode)
+        setCssCode(cssMatch ? removeComments(cssMatch[1]) : '')
+        setJsCode(jsMatch ? removeComments(jsMatch[1]) : '')
       } else {
-        setCode(starterCode)
+        setCode(cleanedStarterCode)
       }
     }
     setOutput('')
@@ -535,34 +598,26 @@ ${js}
                 </Button>
               </div>
 
-              {/* Exercise Description/Instructions - Moved here for better visibility */}
-              {lesson.codeExercise.description && (
-                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-l-4 border-blue-500 dark:border-blue-400 rounded-lg shadow-sm">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 mt-0.5">
+              {/* Exercise Instructions from Comment - Above Code Editor */}
+              {exerciseInstructions && (
+                <Card className="mb-4">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
                       <Code className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      Yêu cầu bài tập
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-sm text-foreground whitespace-pre-wrap font-mono bg-muted/50 p-3 rounded border max-h-[300px] overflow-y-auto">
+                      {escapeDescription(exerciseInstructions)}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-bold text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
-                        <span>📋</span>
-                        <span>Yêu cầu bài tập:</span>
-                      </h4>
-                      <div className="text-sm text-blue-900 dark:text-blue-100 whitespace-pre-wrap font-mono bg-white/50 dark:bg-black/20 p-3 rounded border border-blue-200 dark:border-blue-800">
-                        {escapeDescription(
-                          typeof lesson.codeExercise.description === 'string' 
-                            ? lesson.codeExercise.description 
-                            : lesson.codeExercise.description?.vi || lesson.codeExercise.description?.en || ''
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               )}
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                {/* Code Editor - Takes 2 columns */}
-                <div className="lg:col-span-2">
-                  {lesson.codeExercise.language === 'html-css-js' || activeTab === 'multi' ? (
+              {/* Code Editor - Full width */}
+              <div>
+                {lesson.codeExercise.language === 'html-css-js' || activeTab === 'multi' ? (
                     <Tabs defaultValue="html" className="w-full">
                       <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="html">
@@ -623,70 +678,67 @@ ${js}
                       onErrorsChange={setCodeErrors}
                     />
                   )}
-                </div>
-
-                {/* Errors Panel - Takes 1 column, fixed position */}
-                <div className="lg:col-span-1">
-                  <Card className="sticky top-4">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
-                        Syntax Errors
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {(() => {
-                        const allErrors = activeTab === 'multi' 
-                          ? [...htmlErrors, ...cssErrors, ...jsErrors]
-                          : codeErrors
-                        const totalErrors = allErrors.length
-
-                        if (totalErrors === 0 && (code.trim().length > 0 || htmlCode.trim().length > 0 || cssCode.trim().length > 0 || jsCode.trim().length > 0)) {
-                          return (
-                            <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
-                              <CheckCircle2 className="h-4 w-4" />
-                              <span>No syntax errors</span>
-                            </div>
-                          )
-                        }
-
-                        if (totalErrors === 0) {
-                          return (
-                            <div className="text-sm text-muted-foreground p-3 text-center">
-                              Start typing to see syntax errors
-                            </div>
-                          )
-                        }
-
-                        return (
-                          <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                            <div className="text-xs font-semibold text-red-600 dark:text-red-400 mb-2">
-                              {totalErrors} error{totalErrors > 1 ? 's' : ''} found
-                            </div>
-                            {allErrors.map((error, index) => (
-                              <div 
-                                key={index} 
-                                className={`text-xs p-2 rounded border ${
-                                  error.severity === 'error' 
-                                    ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200' 
-                                    : 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200'
-                                }`}
-                              >
-                                <div className="font-medium mb-1">
-                                  Line {error.line}
-                                </div>
-                                <div className="text-xs">
-                                  {error.message}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )
-                      })()}
-                    </CardContent>
-                  </Card>
-                </div>
               </div>
+
+              {/* Syntax Errors Panel - Below Code Editor */}
+              <Card className="mt-4">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                    Syntax Errors
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {(() => {
+                    const allErrors = activeTab === 'multi' 
+                      ? [...htmlErrors, ...cssErrors, ...jsErrors]
+                      : codeErrors
+                    const totalErrors = allErrors.length
+
+                    if (totalErrors === 0 && (code.trim().length > 0 || htmlCode.trim().length > 0 || cssCode.trim().length > 0 || jsCode.trim().length > 0)) {
+                      return (
+                        <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                          <CheckCircle2 className="h-4 w-4" />
+                          <span>No syntax errors</span>
+                        </div>
+                      )
+                    }
+
+                    if (totalErrors === 0) {
+                      return (
+                        <div className="text-sm text-muted-foreground p-3 text-center">
+                          Start typing to see syntax errors
+                        </div>
+                      )
+                    }
+
+                    return (
+                      <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                        <div className="text-xs font-semibold text-red-600 dark:text-red-400 mb-2">
+                          {totalErrors} error{totalErrors > 1 ? 's' : ''} found
+                        </div>
+                        {allErrors.map((error, index) => (
+                          <div 
+                            key={index} 
+                            className={`text-xs p-2 rounded border ${
+                              error.severity === 'error' 
+                                ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200' 
+                                : 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200'
+                            }`}
+                          >
+                            <div className="font-medium mb-1">
+                              Line {error.line}
+                            </div>
+                            <div className="text-xs">
+                              {error.message}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  })()}
+                </CardContent>
+              </Card>
 
               <div className="flex gap-2">
                 <Button

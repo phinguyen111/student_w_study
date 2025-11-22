@@ -11,7 +11,7 @@ import { QuizModal } from '@/components/QuizModal'
 import { MarkdownContent } from '@/components/MarkdownContent'
 import { useTimeTracker } from '@/hooks/useTimeTracker'
 import { useGATracking } from '@/hooks/useGATracking'
-import { ArrowLeft, BookOpen, Code, Clock, CheckCircle2, PlayCircle, Loader2, Copy, Check, FileCode } from 'lucide-react'
+import { ArrowLeft, BookOpen, Code, Clock, CheckCircle2, PlayCircle, Loader2, Copy, Check, FileCode, ArrowRight } from 'lucide-react'
 
 interface Question {
   question: string
@@ -202,73 +202,106 @@ export default function LessonPage() {
             {/* Code Example */}
             {lesson.codeExample && (
               <div className="mt-8 pt-6 border-t">
-                <div className="flex items-center gap-2 mb-4">
-                  <Code className="h-5 w-5 text-primary" />
-                  <h3 className="text-xl font-semibold">Code Example</h3>
-                </div>
-                <div className="relative group">
-                  <div className="absolute top-3 right-3 z-10">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        navigator.clipboard.writeText(lesson.codeExample || '')
-                      }}
-                      className="h-8 px-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Copy className="h-3 w-3" />
-                    </Button>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Code className="h-5 w-5 text-primary" />
+                    <h3 className="text-xl font-semibold">Code Example</h3>
                   </div>
-                  <MarkdownContent 
-                    content={`\`\`\`html\n${lesson.codeExample}\n\`\`\``} 
-                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      navigator.clipboard.writeText(lesson.codeExample || '')
+                    }}
+                    className="gap-2"
+                  >
+                    <Copy className="h-4 w-4" />
+                    Copy Code
+                  </Button>
                 </div>
+                <Card className="bg-muted/50 border-2">
+                  <CardContent className="p-0">
+                    <div className="relative">
+                      <MarkdownContent 
+                        content={`\`\`\`html\n${lesson.codeExample}\n\`\`\``} 
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             )}
           </CardContent>
         </Card>
 
         {/* Quiz & Code Exercise Section */}
-        <Card className="shadow-lg border-2 border-primary/30 bg-gradient-to-br from-[hsl(185_80%_95%)] via-[hsl(210_60%_95%)] to-[hsl(250_60%_95%)] dark:from-[hsl(185_80%_15%)] dark:via-[hsl(210_60%_15%)] dark:to-[hsl(250_60%_15%)]">
+        <Card className="shadow-lg border-2 border-primary/30 bg-gradient-to-br from-primary/5 via-secondary/5 to-primary/5 dark:from-primary/10 dark:via-secondary/10 dark:to-primary/10">
           <CardContent className="pt-6">
             <div className="text-center mb-6">
-              <h3 className="text-xl font-semibold mb-2">Ready to test your knowledge?</h3>
+              <h3 className="text-2xl font-bold mb-2 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                Ready to test your knowledge?
+              </h3>
               <p className="text-sm text-muted-foreground">
-                Choose how you want to practice
+                Choose how you want to practice and reinforce what you've learned
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Quiz Button */}
-              <Button 
-                onClick={handleShowQuiz} 
-                size="lg"
-                variant="default"
-                className="w-full h-24 flex flex-col items-center justify-center gap-2"
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Quiz Card */}
+              <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-lg cursor-pointer group"
+                onClick={handleShowQuiz}
               >
-                <BookOpen className="h-6 w-6" />
-                <div className="text-center">
-                  <div className="font-semibold">Take Quiz</div>
-                  <div className="text-xs opacity-90">
-                    {lesson.quiz.questions.length} questions
+                <CardContent className="pt-6">
+                  <div className="flex flex-col items-center text-center space-y-4">
+                    <div className="p-4 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                      <BookOpen className="h-8 w-8 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-bold mb-1">Take Quiz</h4>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Test your understanding with multiple-choice questions
+                      </p>
+                      <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        <span>{lesson.quiz.questions.length} questions</span>
+                        <span>•</span>
+                        <span>Passing: {lesson.quiz.passingScore}/{lesson.quiz.questions.length}</span>
+                      </div>
+                    </div>
+                    <Button className="w-full group/btn">
+                      Start Quiz
+                      <ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                    </Button>
                   </div>
-                </div>
-              </Button>
+                </CardContent>
+              </Card>
 
-              {/* Code Exercise Button */}
-              <Button 
-                onClick={() => router.push(`/learn/${params.langId}/lesson/${params.lessonId}/code`)} 
-                size="lg"
-                variant="outline"
-                className="w-full h-24 flex flex-col items-center justify-center gap-2 border-2"
+              {/* Code Exercise Card */}
+              <Card className="border-2 hover:border-secondary/50 transition-all duration-300 hover:shadow-lg cursor-pointer group"
+                onClick={() => router.push(`/learn/${params.langId}/lesson/${params.lessonId}/code`)}
               >
-                <Code className="h-6 w-6" />
-                <div className="text-center">
-                  <div className="font-semibold">Code Exercise</div>
-                  <div className="text-xs opacity-90">
-                    Practice coding
+                <CardContent className="pt-6">
+                  <div className="flex flex-col items-center text-center space-y-4">
+                    <div className="p-4 rounded-full bg-secondary/10 group-hover:bg-secondary/20 transition-colors">
+                      <Code className="h-8 w-8 text-secondary-foreground" />
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-bold mb-1">Code Exercise</h4>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Practice coding with hands-on exercises and real-time feedback
+                      </p>
+                      <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                        <FileCode className="h-3 w-3" />
+                        <span>Interactive IDE</span>
+                        <span>•</span>
+                        <span>Live Preview</span>
+                      </div>
+                    </div>
+                    <Button variant="outline" className="w-full group/btn border-2">
+                      Start Coding
+                      <ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                    </Button>
                   </div>
-                </div>
-              </Button>
+                </CardContent>
+              </Card>
             </div>
           </CardContent>
         </Card>
