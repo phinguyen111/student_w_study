@@ -215,7 +215,7 @@ export default function Home() {
                       &nbsp;&nbsp;<span className="code-keyword">const</span> <span className="code-variable">frameworks</span> <span className="code-operator">=</span> <span className="code-punctuation">[</span><span className="code-string">'React'</span><span className="code-punctuation">,</span> <span className="code-string">'Next.js'</span><span className="code-punctuation">]</span><span className="code-punctuation">;</span>
                       <br />
                       <br />
-                      &nbsp;&nbsp;<span className="code-keyword">return</span> <span className="code-variable">skills</span><span className="code-punctuation">.</span><span className="code-function">map</span><span className="code-punctuation">(</span><span className="code-variable">skill</span> <span className="code-operator">=></span>
+                      &nbsp;&nbsp;<span className="code-keyword">return</span> <span className="code-variable">skills</span><span className="code-punctuation">.</span><span className="code-function">map</span><span className="code-punctuation">(</span><span className="code-variable">skill</span> <span className="code-operator">{'=>'}</span>
                       <br />
                       &nbsp;&nbsp;&nbsp;&nbsp;<span className="code-function">master</span><span className="code-punctuation">(</span><span className="code-variable">skill</span><span className="code-punctuation">)</span>
                       <br />
