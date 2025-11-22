@@ -72,6 +72,8 @@ interface UserProgress {
     codeScore: number | null
     totalScore: number
     completedAt?: string
+    quizAttempts?: number
+    codeAttempts?: number
   }>
 }
 
