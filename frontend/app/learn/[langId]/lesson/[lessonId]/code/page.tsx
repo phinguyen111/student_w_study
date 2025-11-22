@@ -19,8 +19,8 @@ interface Lesson {
   title: string
   codeExercise?: {
     starterCode: string
-    language: 'html' | 'javascript' | 'css' | 'python'
-    description?: string
+    language: 'html' | 'javascript' | 'css' | 'python' | 'html-css-js'
+    description?: string | { vi?: string; en?: string }
   }
 }
 
