@@ -7,7 +7,7 @@ import api from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { User, Lock, Mail, Loader2, AlertCircle, CheckCircle, Eye, EyeOff, Save, X, Edit2, Shield, Sparkles, KeyRound, CheckCircle2 } from 'lucide-react'
+import { User, Lock, Mail, Loader2, AlertCircle, CheckCircle, Eye, EyeOff, Save, X, Edit2, Shield, Sparkles, KeyRound, CheckCircle2, Upload, Camera } from 'lucide-react'
 
 export default function ProfilePage() {
   const { isAuthenticated, user, loading, refreshUser } = useAuth()
@@ -29,6 +29,11 @@ export default function ProfilePage() {
   const [passwordError, setPasswordError] = useState('')
   const [passwordSuccess, setPasswordSuccess] = useState('')
   const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false })
+  
+  // Avatar upload states
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const [avatarError, setAvatarError] = useState('')
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -40,6 +45,25 @@ export default function ProfilePage() {
     if (user) {
       setName(user.name || '')
       setEmail(user.email || '')
+      if (user.avatar) {
+        // Get API URL from window location or env
+        const getApiBaseUrl = () => {
+          if (typeof window !== 'undefined') {
+            // In production, use the backend URL
+            if (window.location.hostname.includes('vercel.app')) {
+              return 'https://codecatalyst-azure.vercel.app'
+            }
+          }
+          return process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000'
+        }
+        // Thêm timestamp để force reload ảnh
+        const baseUrl = getApiBaseUrl()
+        const avatarUrl = `${baseUrl}${user.avatar}${user.avatar.includes('?') ? '&' : '?'}t=${Date.now()}`
+        console.log('Loading avatar from:', avatarUrl)
+        setAvatarPreview(avatarUrl)
+      } else {
+        setAvatarPreview(null)
+      }
     }
   }, [user])
 
@@ -111,6 +135,123 @@ export default function ProfilePage() {
     setEmail(user?.email || '')
     setProfileError('')
     setProfileSuccess('')
+  }
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setAvatarError('Please select an image file')
+      return
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError('Image size must be less than 5MB')
+      return
+    }
+
+    setAvatarError('')
+    setIsUploadingAvatar(true)
+
+    // Tạm thời hiển thị preview từ file (sẽ được thay thế bằng URL từ server sau khi upload thành công)
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setAvatarPreview(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+
+    // Upload to server
+    try {
+      const formData = new FormData()
+      formData.append('avatar', file)
+
+      const token = localStorage.getItem('token')
+      const getApiUrl = () => {
+        if (typeof window !== 'undefined') {
+          if (window.location.hostname.includes('vercel.app')) {
+            return 'https://codecatalyst-azure.vercel.app/api'
+          }
+        }
+        return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
+      }
+      const apiUrl = getApiUrl()
+
+      console.log('Uploading avatar to:', `${apiUrl}/auth/avatar`)
+      console.log('File info:', { name: file.name, size: file.size, type: file.type })
+
+      const response = await fetch(`${apiUrl}/auth/avatar`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      })
+
+      console.log('Response status:', response.status, response.statusText)
+      const data = await response.json()
+      console.log('Response data:', data)
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to upload avatar')
+      }
+
+      if (data.success) {
+        console.log('Upload successful! Avatar path:', data.avatar)
+        console.log('User data from response:', data.user)
+        
+        // Cập nhật avatar preview ngay từ response với timestamp để force reload
+        if (data.avatar || data.user?.avatar) {
+          const avatarPath = data.avatar || data.user?.avatar
+          const getApiBaseUrl = () => {
+            if (typeof window !== 'undefined') {
+              if (window.location.hostname.includes('vercel.app')) {
+                return 'https://codecatalyst-azure.vercel.app'
+              }
+            }
+            return process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000'
+          }
+          // Thêm timestamp để force browser reload ảnh mới
+          const avatarUrl = `${getApiBaseUrl()}${avatarPath}?t=${Date.now()}`
+          console.log('Setting avatar URL to:', avatarUrl)
+          setAvatarPreview(avatarUrl)
+        } else {
+          console.error('No avatar path in response!', data)
+        }
+        
+        // Refresh user data để đảm bảo sync
+        console.log('Refreshing user data...')
+        await refreshUser()
+        console.log('User data refreshed')
+        setProfileSuccess('Avatar updated successfully!')
+        setTimeout(() => setProfileSuccess(''), 4000)
+      } else {
+        console.error('Upload failed - success is false:', data)
+        throw new Error(data.message || 'Upload failed')
+      }
+    } catch (error: any) {
+      setAvatarError(error.message || 'Failed to upload avatar')
+      // Reset to original avatar on error
+      if (user?.avatar) {
+        const getApiBaseUrl = () => {
+          if (typeof window !== 'undefined') {
+            if (window.location.hostname.includes('vercel.app')) {
+              return 'https://codecatalyst-azure.vercel.app'
+            }
+          }
+          return process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000'
+        }
+        setAvatarPreview(`${getApiBaseUrl()}${user.avatar}`)
+      } else {
+        setAvatarPreview(null)
+      }
+    } finally {
+      setIsUploadingAvatar(false)
+      // Reset input
+      e.target.value = ''
+    }
   }
 
   const getPasswordStrength = (password: string) => {
@@ -207,13 +348,90 @@ export default function ProfilePage() {
                   {/* Enhanced Avatar */}
                   <div className="relative group">
                     <div className={`absolute -inset-2 bg-gradient-to-br ${avatarColor} rounded-full blur-2xl opacity-60 group-hover:opacity-80 transition-opacity duration-500`}></div>
-                    <div className={`relative w-28 h-28 md:w-32 md:h-32 rounded-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white text-4xl md:text-5xl font-extrabold shadow-2xl transform group-hover:scale-110 transition-all duration-500 ring-4 ring-white dark:ring-slate-900`}>
-                      {getInitials(user?.name || 'User')}
+                    <div className={`relative w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white text-4xl md:text-5xl font-extrabold shadow-2xl transform group-hover:scale-110 transition-all duration-500 ring-4 ring-white dark:ring-slate-900`}>
+                      {avatarPreview ? (
+                        <img 
+                          src={avatarPreview} 
+                          alt={user?.name || 'User'} 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // Fallback về initials nếu ảnh không load được
+                            console.error('Failed to load avatar image:', avatarPreview)
+                            setAvatarPreview(null)
+                          }}
+                        />
+                      ) : (
+                        getInitials(user?.name || 'User')
+                      )}
                     </div>
                     <div className="absolute -bottom-1 -right-1 w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full border-4 border-white dark:border-slate-900 flex items-center justify-center shadow-lg">
                       <div className="w-4 h-4 bg-white rounded-full animate-pulse"></div>
                     </div>
+                    {/* Upload Button */}
+                    <label className="absolute inset-0 cursor-pointer rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50 flex items-center justify-center">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                        disabled={isUploadingAvatar}
+                        className="hidden"
+                      />
+                      <div className="flex flex-col items-center gap-1 text-white">
+                        {isUploadingAvatar ? (
+                          <Loader2 className="h-6 w-6 animate-spin" />
+                        ) : (
+                          <Camera className="h-6 w-6" />
+                        )}
+                        <span className="text-xs font-medium">Upload</span>
+                      </div>
+                    </label>
                   </div>
+                  
+                  {/* Avatar Upload Error */}
+                  {avatarError && (
+                    <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm animate-in slide-in-from-top-2 duration-300">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                        <span className="flex-1">{avatarError}</span>
+                        <button
+                          type="button"
+                          onClick={() => setAvatarError('')}
+                          className="text-destructive/60 hover:text-destructive transition-colors"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Manual Upload Button */}
+                  <label className="w-full">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      disabled={isUploadingAvatar}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={isUploadingAvatar}
+                      className="w-full h-11 text-sm font-semibold border-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-300"
+                    >
+                      {isUploadingAvatar ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4 mr-2" />
+                          Change Avatar
+                        </>
+                      )}
+                    </Button>
+                  </label>
 
                   {/* User Info */}
                   <div className="space-y-3 w-full">

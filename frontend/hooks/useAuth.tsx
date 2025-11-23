@@ -10,6 +10,7 @@ interface User {
   email: string;
   name: string;
   role: string;
+  avatar?: string;
 }
 
 interface AuthContextType {
@@ -51,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const token = localStorage.getItem('token');
       if (token) {
         const response = await api.get('/auth/me');
+        console.log('Refreshed user data:', response.data.user);
         setUser(response.data.user);
       }
     } catch (error) {

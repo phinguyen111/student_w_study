@@ -1,8 +1,14 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import connectDB, { ensureConnection } from './config/database.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Routes
 import authRoutes from './api/auth.js';
@@ -88,9 +94,44 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve static files from public directory
+const publicUploadsPath = path.join(__dirname, 'public', 'uploads');
+console.log('Static files path:', publicUploadsPath);
+console.log('Static files exists:', fs.existsSync(publicUploadsPath));
+
+app.use('/uploads', express.static(publicUploadsPath, {
+  setHeaders: (res, filePath) => {
+    // Set CORS headers for images
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Cache-Control', 'public, max-age=31536000');
+    console.log('Serving static file:', filePath);
+  }
+}));
+
 // Health check (no DB required)
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'API is running' });
+});
+
+// Test endpoint để kiểm tra static files
+app.get('/api/test-uploads', (req, res) => {
+  const avatarsDir = path.join(__dirname, 'public', 'uploads', 'avatars');
+  try {
+    const files = fs.readdirSync(avatarsDir).filter(f => !f.startsWith('backup'));
+    res.json({ 
+      success: true, 
+      path: avatarsDir,
+      exists: fs.existsSync(avatarsDir),
+      files: files 
+    });
+  } catch (error) {
+    res.json({ 
+      success: false, 
+      error: error.message,
+      path: avatarsDir,
+      exists: fs.existsSync(avatarsDir)
+    });
+  }
 });
 
 // Ensure DB connection for all API routes (except health check)
