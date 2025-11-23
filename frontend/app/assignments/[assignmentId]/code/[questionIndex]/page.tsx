@@ -361,10 +361,7 @@ ${js}
       }
       localStorage.setItem(`quiz-${assignmentId}-answers`, JSON.stringify(savedAnswers))
       
-      trackQuizAction('code_submit', assignmentId || '', assignment?.title, {
-        question_index: questionIndex,
-        code_type: question?.codeType
-      })
+      trackButtonClick('Submit Code Answer', window.location.pathname)
       
       // Navigate to next question or submit final quiz
       const nextQuestionIndex = questionIndex + 1
