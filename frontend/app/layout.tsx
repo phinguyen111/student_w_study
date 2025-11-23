@@ -8,6 +8,7 @@ import { ActivityTracker } from '@/components/ActivityTracker'
 import { GoogleAnalytics } from '@/components/GoogleAnalytics'
 import { ExitTracker } from '@/components/ExitTracker'
 import { GATrackingProvider } from '@/components/GATrackingProvider'
+import { ScrollToTop } from '@/components/ScrollToTop'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -31,6 +32,7 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <GATrackingProvider>
+              <ScrollToTop />
               <ExitTracker />
               <ActivityTracker />
               <Navbar />

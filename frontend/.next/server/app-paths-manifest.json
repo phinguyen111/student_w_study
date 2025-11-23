@@ -1,4 +1,7 @@
 {
-  "/not-found": "app/not-found.js",
-  "/learn/page": "app/learn/page.js"
+  "/learn/[langId]/lesson/[lessonId]/page": "app/learn/[langId]/lesson/[lessonId]/page.js",
+  "/assignments/[assignmentId]/quiz/page": "app/assignments/[assignmentId]/quiz/page.js",
+  "/learn/[langId]/level/[levelId]/page": "app/learn/[langId]/level/[levelId]/page.js",
+  "/learn/[langId]/lesson/[lessonId]/code/page": "app/learn/[langId]/lesson/[lessonId]/code/page.js",
+  "/assignments/page": "app/assignments/page.js"
 }

@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useGATracking } from '@/hooks/useGATracking'
-import { useRouter } from 'next/navigation'
-import { useParams } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import api from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -82,20 +81,10 @@ export default function AssignmentsPage() {
 
   const handleStartQuiz = async (assignmentId: string) => {
     try {
-      const response = await api.get(`/progress/quiz-assignments/${assignmentId}`)
-      const assignment = response.data.assignment
-      setSelectedAssignment(assignment)
-      setShowQuiz(true)
-      
-      // Track quiz start
-      trackQuizAction('start', assignmentId, assignment.title, {
-        quiz_type: 'assignment',
-        passing_score: assignment.passingScore,
-        questions_count: assignment.questions.length
-      })
-      trackButtonClick('Start Quiz', '/assignments')
+      // Always redirect to quiz page (not modal)
+      router.push(`/assignments/${assignmentId}/quiz`)
     } catch (error: any) {
-      console.error('Error fetching assignment:', error)
+      console.error('Error starting quiz:', error)
       alert(error.response?.data?.message || 'Error loading quiz')
     }
   }

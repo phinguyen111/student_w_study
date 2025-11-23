@@ -1014,15 +1014,56 @@ router.post('/quiz-assignments', async (req, res) => {
       return res.status(400).json({ message: 'assignedTo must be a non-empty array' });
     }
 
+    // Validate each question based on type
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i];
+      if (!q.type || !['multiple-choice', 'code'].includes(q.type)) {
+        return res.status(400).json({ message: `Question ${i + 1}: type must be 'multiple-choice' or 'code'` });
+      }
+      
+      if (q.type === 'multiple-choice') {
+        if (!q.options || !Array.isArray(q.options) || q.options.length === 0) {
+          return res.status(400).json({ message: `Question ${i + 1}: options are required for multiple-choice questions` });
+        }
+        if (q.correctAnswer === undefined || q.correctAnswer === null) {
+          return res.status(400).json({ message: `Question ${i + 1}: correctAnswer is required for multiple-choice questions` });
+        }
+        if (q.correctAnswer < 0 || q.correctAnswer >= q.options.length) {
+          return res.status(400).json({ message: `Question ${i + 1}: correctAnswer must be a valid option index` });
+        }
+      } else if (q.type === 'code') {
+        if (!q.codeType || !['html', 'css', 'javascript', 'html-css-js'].includes(q.codeType)) {
+          return res.status(400).json({ message: `Question ${i + 1}: codeType is required for code questions` });
+        }
+        if (!q.starterCode) {
+          return res.status(400).json({ message: `Question ${i + 1}: starterCode is required for code questions` });
+        }
+        if (!q.expectedOutput) {
+          return res.status(400).json({ message: `Question ${i + 1}: expectedOutput is required for code questions` });
+        }
+      }
+    }
+
     const deadlineDate = new Date(deadline);
     if (isNaN(deadlineDate.getTime())) {
       return res.status(400).json({ message: 'Invalid deadline date' });
     }
 
+    // Normalize questions - remove correctAnswer for code questions, remove code fields for multiple-choice
+    const normalizedQuestions = questions.map(q => {
+      if (q.type === 'code') {
+        const { correctAnswer, options, ...codeQuestion } = q;
+        return codeQuestion;
+      } else {
+        const { codeType, starterCode, expectedOutput, ...multipleChoiceQuestion } = q;
+        return multipleChoiceQuestion;
+      }
+    });
+
     const assignment = await QuizAssignment.create({
       title,
       description: description || '',
-      questions,
+      questions: normalizedQuestions,
       passingScore: passingScore || 7,
       assignedBy: req.user._id,
       assignedTo,

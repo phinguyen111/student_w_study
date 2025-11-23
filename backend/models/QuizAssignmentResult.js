@@ -20,7 +20,16 @@ const quizAssignmentResultSchema = new mongoose.Schema({
     },
     selectedAnswer: {
       type: Number,
-      required: true
+      // Not required for code questions
+    },
+    codeAnswer: {
+      type: String,
+      // For code questions
+    },
+    codeType: {
+      type: String,
+      enum: ['html', 'css', 'javascript', 'html-css-js'],
+      // For code questions
     }
   }],
   score: {

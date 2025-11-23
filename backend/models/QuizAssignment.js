@@ -1,18 +1,53 @@
 import mongoose from 'mongoose';
 
 const questionSchema = new mongoose.Schema({
+  type: {
+    type: String,
+    enum: ['multiple-choice', 'code'],
+    required: true,
+    default: 'multiple-choice'
+  },
   question: {
     type: mongoose.Schema.Types.Mixed, // Support both string and {vi, en} format
     required: true
   },
+  // Fields for multiple-choice questions
   options: {
     type: [mongoose.Schema.Types.Mixed], // Support both string[] and [{vi, en}] format
-    required: true
+    required: function() {
+      return this.type === 'multiple-choice';
+    }
   },
   correctAnswer: {
     type: Number,
-    required: true,
+    required: function() {
+      return this.type === 'multiple-choice';
+    },
     min: 0
+  },
+  // Fields for code questions
+  codeType: {
+    type: String,
+    enum: ['html', 'css', 'javascript', 'html-css-js'],
+    required: function() {
+      return this.type === 'code';
+    }
+  },
+  starterCode: {
+    type: {
+      html: String,
+      css: String,
+      javascript: String
+    },
+    required: function() {
+      return this.type === 'code';
+    }
+  },
+  expectedOutput: {
+    type: String,
+    required: function() {
+      return this.type === 'code';
+    }
   },
   explanation: {
     type: mongoose.Schema.Types.Mixed // Support both string and {vi, en} format

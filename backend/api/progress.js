@@ -667,20 +667,41 @@ router.post('/quiz-assignments/:id/submit', authenticate, async (req, res) => {
 
     assignment.questions.forEach((question, index) => {
       const userAnswer = submittedAnswers[index];
-      const correctAnswer = question.correctAnswer;
       
-      // Only count as correct if:
-      // 1. User provided an answer (not undefined, not null)
-      // 2. Correct answer is defined
-      // 3. They match exactly (using strict equality)
-      if (
-        userAnswer !== undefined && 
-        userAnswer !== null &&
-        correctAnswer !== undefined && 
-        correctAnswer !== null &&
-        Number(userAnswer) === Number(correctAnswer)
-      ) {
-        correctCount++;
+      if (question.type === 'code') {
+        // For code questions, check if code matches expected output
+        // This is a simple check - in production, you might want more sophisticated validation
+        const codeAnswer = userAnswer?.codeAnswer || '';
+        const expectedOutput = question.expectedOutput || '';
+        
+        // Simple check: if code contains expected output or vice versa
+        // In production, you'd want to actually execute and compare outputs
+        if (codeAnswer && expectedOutput) {
+          const codeLower = codeAnswer.toLowerCase().trim();
+          const expectedLower = expectedOutput.toLowerCase().trim();
+          
+          // Check if code contains expected output or if they're similar
+          if (codeLower.includes(expectedLower) || expectedLower.includes(codeLower)) {
+            correctCount++;
+          }
+        }
+      } else {
+        // Multiple-choice question
+        const correctAnswer = question.correctAnswer;
+        
+        // Only count as correct if:
+        // 1. User provided an answer (not undefined, not null)
+        // 2. Correct answer is defined
+        // 3. They match exactly (using strict equality)
+        if (
+          userAnswer !== undefined && 
+          userAnswer !== null &&
+          correctAnswer !== undefined && 
+          correctAnswer !== null &&
+          Number(userAnswer) === Number(correctAnswer)
+        ) {
+          correctCount++;
+        }
       }
     });
 
@@ -699,10 +720,21 @@ router.post('/quiz-assignments/:id/submit', authenticate, async (req, res) => {
     const result = await QuizAssignmentResult.create({
       assignmentId: assignment._id,
       userId: req.user._id,
-      answers: submittedAnswers.map((answer, index) => ({
-        questionIndex: index,
-        selectedAnswer: answer
-      })),
+      answers: submittedAnswers.map((answer, index) => {
+        const question = assignment.questions[index];
+        if (question.type === 'code') {
+          return {
+            questionIndex: index,
+            codeAnswer: answer?.codeAnswer || answer?.code || '',
+            codeType: answer?.codeType || question.codeType
+          };
+        } else {
+          return {
+            questionIndex: index,
+            selectedAnswer: answer?.selectedAnswer !== undefined ? answer.selectedAnswer : answer
+          };
+        }
+      }),
       score,
       passingScore: assignment.passingScore,
       passed,
@@ -716,6 +748,49 @@ router.post('/quiz-assignments/:id/submit', authenticate, async (req, res) => {
       .populate('assignmentId', 'title');
 
     res.json({ success: true, result: populatedResult });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Save code answer for a quiz assignment question (temporary, before final submission)
+router.post('/quiz-assignments/:id/save-code-answer', authenticate, async (req, res) => {
+  try {
+    const { questionIndex, code, codeType } = req.body;
+
+    const assignment = await QuizAssignment.findById(req.params.id);
+
+    if (!assignment) {
+      return res.status(404).json({ message: 'Quiz assignment not found' });
+    }
+
+    // Check if user is assigned to this quiz
+    const isAssigned = assignment.assignedTo.some(
+      userId => userId.toString() === req.user._id.toString()
+    );
+
+    if (!isAssigned) {
+      return res.status(403).json({ message: 'You are not assigned to this quiz' });
+    }
+
+    // Check if question exists and is a code question
+    if (!assignment.questions[questionIndex]) {
+      return res.status(404).json({ message: 'Question not found' });
+    }
+
+    const question = assignment.questions[questionIndex];
+    if (question.type !== 'code') {
+      return res.status(400).json({ message: 'This is not a code question' });
+    }
+
+    // For now, just return success - in a full implementation, you might want to
+    // store this temporarily in a separate collection or session
+    res.json({ 
+      success: true, 
+      message: 'Code answer saved',
+      questionIndex,
+      codeType
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

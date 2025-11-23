@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUserId(response.data.user.id);
         }
         
-        router.push('/learn');
+        router.push('/');
       } else {
         throw new Error(response.data.message || 'Login failed');
       }
