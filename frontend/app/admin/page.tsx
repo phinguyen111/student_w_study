@@ -1,3 +1,4 @@
+<<<<<<< Current (Your changes)
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
@@ -4689,3 +4690,1062 @@ export default function AdminPage() {
     </div>
   )
 }
+
+                                          className="w-full p-2 border rounded font-mono text-xs"
+                                          rows={3}
+                                          value={q.starterCode?.css || ''}
+                                          onChange={(e) => updateAssignmentStarterCode(qIndex, 'css', e.target.value)}
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-xs font-medium mb-1 block">JavaScript Starter Code</label>
+                                        <textarea
+                                          className="w-full p-2 border rounded font-mono text-xs"
+                                          rows={3}
+                                          value={q.starterCode?.javascript || ''}
+                                          onChange={(e) => updateAssignmentStarterCode(qIndex, 'javascript', e.target.value)}
+                                        />
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div>
+                                      <label className="text-xs font-medium mb-1 block">
+                                        {q.codeType?.toUpperCase()} Starter Code
+                                      </label>
+                                      <textarea
+                                        className="w-full p-2 border rounded font-mono text-xs"
+                                        rows={4}
+                                        value={q.starterCode?.[q.codeType as 'html' | 'css' | 'javascript'] || ''}
+                                        onChange={(e) => updateAssignmentStarterCode(qIndex, q.codeType as 'html' | 'css' | 'javascript', e.target.value)}
+                                      />
+                                    </div>
+                                  )}
+                                  <div>
+                                    <label className="text-xs font-medium mb-1 block">Expected Output *</label>
+                                    <textarea
+                                      className="w-full p-2 border rounded text-xs"
+                                      rows={2}
+                                      placeholder="Expected output or result (used for auto-grading)"
+                                      value={q.expectedOutput || ''}
+                                      onChange={(e) => updateQuestion(qIndex, 'expectedOutput', e.target.value)}
+                                    />
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      Describe what the code should produce or output
+                                    </p>
+                                  </div>
+                                  <Input
+                                    placeholder="Explanation (optional)"
+                                    value={q.explanation || ''}
+                                    onChange={(e) => updateQuestion(qIndex, 'explanation', e.target.value)}
+                                  />
+                                </>
+                              ) : (
+                                <>
+                                  <div className="space-y-2">
+                                    <label className="text-xs font-medium">Options (select correct answer)</label>
+                                    {q.options?.map((opt: string, optIndex: number) => (
+                                      <div key={optIndex} className="flex items-center gap-2">
+                                        <input
+                                          type="radio"
+                                          name={`correct-${qIndex}`}
+                                          checked={q.correctAnswer === optIndex}
+                                          onChange={() => updateQuestion(qIndex, 'correctAnswer', optIndex)}
+                                          className="w-4 h-4"
+                                        />
+                                        <Input
+                                          placeholder={`Option ${optIndex + 1}`}
+                                          value={opt}
+                                          onChange={(e) => updateQuestionOption(qIndex, optIndex, e.target.value)}
+                                        />
+                                        {q.options && q.options.length > 2 && (
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => removeQuestionOption(qIndex, optIndex)}
+                                          >
+                                            <X className="h-4 w-4" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                    ))}
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => addQuestionOption(qIndex)}
+                                    >
+                                      <Plus className="h-4 w-4 mr-2" />
+                                      Add Option
+                                    </Button>
+                                  </div>
+                                  <Input
+                                    placeholder="Explanation (optional)"
+                                    value={q.explanation || ''}
+                                    onChange={(e) => updateQuestion(qIndex, 'explanation', e.target.value)}
+                                  />
+                                </>
+                              )}
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button onClick={handleCreateQuizAssignment}>
+                        <Save className="h-4 w-4 mr-2" />
+                        Create Assignment
+                      </Button>
+                      <Button variant="outline" onClick={() => {
+                        setShowCreateAssignment(false)
+                        setNewAssignment({
+                          title: '',
+                          description: '',
+                          questions: [],
+                          passingScore: 7,
+                          assignedTo: [],
+                          deadline: ''
+                        })
+                      }}>
+                        <X className="h-4 w-4 mr-2" />
+                        Cancel
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              <div className="space-y-4">
+                {quizAssignments.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">No quiz assignments yet</p>
+                ) : (
+                  quizAssignments.map((assignment) => {
+                    const isExpired = new Date(assignment.deadline) < new Date()
+                    const deadlineDate = new Date(assignment.deadline)
+                    
+                    return (
+                      <Card key={assignment._id} className={isExpired ? 'opacity-75' : ''}>
+                        <CardHeader>
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <CardTitle className="flex items-center gap-2">
+                                {assignment.title}
+                                {isExpired && (
+                                  <span className="text-xs px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded">
+                                    Expired
+                                  </span>
+                                )}
+                                {assignment.status === 'active' && !isExpired && (
+                                  <span className="text-xs px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded">
+                                    Active
+                                  </span>
+                                )}
+                              </CardTitle>
+                              <CardDescription className="mt-1">
+                                {assignment.description}
+                              </CardDescription>
+                              <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Clock className="h-4 w-4" />
+                                  Deadline: {deadlineDate.toLocaleString()}
+                                </span>
+                                <span>Passing: {assignment.passingScore}/10</span>
+                                <span>{assignment.questions.length} questions</span>
+                                <span>{assignment.totalAssigned || assignment.assignedTo.length} users assigned</span>
+                                <span className="flex items-center gap-1">
+                                  <CheckCircle2 className="h-4 w-4" />
+                                  {assignment.submittedCount || 0}/{assignment.totalAssigned || assignment.assignedTo.length} submitted
+                                  ({assignment.passedCount || 0} passed)
+                                </span>
+                              </div>
+                              {/* Quick tracking summary - fetch when assignment is selected */}
+                              {selectedAssignment?._id === assignment._id && assignmentTracking.length > 0 && (
+                                <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded">
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                    <span className="font-semibold text-blue-800 dark:text-blue-200">Tracking Summary:</span>
+                                    <span className="text-blue-700 dark:text-blue-300">
+                                      {assignmentTracking.filter((t: any) => t.hasExternalVisits).length} user(s) visited external websites
+                                    </span>
+                                    {assignmentTracking.filter((t: any) => t.hasSuspiciousActivity).length > 0 && (
+                                      <span className="px-2 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 text-xs rounded flex items-center gap-1">
+                                        <AlertTriangle className="h-3 w-3" />
+                                        {assignmentTracking.filter((t: any) => t.hasSuspiciousActivity).length} suspicious
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => fetchAssignmentDetails(assignment._id)}
+                              >
+                                View Details
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleDeleteQuizAssignment(assignment._id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        {selectedAssignment?._id === assignment._id && (
+                          <CardContent>
+                            <div className="space-y-4">
+                              {/* Tracking Summary Section */}
+                              {assignmentTracking.length > 0 && (
+                                <div className="p-4 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20 border-2 border-yellow-300 dark:border-yellow-700 rounded-lg">
+                                  <div className="flex items-center gap-2 mb-3">
+                                    <Eye className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                                    <h4 className="font-bold text-lg text-yellow-900 dark:text-yellow-100">
+                                      Cheating Detection Report
+                                    </h4>
+                                  </div>
+                                  <div className="grid md:grid-cols-2 gap-4 mb-3">
+                                    <div className="p-3 bg-white dark:bg-gray-900 rounded border">
+                                      <p className="text-sm text-muted-foreground mb-1">Users with External Visits</p>
+                                      <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                                        {assignmentTracking.filter((t: any) => t.hasExternalVisits).length}
+                                      </p>
+                                    </div>
+                                    <div className="p-3 bg-white dark:bg-gray-900 rounded border">
+                                      <p className="text-sm text-muted-foreground mb-1">Suspicious Activities</p>
+                                      <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                                        {assignmentTracking.filter((t: any) => t.hasSuspiciousActivity).length}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="space-y-2">
+                                    {assignmentTracking
+                                      .filter((t: any) => t.hasExternalVisits)
+                                      .map((tracking: any) => (
+                                        <div key={tracking._id} className="p-2 bg-white dark:bg-gray-900 rounded border border-yellow-200 dark:border-yellow-800">
+                                          <div className="flex justify-between items-center">
+                                            <span className="font-medium text-sm">
+                                              {tracking.userId?.name || 'Unknown'} ({tracking.userId?.email})
+                                            </span>
+                                            <span className="text-xs text-yellow-700 dark:text-yellow-300">
+                                              {tracking.totalExternalTimeMinutes} min on external sites
+                                            </span>
+                                          </div>
+                                          <div className="mt-1 flex flex-wrap gap-2">
+                                            {tracking.externalVisits.slice(0, 3).map((visit: any, idx: number) => (
+                                              <span key={idx} className="text-xs px-2 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 rounded">
+                                                {visit.domain} ({visit.totalDurationMinutes} min)
+                                              </span>
+                                            ))}
+                                            {tracking.externalVisits.length > 3 && (
+                                              <span className="text-xs text-muted-foreground">
+                                                +{tracking.externalVisits.length - 3} more
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      ))}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              <div>
+                                <h4 className="font-semibold mb-2">Assigned Users:</h4>
+                                <div className="flex flex-wrap gap-2">
+                                  {assignment.assignedTo.map((user: any) => (
+                                    <span
+                                      key={user._id}
+                                      className="px-2 py-1 bg-muted rounded text-sm"
+                                    >
+                                      {user.name}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                              {assignmentResults.length > 0 && (
+                                <div>
+                                  <h4 className="font-semibold mb-2">Results:</h4>
+                                  <div className="space-y-2">
+                                    {assignmentResults.map((result: any) => {
+                                      // Find tracking data for this user
+                                      const userTracking = assignmentTracking.find(
+                                        (t: any) => t.userId?._id === result.userId?._id
+                                      )
+                                      const hasSuspiciousActivity = userTracking?.hasSuspiciousActivity || false
+                                      const hasExternalVisits = userTracking?.hasExternalVisits || false
+                                      
+                                      return (
+                                        <div
+                                          key={result._id}
+                                          className={`p-3 border rounded-lg ${
+                                            result.passed
+                                              ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20'
+                                              : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20'
+                                          } ${hasSuspiciousActivity || hasExternalVisits ? 'border-yellow-500 dark:border-yellow-600 border-2' : ''}`}
+                                        >
+                                          <div className="flex justify-between items-start">
+                                            <div className="flex-1">
+                                              <div className="flex items-center gap-2 mb-1">
+                                                <p className="font-medium">
+                                                  {result.userId?.name || 'Unknown'} ({result.userId?.email})
+                                                </p>
+                                                {(hasSuspiciousActivity || hasExternalVisits) && (
+                                                  <span className="px-2 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 text-xs rounded flex items-center gap-1">
+                                                    <AlertTriangle className="h-3 w-3" />
+                                                    Suspicious Activity
+                                                  </span>
+                                                )}
+                                              </div>
+                                              <p className="text-sm text-muted-foreground">
+                                                Submitted: {new Date(result.submittedAt).toLocaleString()}
+                                              </p>
+                                              
+                                              {/* External Visits Info */}
+                                              {userTracking && hasExternalVisits && (
+                                                <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded">
+                                                  <div className="flex items-center gap-2 mb-1">
+                                                    <ExternalLink className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                                                    <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-200">
+                                                      External Website Visits Detected
+                                                    </p>
+                                                  </div>
+                                                  <p className="text-xs text-yellow-700 dark:text-yellow-300 mb-2">
+                                                    Total time on external sites: {userTracking.totalExternalTimeMinutes} minutes
+                                                  </p>
+                                                  <div className="space-y-1">
+                                                    {userTracking.externalVisits.map((visit: any, idx: number) => (
+                                                      <div key={idx} className="text-xs text-yellow-700 dark:text-yellow-300 flex justify-between items-center">
+                                                        <span className="font-medium">{visit.domain}</span>
+                                                        <span>
+                                                          {visit.count} visit(s) • {visit.totalDurationMinutes} min
+                                                        </span>
+                                                      </div>
+                                                    ))}
+                                                  </div>
+                                                  {userTracking.suspiciousCount > 0 && (
+                                                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                                                      {userTracking.suspiciousCount} suspicious activity(ies) detected
+                                                    </p>
+                                                  )}
+                                                </div>
+                                              )}
+                                            </div>
+                                            <div className="text-right ml-4">
+                                              <p className="font-bold text-lg">
+                                                {result.score.toFixed(1)}/10
+                                              </p>
+                                              <p className={`text-sm ${result.passed ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                                {result.passed ? 'Passed' : 'Failed'}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        )}
+                      </Card>
+                    )
+                  })
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Progress Tab */}
+        <TabsContent value="progress" className="space-y-6">
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <div>
+                  <CardTitle>Select User</CardTitle>
+                  <CardDescription>Choose a user to view their progress</CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* Search Input */}
+                <div className="mb-4">
+                  <Input
+                    placeholder="Tìm kiếm theo tên, email, language, hoặc tiến độ học..."
+                    value={userProgressTabSearch}
+                    onChange={(e) => setUserProgressTabSearch(e.target.value)}
+                    className="w-full"
+                  />
+                  {userProgressTabSearch && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Tìm thấy {getFilteredAndSortedUserProgressTab().length} kết quả
+                    </p>
+                  )}
+                </div>
+
+                {/* Sort Controls */}
+                <div className="mb-4 p-3 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg border border-primary/20">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 text-primary">
+                      <Filter className="h-4 w-4" />
+                      <span className="text-sm font-semibold">Sắp xếp:</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-1">
+                      <select
+                        className="flex-1 px-3 py-2 border border-primary/30 rounded-md bg-background text-sm font-medium hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        value={userProgressTabSort}
+                        onChange={(e) => setUserProgressTabSort(e.target.value as any)}
+                      >
+                        <option value="name">Tên</option>
+                        <option value="email">Email</option>
+                      </select>
+                      <select
+                        className="px-3 py-2 border border-primary/30 rounded-md bg-background text-sm font-medium hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20 min-w-[80px]"
+                        value={userProgressTabSortOrder}
+                        onChange={(e) => setUserProgressTabSortOrder(e.target.value as 'asc' | 'desc')}
+                      >
+                        <option value="asc">↑ Tăng dần</option>
+                        <option value="desc">↓ Giảm dần</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {getFilteredAndSortedUserProgressTab().map((u) => {
+                    const userInfo = getUserInfoForSearch(u._id)
+                    return (
+                    <button
+                      key={u._id}
+                      onClick={() => fetchUserProgress(u._id)}
+                      className={`w-full text-left p-3 rounded-lg border transition-all duration-200 ${
+                        selectedUser === u._id
+                          ? 'border-primary bg-primary/10 shadow-md shadow-primary/20'
+                          : 'border-border hover:bg-gradient-to-br hover:from-primary/10 hover:to-primary/5 hover:border-primary/40 hover:shadow-md hover:shadow-primary/10 hover:scale-[1.02] group'
+                      }`}
+                    >
+                      <p className={`font-semibold transition-all duration-200 ${selectedUser !== u._id ? 'group-hover:text-primary group-hover:font-bold' : ''}`}>{u.name}</p>
+                      <p className={`text-sm text-muted-foreground transition-all duration-200 ${selectedUser !== u._id ? 'group-hover:text-foreground group-hover:font-medium' : ''}`}>{u.email}</p>
+                      {(userInfo.language || userInfo.completedLessons > 0 || userInfo.score > 0) && (
+                        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                          {userInfo.language && (
+                            <span>Language: <span className="font-medium">{userInfo.language}</span></span>
+                          )}
+                          {userInfo.completedLessons > 0 && (
+                            <span>Đã làm: <span className="font-medium">{userInfo.completedLessons} bài</span></span>
+                          )}
+                          {userInfo.score > 0 && (
+                            <span>Điểm: <span className="font-medium">{userInfo.score.toFixed(1)}</span></span>
+                          )}
+                        </div>
+                      )}
+                    </button>
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            {userProgress && (
+              <div className="space-y-6">
+                {/* Current Language and Level Info */}
+                {(() => {
+                  const currentInfo = getCurrentLanguageAndLevel()
+                  return currentInfo ? (
+                    <Card className="border-primary/30 bg-primary/5">
+                      <CardHeader>
+                        <CardTitle className="text-lg">Current Learning Status</CardTitle>
+                        <CardDescription>User's current language and level</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl">{currentInfo.language.icon}</span>
+                            <div>
+                              <p className="font-semibold">Language</p>
+                              <p className="text-sm text-muted-foreground">{currentInfo.language.name}</p>
+                            </div>
+                          </div>
+                          <div className="h-12 w-px bg-border"></div>
+                          <div>
+                            <p className="font-semibold">Current Level</p>
+                            <p className="text-sm text-muted-foreground">
+                              Level {currentInfo.level.number}: {currentInfo.level.title}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : null
+                })()}
+
+                {/* Unlock Level Section */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Unlock Level</CardTitle>
+                    <CardDescription>Manually unlock a level for this user</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Select Language</label>
+                        <select
+                          className="w-full p-2 border rounded-lg"
+                          value={selectedLanguageId}
+                          onChange={(e) => {
+                            setSelectedLanguageId(e.target.value)
+                            setSelectedLevelId('') // Reset level when language changes
+                          }}
+                        >
+                          <option value="">-- Select Language --</option>
+                          {languages.map((lang) => (
+                            <option key={lang._id} value={lang._id}>
+                              {lang.icon} {lang.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {selectedLanguageId && (
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">Select Level</label>
+                          <select
+                            className="w-full p-2 border rounded-lg"
+                            value={selectedLevelId}
+                            onChange={(e) => setSelectedLevelId(e.target.value)}
+                          >
+                            <option value="">-- Select Level --</option>
+                            {getAvailableLevels().map((level) => (
+                              <option key={level._id} value={level._id}>
+                                Level {level.levelNumber}: {level.title}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <Button
+                        onClick={() => handleUnlockLevel()}
+                        disabled={!selectedLevelId}
+                        className="w-full"
+                      >
+                        <Unlock className="h-4 w-4 mr-2" />
+                        Unlock Selected Level
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* User Progress List - Levels */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Level Progress</CardTitle>
+                    <CardDescription>
+                      {userProgress.userId.name} ({userProgress.userId.email})
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {userProgress.levelScores.length > 0 ? (
+                        userProgress.levelScores.map((levelScore, index) => (
+                          <div key={index} className="p-4 border rounded-lg">
+                            <div className="flex items-center justify-between mb-2">
+                              <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                  {levelScore.levelId.languageId && (
+                                    <>
+                                      <span className="text-lg">
+                                        {levelScore.levelId.languageId.icon}
+                                      </span>
+                                      <span className="text-sm text-muted-foreground">
+                                        {levelScore.levelId.languageId.name}
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                                <p className="font-semibold">
+                                  Level {levelScore.levelId.levelNumber}: {levelScore.levelId.title}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  Score: {levelScore.averageScore.toFixed(1)}/10
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {levelScore.isUnlocked ? (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-green-500 text-sm flex items-center gap-1">
+                                      <CheckCircle2 className="h-4 w-4" />
+                                      Unlocked
+                                    </span>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleLockLevel(levelScore.levelId._id)}
+                                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                                    >
+                                      <Lock className="h-4 w-4 mr-2" />
+                                      Lock
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleUnlockLevel(levelScore.levelId._id)}
+                                  >
+                                    <Unlock className="h-4 w-4 mr-2" />
+                                    Unlock
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                            {levelScore.adminApproved && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-2">
+                                <Shield className="h-3 w-3" />
+                                Admin approved
+                              </p>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-muted-foreground text-center py-4">
+                          No level progress data available
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* User Progress List - Lessons */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Completed Lessons</CardTitle>
+                    <CardDescription>
+                      Danh sách các bài học đã hoàn thành
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {userProgress.lessonScores && userProgress.lessonScores.length > 0 ? (
+                        userProgress.lessonScores
+                          .filter(ls => ls.totalScore > 0)
+                          .sort((a, b) => {
+                            if (a.completedAt && b.completedAt) {
+                              return new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
+                            }
+                            return (b.totalScore || 0) - (a.totalScore || 0)
+                          })
+                          .map((lessonScore, index) => (
+                            <div key={index} className="p-4 border rounded-lg transition-all duration-200 hover:bg-gradient-to-br hover:from-primary/10 hover:to-primary/5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 hover:scale-[1.01] group cursor-pointer">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    {lessonScore.lessonId.levelId && (
+                                      <>
+                                        {lessonScore.lessonId.levelId.languageId && (
+                                          <span className="text-lg">
+                                            {lessonScore.lessonId.levelId.languageId.icon}
+                                          </span>
+                                        )}
+                                        <span className="text-xs px-2 py-1 bg-muted rounded">
+                                          Level {lessonScore.lessonId.levelId.levelNumber}
+                                        </span>
+                                        {lessonScore.lessonId.levelId.languageId && (
+                                          <span className="text-xs text-muted-foreground">
+                                            {lessonScore.lessonId.levelId.languageId.name}
+                                          </span>
+                                        )}
+                                      </>
+                                    )}
+                                  </div>
+                                  <p className="font-semibold text-lg mb-1 group-hover:text-primary group-hover:font-bold transition-all duration-200">
+                                    Lesson {lessonScore.lessonId.lessonNumber}: {lessonScore.lessonId.title}
+                                  </p>
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Quiz Score</p>
+                                      <p className="font-medium">
+                                        {lessonScore.quizScore !== null ? lessonScore.quizScore.toFixed(1) : 'N/A'}/10
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Code Score</p>
+                                      <p className="font-medium">
+                                        {lessonScore.codeScore !== null ? lessonScore.codeScore.toFixed(1) : 'N/A'}/10
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Total Score</p>
+                                      <p className="font-medium text-primary">
+                                        {lessonScore.totalScore.toFixed(1)}/20
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Attempts</p>
+                                      <p className="font-medium">
+                                        Quiz: {lessonScore.quizAttempts || 0} | Code: {lessonScore.codeAttempts || 0}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  {lessonScore.completedAt && (
+                                    <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                                      <Clock className="h-3 w-3" />
+                                      Completed: {new Date(lessonScore.completedAt).toLocaleString('vi-VN')}
+                                    </p>
+                                  )}
+                                </div>
+                                <div className="ml-4">
+                                  <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                    lessonScore.totalScore >= 18 
+                                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                                      : lessonScore.totalScore >= 14
+                                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+                                      : lessonScore.totalScore >= 10
+                                      ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                      : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                                  }`}>
+                                    {lessonScore.totalScore >= 18 ? 'Excellent' 
+                                      : lessonScore.totalScore >= 14 ? 'Good'
+                                      : lessonScore.totalScore >= 10 ? 'Average'
+                                      : 'Needs Improvement'}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                      ) : (
+                        <p className="text-muted-foreground text-center py-4">
+                          Chưa có bài học nào được hoàn thành
+                        </p>
+                      )}
+                    </div>
+                    {userProgress.lessonScores && userProgress.lessonScores.length > 0 && (
+                      <div className="mt-4 p-3 bg-muted rounded-lg">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div>
+                            <p className="text-muted-foreground">Total Lessons</p>
+                            <p className="font-semibold text-lg">{userProgress.lessonScores.filter(ls => ls.totalScore > 0).length}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Avg Quiz Score</p>
+                            <p className="font-semibold text-lg">
+                              {(() => {
+                                const quizScores = userProgress.lessonScores
+                                  .filter(ls => ls.quizScore !== null)
+                                  .map(ls => ls.quizScore!)
+                                return quizScores.length > 0 
+                                  ? (quizScores.reduce((a, b) => a + b, 0) / quizScores.length).toFixed(1)
+                                  : 'N/A'
+                              })()}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Avg Code Score</p>
+                            <p className="font-semibold text-lg">
+                              {(() => {
+                                const codeScores = userProgress.lessonScores
+                                  .filter(ls => ls.codeScore !== null)
+                                  .map(ls => ls.codeScore!)
+                                return codeScores.length > 0 
+                                  ? (codeScores.reduce((a, b) => a + b, 0) / codeScores.length).toFixed(1)
+                                  : 'N/A'
+                              })()}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Avg Total Score</p>
+                            <p className="font-semibold text-lg">
+                              {(() => {
+                                const totalScores = userProgress.lessonScores
+                                  .filter(ls => ls.totalScore > 0)
+                                  .map(ls => ls.totalScore)
+                                return totalScores.length > 0 
+                                  ? (totalScores.reduce((a, b) => a + b, 0) / totalScores.length).toFixed(1)
+                                  : 'N/A'
+                              })()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
+
+                                            onChange={(e) => updateStarterCode(qIndex, 'html', e.target.value)}
+                                          />
+                                        </div>
+                                        <div>
+                                          <label className="text-xs font-medium mb-1 block">CSS Starter Code</label>
+                                          <textarea
+                                            className="w-full p-2 border rounded-lg font-mono text-sm"
+                                            rows={4}
+                                            placeholder="CSS starter code"
+                                            value={q.starterCode?.css || ''}
+                                            onChange={(e) => updateStarterCode(qIndex, 'css', e.target.value)}
+                                          />
+                                        </div>
+                                        <div>
+                                          <label className="text-xs font-medium mb-1 block">JavaScript Starter Code</label>
+                                          <textarea
+                                            className="w-full p-2 border rounded-lg font-mono text-sm"
+                                            rows={4}
+                                            placeholder="JavaScript starter code"
+                                            value={q.starterCode?.javascript || ''}
+                                            onChange={(e) => updateStarterCode(qIndex, 'javascript', e.target.value)}
+                                          />
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div>
+                                        <label className="text-xs font-medium mb-1 block">
+                                          {q.codeType?.toUpperCase()} Starter Code
+                                        </label>
+                                        <textarea
+                                          className="w-full p-2 border rounded-lg font-mono text-sm"
+                                          rows={6}
+                                          placeholder={`${q.codeType?.toUpperCase()} starter code`}
+                                          value={q.starterCode?.[q.codeType as 'html' | 'css' | 'javascript'] || ''}
+                                          onChange={(e) => updateStarterCode(qIndex, q.codeType as 'html' | 'css' | 'javascript', e.target.value)}
+                                        />
+                                      </div>
+                                    )}
+                                    
+                                    <div>
+                                      <label className="text-xs font-medium mb-1 block">Expected Output *</label>
+                                      <textarea
+                                        className="w-full p-2 border rounded-lg"
+                                        rows={3}
+                                        placeholder="Describe what the code should produce or output"
+                                        value={q.expectedOutput || ''}
+                                        onChange={(e) => updateQuestion(qIndex, 'expectedOutput', e.target.value)}
+                                      />
+                                    </div>
+                                    <Input
+                                      placeholder="Explanation (optional)"
+                                      value={q.explanation || ''}
+                                      onChange={(e) => updateQuestion(qIndex, 'explanation', e.target.value)}
+                                    />
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="space-y-2">
+                                      <label className="text-xs font-medium">Options (select correct answer)</label>
+                                      {q.options?.map((opt: string, optIndex: number) => (
+                                        <div key={optIndex} className="flex items-center gap-2">
+                                          <input
+                                            type="radio"
+                                            name={`correct-${qIndex}`}
+                                            checked={q.correctAnswer === optIndex}
+                                            onChange={() => updateQuestion(qIndex, 'correctAnswer', optIndex)}
+                                            className="w-4 h-4"
+                                          />
+                                          <Input
+                                            placeholder={`Option ${optIndex + 1}`}
+                                            value={opt}
+                                            onChange={(e) => {
+                                              const newOptions = [...(q.options || [])]
+                                              newOptions[optIndex] = e.target.value
+                                              updateQuestion(qIndex, 'options', newOptions)
+                                            }}
+                                          />
+                                          {q.options && q.options.length > 2 && (
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              onClick={() => removeQuestionOption(qIndex, optIndex)}
+                                            >
+                                              <X className="h-4 w-4" />
+                                            </Button>
+                                          )}
+                                        </div>
+                                      ))}
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => addQuestionOption(qIndex)}
+                                      >
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        Add Option
+                                      </Button>
+                                    </div>
+                                    <Input
+                                      placeholder="Explanation (optional)"
+                                      value={q.explanation || ''}
+                                      onChange={(e) => updateQuestion(qIndex, 'explanation', e.target.value)}
+                                    />
+                                  </>
+                                )}
+                              </div>
+                            </Card>
+                          )
+                        })}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button onClick={handleCreateQuizAssignment}>
+                        <Save className="h-4 w-4 mr-2" />
+                        Create Assignment
+                      </Button>
+                      <Button variant="outline" onClick={() => {
+                        setShowCreateAssignment(false)
+                        setNewAssignment({
+                          title: '',
+                          description: '',
+                          questions: [],
+                          passingScore: 7,
+                          assignedTo: [],
+                          deadline: ''
+                        })
+                      }}>
+                        <X className="h-4 w-4 mr-2" />
+                        Cancel
+                      </Button>
+                    </div>                 <div>
+                      <label className="text-sm font-medium mb-2 block">Title *</label>
+                      <Input
+                        value={newAssignment.title}
+                        onChange={(e) => setNewAssignment({ ...newAssignment, title: e.target.value })}
+                        placeholder="Quiz Assignment Title"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Description</label>
+                      <textarea
+                        className="w-full p-2 border rounded-lg"
+                        rows={3}
+                        value={newAssignment.description}
+                        onChange={(e) => setNewAssignment({ ...newAssignment, description: e.target.value })}
+                        placeholder="Assignment description"
+                      />
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Passing Score (0-10) *</label>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="10"
+                          value={newAssignment.passingScore}
+                          onChange={(e) => setNewAssignment({ ...newAssignment, passingScore: parseFloat(e.target.value) || 7 })}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Deadline *</label>
+                        <Input
+                          type="datetime-local"
+                          value={newAssignment.deadline}
+                          onChange={(e) => setNewAssignment({ ...newAssignment, deadline: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Assign To Users *</label>
+                      <div className="max-h-40 overflow-y-auto border rounded-lg p-2 space-y-2">
+                        {users.filter(u => u.role !== 'admin').map((user) => (
+                          <label key={user._id} className="flex items-center gap-2 cursor-pointer p-2 rounded transition-all duration-200 hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:shadow-sm hover:shadow-primary/10 hover:scale-[1.02] group">
+                            <input
+                              type="checkbox"
+                              checked={newAssignment.assignedTo.includes(user._id)}
+                              onChange={() => toggleUserAssignment(user._id)}
+                            />
+                            <span>{user.name} ({user.email})</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-sm font-medium">Questions *</label>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" onClick={() => addQuestion('multiple-choice')}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Text Question
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => addQuestion('code')}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Code Question
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        {newAssignment.questions.map((q, qIndex) => (
+                          <Card key={qIndex} className="p-4 border-2">
+                            <div className="flex justify-between items-center mb-3">
+                              <span className="font-medium">Question {qIndex + 1}</span>
+                              <div className="flex gap-2">
+                                <select
+                                  className="text-sm px-2 py-1 border rounded"
+                                  value={q.type || 'multiple-choice'}
+                                  onChange={(e) => updateQuestion(qIndex, 'type', e.target.value)}
+                                >
+                                  <option value="multiple-choice">Text Question</option>
+                                  <option value="code">Code Question</option>
+                                </select>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => removeQuestion(qIndex)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="space-y-3">
+                              <Input
+                                placeholder="Question text"
+                                value={typeof q.question === 'string' ? q.question : ''}
+                                onChange={(e) => updateQuestion(qIndex, 'question', e.target.value)}
+                              />
+                              
+                              {q.type === 'code' ? (
+                                <>
+                                  <div>
+                                    <label className="text-xs font-medium mb-1 block">Code Type *</label>
+                                    <select
+                                      className="w-full px-2 py-1 border rounded text-sm"
+                                      value={q.codeType || 'html'}
+                                      onChange={(e) => updateQuestion(qIndex, 'codeType', e.target.value)}
+                                    >
+                                      <option value="html">HTML</option>
+                                      <option value="css">CSS</option>
+                                      <option value="javascript">JavaScript</option>
+                                      <option value="html-css-js">HTML + CSS + JS</option>
+                                    </select>
+                                  </div>
+                                  {q.codeType === 'html-css-js' ? (
+                                    <div className="space-y-2">
+                                      <div>
+                                        <label className="text-xs font-medium mb-1 block">HTML Starter Code</label>
+                                        <textarea
+                                          className="w-full p-2 border rounded font-mono text-xs"
+                                          rows={3}
+                                          value={q.starterCode?.html || ''}
+                                          onChange={(e) => updateStarterCode(qIndex, 'html', e.target.value)}
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-xs font-medium mb-1 block">CSS Starter Code</label>
+                                        <textarea
+
+
+
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
+
+
+=======
+ 
+>>>>>>> Incoming (Background Agent changes)

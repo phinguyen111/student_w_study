@@ -88,8 +88,8 @@ export default function LanguagePage() {
           <div className="flex items-start justify-between gap-6">
             <div className="flex-1">
               <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-[hsl(185_80%_45%)] via-[hsl(210_60%_55%)] to-[hsl(250_60%_55%)] bg-clip-text text-transparent">
-                {language.name}
-              </h1>
+        {language.name}
+      </h1>
               <p className="text-lg text-muted-foreground mb-6">
                 Master {language.name} step by step through structured levels and hands-on practice.
               </p>
@@ -120,6 +120,252 @@ export default function LanguagePage() {
             const lessonCount = level.lessons?.length || 0
             
             return (
+              <Card 
+                key={level._id} 
+                className={`relative overflow-hidden transition-all duration-300 hover:shadow-xl ${
+                  !level.isUnlocked 
+                    ? 'opacity-60 border-dashed' 
+                    : 'border-2 hover:border-primary/50'
+                }`}
+              >
+                {level.isUnlocked && (
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16" />
+                )}
+                <CardHeader className="relative">
+                  <div className="flex items-start justify-between gap-4 mb-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-bold px-2 py-1 rounded bg-primary/10 text-primary">
+                          LEVEL {level.levelNumber}
+                        </span>
+                        {level.isUnlocked ? (
+                          <CheckCircle2 className="h-5 w-5 text-green-500" />
+                        ) : (
+                          <Lock className="h-5 w-5 text-muted-foreground" />
+                        )}
+                      </div>
+                      <CardTitle className="text-2xl mb-2">
+                        {level.title}
+                      </CardTitle>
+                      <CardDescription className="text-base">
+                        {level.description}
+                      </CardDescription>
+                    </div>
+                  </div>
+                  
+                  {/* Progress Bar */}
+              {level.averageScore > 0 && (
+                    <div className="mt-4 space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Progress</span>
+                        <span className="font-semibold">{level.averageScore.toFixed(1)}/10</span>
+                      </div>
+                      <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {lessonCount > 0 && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {lessonCount} lesson{lessonCount > 1 ? 's' : ''}
+                </p>
+              )}
+            </CardHeader>
+                <CardContent className="relative">
+              {level.isUnlocked ? (
+                <Link href={`/learn/${params.langId}/level/${level._id}`}>
+                      <Button className="w-full group">
+                        View Lessons
+                        <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      </Button>
+                </Link>
+              ) : (
+                    <Button disabled className="w-full">
+                      <Lock className="h-4 w-4 mr-2" />
+                      Locked - Complete previous level
+                    </Button>
+              )}
+            </CardContent>
+          </Card>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+
+
+              <Card 
+                key={level._id} 
+                className={`relative overflow-hidden transition-all duration-300 hover:shadow-xl ${
+                  !level.isUnlocked 
+                    ? 'opacity-60 border-dashed' 
+                    : 'border-2 hover:border-primary/50'
+                }`}
+              >
+                {level.isUnlocked && (
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16" />
+                )}
+                <CardHeader className="relative">
+                  <div className="flex items-start justify-between gap-4 mb-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-bold px-2 py-1 rounded bg-primary/10 text-primary">
+                          LEVEL {level.levelNumber}
+                        </span>
+                        {level.isUnlocked ? (
+                          <CheckCircle2 className="h-5 w-5 text-green-500" />
+                        ) : (
+                          <Lock className="h-5 w-5 text-muted-foreground" />
+                        )}
+                      </div>
+                      <CardTitle className="text-2xl mb-2">
+                        {level.title}
+                      </CardTitle>
+                      <CardDescription className="text-base">
+                        {level.description}
+                      </CardDescription>
+                    </div>
+                  </div>
+                  
+                  {/* Progress Bar */}
+              {level.averageScore > 0 && (
+                    <div className="mt-4 space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Progress</span>
+                        <span className="font-semibold">{level.averageScore.toFixed(1)}/10</span>
+                      </div>
+                      <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {lessonCount > 0 && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {lessonCount} lesson{lessonCount > 1 ? 's' : ''}
+                </p>
+              )}
+            </CardHeader>
+                <CardContent className="relative">
+              {level.isUnlocked ? (
+                <Link href={`/learn/${params.langId}/level/${level._id}`}>
+                      <Button className="w-full group">
+                        View Lessons
+                        <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      </Button>
+                </Link>
+              ) : (
+                    <Button disabled className="w-full">
+                      <Lock className="h-4 w-4 mr-2" />
+                      Locked - Complete previous level
+                    </Button>
+              )}
+            </CardContent>
+          </Card>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+
+
+              <Card 
+                key={level._id} 
+                className={`relative overflow-hidden transition-all duration-300 hover:shadow-xl ${
+                  !level.isUnlocked 
+                    ? 'opacity-60 border-dashed' 
+                    : 'border-2 hover:border-primary/50'
+                }`}
+              >
+                {level.isUnlocked && (
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16" />
+                )}
+                <CardHeader className="relative">
+                  <div className="flex items-start justify-between gap-4 mb-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-bold px-2 py-1 rounded bg-primary/10 text-primary">
+                          LEVEL {level.levelNumber}
+                        </span>
+                        {level.isUnlocked ? (
+                          <CheckCircle2 className="h-5 w-5 text-green-500" />
+                        ) : (
+                          <Lock className="h-5 w-5 text-muted-foreground" />
+                        )}
+                      </div>
+                      <CardTitle className="text-2xl mb-2">
+                        {level.title}
+                      </CardTitle>
+                      <CardDescription className="text-base">
+                        {level.description}
+                      </CardDescription>
+                    </div>
+                  </div>
+                  
+                  {/* Progress Bar */}
+              {level.averageScore > 0 && (
+                    <div className="mt-4 space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Progress</span>
+                        <span className="font-semibold">{level.averageScore.toFixed(1)}/10</span>
+                      </div>
+                      <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {lessonCount > 0 && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {lessonCount} lesson{lessonCount > 1 ? 's' : ''}
+                </p>
+              )}
+            </CardHeader>
+                <CardContent className="relative">
+              {level.isUnlocked ? (
+                <Link href={`/learn/${params.langId}/level/${level._id}`}>
+                      <Button className="w-full group">
+                        View Lessons
+                        <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      </Button>
+                </Link>
+              ) : (
+                    <Button disabled className="w-full">
+                      <Lock className="h-4 w-4 mr-2" />
+                      Locked - Complete previous level
+                    </Button>
+              )}
+            </CardContent>
+          </Card>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+
+
               <Card 
                 key={level._id} 
                 className={`relative overflow-hidden transition-all duration-300 hover:shadow-xl ${

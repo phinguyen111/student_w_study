@@ -3312,7 +3312,7 @@ Nội dung phụ, sidebar (quảng cáo, links liên quan):
   <h3>Related Links</h3>
   <ul>
     <li><a href="#">Link 1</a></li>
-  </ul>
+</ul>
 </aside>
 \`\`\`
 
@@ -3414,11 +3414,11 @@ Page header, usually contains logo, navigation, or title:
 Main navigation section of the page:
 \`\`\`html
 <nav>
-  <ul>
+    <ul>
     <li><a href="/">Home</a></li>
     <li><a href="/about">About</a></li>
     <li><a href="/contact">Contact</a></li>
-  </ul>
+    </ul>
 </nav>
 \`\`\`
 
@@ -3456,7 +3456,7 @@ Side content, sidebar (ads, related links):
   <h3>Related Links</h3>
   <ul>
     <li><a href="#">Link 1</a></li>
-  </ul>
+    </ul>
 </aside>
 \`\`\`
 
@@ -3697,6 +3697,1461 @@ HTML5 cung cấp nhiều loại input khác nhau để thu thập dữ liệu ph
 
 ### Email Input
 Tự động validate định dạng email:
+\`\`\`html
+<input type="email" name="email" placeholder="Enter your email" required>
+\`\`\`
+
+### Password Input
+Ẩn ký tự khi nhập:
+\`\`\`html
+<input type="password" name="password" placeholder="Enter password">
+\`\`\`
+
+### Number Input
+Chỉ cho phép nhập số:
+\`\`\`html
+<input type="number" name="age" min="1" max="120" value="18">
+\`\`\`
+
+### Date Input
+Chọn ngày tháng:
+\`\`\`html
+<input type="date" name="birthday">
+\`\`\`
+
+### Checkbox
+Cho phép chọn nhiều lựa chọn:
+\`\`\`html
+<input type="checkbox" name="hobby" value="reading"> Reading
+<input type="checkbox" name="hobby" value="sports"> Sports
+\`\`\`
+
+### Radio Button
+Chỉ cho phép chọn một lựa chọn:
+\`\`\`html
+<input type="radio" name="gender" value="male" id="male">
+<label for="male">Male</label>
+<input type="radio" name="gender" value="female" id="female">
+<label for="female">Female</label>
+\`\`\`
+
+### Select Dropdown
+Danh sách lựa chọn:
+\`\`\`html
+<select name="country">
+  <option value="">Select a country</option>
+  <option value="us">United States</option>
+  <option value="vn">Vietnam</option>
+  <option value="uk">United Kingdom</option>
+</select>
+\`\`\`
+
+### Textarea
+Vùng nhập văn bản nhiều dòng:
+\`\`\`html
+<textarea name="message" rows="4" cols="50" placeholder="Enter your message"></textarea>
+\`\`\`
+
+## Form Attributes quan trọng
+
+- **\`required\`**: Bắt buộc phải điền
+- **\`placeholder\`**: Gợi ý nội dung
+- **\`value\`**: Giá trị mặc định
+- **\`name\`**: Tên field (quan trọng khi submit form)
+- **\`id\`**: Định danh duy nhất
+- **\`min\` / \`max\`**: Giới hạn giá trị (cho number, date)
+
+## Label và Form Accessibility
+
+Luôn sử dụng \`<label>\` để liên kết với input, giúp cải thiện accessibility:
+
+\`\`\`html
+<label for="email">Email Address:</label>
+<input type="email" id="email" name="email" required>
+\`\`\`
+
+## Submit Button
+
+Button để gửi form:
+\`\`\`html
+<button type="submit">Submit</button>
+<!-- hoặc -->
+<input type="submit" value="Submit Form">
+\`\`\`
+
+## Ví dụ Form hoàn chỉnh
+
+\`\`\`html
+<form action="/register" method="POST">
+  <div>
+    <label for="username">Username:</label>
+    <input type="text" id="username" name="username" required>
+  </div>
+  
+  <div>
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required>
+  </div>
+  
+  <div>
+    <label for="age">Age:</label>
+    <input type="number" id="age" name="age" min="13" max="100">
+  </div>
+  
+  <div>
+    <label>Gender:</label>
+    <input type="radio" id="male" name="gender" value="male">
+    <label for="male">Male</label>
+    <input type="radio" id="female" name="gender" value="female">
+    <label for="female">Female</label>
+  </div>
+  
+  <button type="submit">Register</button>
+</form>
+\`\`\`
+
+## Tóm tắt
+
+Bạn đã học về các loại input types trong HTML, cách tạo form hoàn chỉnh, và các attributes quan trọng. Forms là cầu nối giữa người dùng và website, vì vậy việc hiểu rõ chúng rất quan trọng!`,
+        en: `# Advanced HTML Forms and Input Types
+
+## Introduction
+
+After mastering basic HTML, we'll now learn about **HTML Forms** - one of the most important components for user interaction. Forms allow users to input data, submit information, and interact with websites.
+
+## Basic Form Structure
+
+Forms in HTML are created using the \`<form>\` tag. This tag contains input fields and has important attributes:
+
+- **\`action\`**: URL where the form will be submitted
+- **\`method\`**: Submission method (GET or POST)
+
+\`\`\`html
+<form action="/submit" method="POST">
+  <!-- Input fields will be placed here -->
+</form>
+\`\`\`
+
+## Input Types
+
+HTML5 provides many different input types to collect appropriate data:
+
+### Text Input
+\`\`\`html
+<input type="text" name="username" placeholder="Enter your username">
+\`\`\`
+
+### Email Input
+Automatically validates email format:
+\`\`\`html
+<input type="email" name="email" placeholder="Enter your email" required>
+\`\`\`
+
+### Password Input
+Hides characters when typing:
+\`\`\`html
+<input type="password" name="password" placeholder="Enter password">
+\`\`\`
+
+### Number Input
+Only allows numeric input:
+\`\`\`html
+<input type="number" name="age" min="1" max="120" value="18">
+\`\`\`
+
+### Date Input
+Select date:
+\`\`\`html
+<input type="date" name="birthday">
+\`\`\`
+
+### Checkbox
+Allows multiple selections:
+\`\`\`html
+<input type="checkbox" name="hobby" value="reading"> Reading
+<input type="checkbox" name="hobby" value="sports"> Sports
+\`\`\`
+
+### Radio Button
+Allows only one selection:
+\`\`\`html
+<input type="radio" name="gender" value="male" id="male">
+<label for="male">Male</label>
+<input type="radio" name="gender" value="female" id="female">
+<label for="female">Female</label>
+\`\`\`
+
+### Select Dropdown
+Selection list:
+\`\`\`html
+<select name="country">
+  <option value="">Select a country</option>
+  <option value="us">United States</option>
+  <option value="vn">Vietnam</option>
+  <option value="uk">United Kingdom</option>
+</select>
+\`\`\`
+
+### Textarea
+Multi-line text input area:
+\`\`\`html
+<textarea name="message" rows="4" cols="50" placeholder="Enter your message"></textarea>
+\`\`\`
+
+## Important Form Attributes
+
+- **\`required\`**: Field must be filled
+- **\`placeholder\`**: Hint text
+- **\`value\`**: Default value
+- **\`name\`**: Field name (important when submitting form)
+- **\`id\`**: Unique identifier
+- **\`min\` / \`max\`**: Value limits (for number, date)
+
+## Label and Form Accessibility
+
+Always use \`<label>\` to link with input, improving accessibility:
+
+\`\`\`html
+<label for="email">Email Address:</label>
+<input type="email" id="email" name="email" required>
+\`\`\`
+
+## Submit Button
+
+Button to submit form:
+\`\`\`html
+<button type="submit">Submit</button>
+<!-- or -->
+<input type="submit" value="Submit Form">
+\`\`\`
+
+## Complete Form Example
+
+\`\`\`html
+<form action="/register" method="POST">
+  <div>
+    <label for="username">Username:</label>
+    <input type="text" id="username" name="username" required>
+  </div>
+  
+  <div>
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required>
+  </div>
+  
+  <div>
+    <label for="age">Age:</label>
+    <input type="number" id="age" name="age" min="13" max="100">
+  </div>
+  
+  <div>
+    <label>Gender:</label>
+    <input type="radio" id="male" name="gender" value="male">
+    <label for="male">Male</label>
+    <input type="radio" id="female" name="gender" value="female">
+    <label for="female">Female</label>
+  </div>
+  
+  <button type="submit">Register</button>
+</form>
+\`\`\`
+
+## Summary
+
+You've learned about different input types in HTML, how to create complete forms, and important attributes. Forms are the bridge between users and websites, so understanding them is crucial!`
+      },
+      codeExample: `<!DOCTYPE html>
+<html>
+<head>
+    <title>Advanced Forms</title>
+</head>
+<body>
+    <h1>Registration Form</h1>
+    <form action="/register" method="POST">
+        <div>
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" placeholder="Enter username" required>
+        </div>
+        
+        <div>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" placeholder="your@email.com" required>
+        </div>
+        
+        <div>
+            <label for="age">Age:</label>
+            <input type="number" id="age" name="age" min="13" max="100" value="18">
+        </div>
+        
+        <div>
+            <label>Gender:</label>
+            <input type="radio" id="male" name="gender" value="male">
+            <label for="male">Male</label>
+            <input type="radio" id="female" name="gender" value="female">
+            <label for="female">Female</label>
+        </div>
+        
+        <div>
+            <label for="country">Country:</label>
+            <select id="country" name="country">
+                <option value="">Select country</option>
+                <option value="us">United States</option>
+                <option value="vn">Vietnam</option>
+            </select>
+        </div>
+        
+        <button type="submit">Register</button>
+    </form>
+</body>
+</html>`,
+      codeExercise: {
+        starterCode: `<!DOCTYPE html>
+<html>
+<head>
+    <title>Contact Form</title>
+</head>
+<body>
+    <h1>Contact Us</h1>
+    <form>
+    <!-- 
+        BÀI TẬP: Tạo form liên hệ hoàn chỉnh
+    
+    Yêu cầu:
+        1. Thêm input text cho tên (name="name") với label "Name:" và required
+        2. Thêm input email cho email (name="email") với label "Email:" và required
+        3. Thêm textarea cho message (name="message") với label "Message:" và rows="5"
+        4. Thêm checkbox với value="newsletter" và label "Subscribe to newsletter"
+        5. Thêm submit button với text "Send Message"
+        -->
+    </form>
+</body>
+</html>`,
+        expectedOutput: 'Form with name input, email input, message textarea, newsletter checkbox, and submit button'
+      },
+      quiz: {
+        questions: [
+          {
+            question: 'Which input type automatically validates email format?',
+            options: ['type="text"', 'type="email"', 'type="mail"', 'type="emailaddress"'],
+            correctAnswer: 1,
+            explanation: 'The type="email" input automatically validates that the entered value is a valid email format.'
+          },
+          {
+            question: 'Which attribute makes an input field required?',
+            options: ['mandatory', 'required', 'must', 'needed'],
+            correctAnswer: 1,
+            explanation: 'The required attribute makes an input field mandatory and prevents form submission if empty.'
+          },
+          {
+            question: 'What is the difference between checkbox and radio buttons?',
+            options: [
+              'Checkbox allows multiple selections, radio allows only one',
+              'Radio allows multiple selections, checkbox allows only one',
+              'They are the same',
+              'Checkbox is for text, radio is for numbers'
+            ],
+            correctAnswer: 0,
+            explanation: 'Checkboxes allow multiple selections, while radio buttons allow only one selection from a group.'
+          },
+          {
+            question: 'Which tag is used to create a dropdown selection list?',
+            options: ['<dropdown>', '<select>', '<list>', '<option>'],
+            correctAnswer: 1,
+            explanation: 'The <select> tag creates a dropdown list, with <option> tags for each choice.'
+          },
+          {
+            question: 'What does the "name" attribute do in form inputs?',
+            options: [
+              'Sets the placeholder text',
+              'Identifies the field when the form is submitted',
+              'Sets the default value',
+              'Makes the field required'
+            ],
+            correctAnswer: 1,
+            explanation: 'The name attribute identifies the field when the form is submitted, allowing the server to process the data.'
+          },
+          {
+            question: 'Which input type hides the characters as the user types?',
+            options: ['type="text"', 'type="hidden"', 'type="password"', 'type="secret"'],
+            correctAnswer: 2,
+            explanation: 'The type="password" input hides characters as the user types for security purposes.'
+          },
+          {
+            question: 'What is the purpose of the <label> tag in forms?',
+            options: [
+              'To style the form',
+              'To improve accessibility and link text to input fields',
+              'To submit the form',
+              'To validate the input'
+            ],
+            correctAnswer: 1,
+            explanation: 'The <label> tag improves accessibility by linking descriptive text to input fields, making forms more user-friendly.'
+          }
+        ],
+        passingScore: 7
+      }
+    });
+
+    const level2Lesson3 = await Lesson.create({
+      levelId: webDevLevel2._id,
+      lessonNumber: 3,
+      title: { vi: 'Advanced CSS Selectors và Pseudo-classes', en: 'Advanced CSS Selectors and Pseudo-classes' },
+      content: {
+        vi: `# Advanced CSS Selectors và Pseudo-classes\n\n## Giới thiệu\n\nSau khi đã nắm vững CSS cơ bản, bây giờ chúng ta sẽ học về **Advanced Selectors** và **Pseudo-classes**.\n\n## Advanced Selectors\n\n### Descendant Selector\n\`\`\`css\ndiv p { color: blue; }\n\`\`\`\n\n### Child Selector (>)\n\`\`\`css\ndiv > p { color: red; }\n\`\`\`\n\n### Attribute Selectors\n\`\`\`css\n[type="text"] { border: 1px solid #ccc; }\n[href^="https"] { color: green; }\n\`\`\`\n\n## Pseudo-classes\n\n\`\`\`css\na:hover { color: red; }\ninput:focus { border: 2px solid blue; }\np:first-child { font-weight: bold; }\nli:nth-child(even) { background-color: #f0f0f0; }\n\`\`\`\n\n## Pseudo-elements\n\n\`\`\`css\np::before { content: "Note: "; }\np::first-letter { font-size: 2em; color: red; }\n\`\`\`\n\n## Tóm tắt\n\nAdvanced selectors và pseudo-classes giúp bạn target elements chính xác hơn!`,
+        en: `# Advanced CSS Selectors and Pseudo-classes\n\n## Introduction\n\nAfter mastering basic CSS, we'll learn about **Advanced Selectors** and **Pseudo-classes**.\n\n## Advanced Selectors\n\n### Descendant Selector\n\`\`\`css\ndiv p { color: blue; }\n\`\`\`\n\n### Child Selector (>)\n\`\`\`css\ndiv > p { color: red; }\n\`\`\`\n\n### Attribute Selectors\n\`\`\`css\n[type="text"] { border: 1px solid #ccc; }\n[href^="https"] { color: green; }\n\`\`\`\n\n## Pseudo-classes\n\n\`\`\`css\na:hover { color: red; }\ninput:focus { border: 2px solid blue; }\np:first-child { font-weight: bold; }\nli:nth-child(even) { background-color: #f0f0f0; }\n\`\`\`\n\n## Pseudo-elements\n\n\`\`\`css\np::before { content: "Note: "; }\np::first-letter { font-size: 2em; color: red; }\n\`\`\`\n\n## Summary\n\nAdvanced selectors and pseudo-classes help you target elements more precisely!`
+      },
+      codeExample: `<!DOCTYPE html>\n<html>\n<head><title>Advanced CSS Selectors</title>\n<style>\ndiv p { color: blue; }\nul > li { font-weight: bold; }\ninput[type="text"] { border: 2px solid blue; }\na:hover { color: red; }\nli:nth-child(odd) { background-color: #f0f0f0; }\np::first-letter { font-size: 2em; color: red; }\n</style>\n</head>\n<body>\n<div><p>Paragraph in div</p></div>\n<ul><li>Item 1</li><li>Item 2</li></ul>\n<input type="text" placeholder="Type here">\n<a href="#">Hover me</a>\n</body>\n</html>`,
+      codeExercise: { starterCode: `<!DOCTYPE html>\n<html>\n<head><title>CSS Selectors Practice</title>\n<style>\n/* Style div p, ul > li, input[type="email"], a:hover, li:nth-child(even), p::before */\n</style>\n</head>\n<body>\n<div><p>Paragraph 1</p><p>Paragraph 2</p></div>\n<ul><li>Item 1</li><li>Item 2</li><li>Item 3</li></ul>\n<input type="email" placeholder="Email">\n<a href="#">Hover Link</a>\n</body>\n</html>`, expectedOutput: 'Styled elements using advanced selectors and pseudo-classes' },
+      quiz: {
+        questions: [
+          { question: 'What is the difference between "div p" and "div > p"?', options: ['"div p" selects direct children, "div > p" selects all descendants', '"div p" selects all descendants, "div > p" selects direct children', 'They are the same', '"div p" is invalid syntax'], correctAnswer: 1, explanation: '"div p" selects all <p> inside <div> at any level, while "div > p" only selects direct children.' },
+          { question: 'Which pseudo-class styles a link when hovering?', options: [':active', ':hover', ':focus', ':visited'], correctAnswer: 1, explanation: ':hover styles an element when the user hovers over it.' },
+          { question: 'What does [href^="https"] select?', options: ['Links ending with "https"', 'Links containing "https"', 'Links starting with "https"', 'Links with exact value "https"'], correctAnswer: 2, explanation: 'The ^= operator selects elements whose attribute value starts with the specified value.' },
+          { question: 'Which selector targets the second child element?', options: [':first-child', ':second-child', ':nth-child(2)', ':child(2)'], correctAnswer: 2, explanation: ':nth-child(2) targets the second child element.' },
+          { question: 'What is the purpose of ::before pseudo-element?', options: ['To add content before an element', 'To select elements before', 'To create animations', 'To hide elements'], correctAnswer: 0, explanation: '::before is used to insert content before an element\'s content.' },
+          { question: 'Which selector selects all paragraphs that are siblings following h2?', options: ['h2 p', 'h2 > p', 'h2 + p', 'h2 ~ p'], correctAnswer: 3, explanation: 'h2 ~ p (general sibling selector) selects all <p> elements that are siblings following <h2>.' },
+          { question: 'What does :not(.class) selector do?', options: ['Selects elements with the class', 'Selects all elements except those with the class', 'Selects elements without any class', 'It is invalid syntax'], correctAnswer: 1, explanation: ':not(.class) selects all elements except those that have the specified class.' }
+        ],
+        passingScore: 7
+      }
+    });
+
+    const level2Lesson4 = await Lesson.create({
+      levelId: webDevLevel2._id,
+      lessonNumber: 4,
+      title: { vi: 'CSS Flexbox Layout', en: 'CSS Flexbox Layout' },
+      content: {
+        vi: `# CSS Flexbox Layout\n\n## Giới thiệu\n\n**Flexbox** là một layout model mạnh mẽ trong CSS, giúp bạn dễ dàng tạo các layout responsive và flexible.\n\n## Flex Container\n\n\`\`\`css\n.container { display: flex; }\n\`\`\`\n\n## Flex Direction\n\n\`\`\`css\n.container {\n  flex-direction: row;        /* Mặc định: ngang */\n  flex-direction: column;     /* Dọc */\n}\n\`\`\`\n\n## Justify Content\n\n\`\`\`css\n.container {\n  justify-content: flex-start;   /* Bên trái */\n  justify-content: center;       /* Giữa */\n  justify-content: space-between; /* Cách đều */\n}\n\`\`\`\n\n## Align Items\n\n\`\`\`css\n.container {\n  align-items: center;      /* Giữa cross axis */\n  align-items: stretch;     /* Mặc định */\n}\n\`\`\`\n\n## Flex Properties\n\n\`\`\`css\n.item {\n  flex: 1; /* Grow và shrink */\n}\n\`\`\`\n\n## Tóm tắt\n\nFlexbox giúp tạo layout linh hoạt và responsive một cách dễ dàng!`,
+        en: `# CSS Flexbox Layout\n\n## Introduction\n\n**Flexbox** is a powerful CSS layout model that makes it easy to create responsive and flexible layouts.\n\n## Flex Container\n\n\`\`\`css\n.container { display: flex; }\n\`\`\`\n\n## Flex Direction\n\n\`\`\`css\n.container {\n  flex-direction: row;        /* Default: horizontal */\n  flex-direction: column;     /* Vertical */\n}\n\`\`\`\n\n## Justify Content\n\n\`\`\`css\n.container {\n  justify-content: flex-start;   /* Left */\n  justify-content: center;       /* Center */\n  justify-content: space-between; /* Even spacing */\n}\n\`\`\`\n\n## Align Items\n\n\`\`\`css\n.container {\n  align-items: center;      /* Center of cross axis */\n  align-items: stretch;     /* Default */\n}\n\`\`\`\n\n## Flex Properties\n\n\`\`\`css\n.item {\n  flex: 1; /* Grow and shrink */\n}\n\`\`\`\n\n## Summary\n\nFlexbox makes it easy to create flexible and responsive layouts!`
+      },
+      codeExample: `<!DOCTYPE html>\n<html>\n<head><title>Flexbox Layout</title>\n<style>\n.container { display: flex; justify-content: space-between; align-items: center; height: 200px; border: 2px solid #333; }\n.item { flex: 1; padding: 20px; background-color: lightblue; margin: 10px; }\n</style>\n</head>\n<body>\n<div class="container">\n<div class="item">Item 1</div>\n<div class="item">Item 2</div>\n<div class="item">Item 3</div>\n</div>\n</body>\n</html>`,
+      codeExercise: { starterCode: `<!DOCTYPE html>\n<html>\n<head><title>Flexbox Practice</title>\n<style>\n.container { /* Set display: flex, justify-content: center, align-items: center */ }\n.item { /* Set flex: 1, padding: 20px, background-color: lightblue */ }\n</style>\n</head>\n<body>\n<div class="container">\n<div class="item">Item 1</div>\n<div class="item">Item 2</div>\n<div class="item">Item 3</div>\n</div>\n</body>\n</html>`, expectedOutput: 'Flexbox container with centered items' },
+      quiz: {
+        questions: [
+          { question: 'What property is used to create a flex container?', options: ['flex: 1', 'display: flex', 'flex-container: true', 'layout: flex'], correctAnswer: 1, explanation: 'display: flex creates a flex container, enabling flexbox layout for its children.' },
+          { question: 'What does justify-content: space-between do?', options: ['Centers items', 'Distributes space evenly with no space at ends', 'Distributes space evenly with space at ends', 'Aligns items to the start'], correctAnswer: 1, explanation: 'space-between distributes items evenly with space between them but no space at the ends.' },
+          { question: 'What is the default flex-direction?', options: ['column', 'row', 'row-reverse', 'column-reverse'], correctAnswer: 1, explanation: 'The default flex-direction is row, which arranges items horizontally.' },
+          { question: 'What does flex: 1 mean?', options: ['Item cannot grow or shrink', 'Item can grow and shrink, with basis of 0', 'Item has fixed width of 1px', 'Item is hidden'], correctAnswer: 1, explanation: 'flex: 1 is shorthand for flex: 1 1 0, meaning the item can grow and shrink with a basis of 0.' },
+          { question: 'Which property aligns items along the cross axis?', options: ['justify-content', 'align-items', 'align-content', 'flex-align'], correctAnswer: 1, explanation: 'align-items aligns items along the cross axis (perpendicular to the main axis).' },
+          { question: 'What does flex-wrap: wrap do?', options: ['Prevents items from wrapping', 'Allows items to wrap to new lines', 'Reverses the order of items', 'Centers items'], correctAnswer: 1, explanation: 'flex-wrap: wrap allows flex items to wrap to new lines when they don\'t fit in one line.' },
+          { question: 'How do you center content both horizontally and vertically with flexbox?', options: ['justify-content: center', 'align-items: center', 'Both justify-content: center and align-items: center', 'flex-center: true'], correctAnswer: 2, explanation: 'You need both justify-content: center (horizontal) and align-items: center (vertical) to center content in both directions.' }
+        ],
+        passingScore: 7
+      }
+    });
+
+    const level2Lesson5 = await Lesson.create({
+      levelId: webDevLevel2._id,
+      lessonNumber: 5,
+      title: { vi: 'CSS Grid Layout', en: 'CSS Grid Layout' },
+      content: {
+        vi: `# CSS Grid Layout\n\n## Giới thiệu\n\n**CSS Grid** là một layout system mạnh mẽ cho phép bạn tạo các layout phức tạp với rows và columns.\n\n## Grid Container\n\n\`\`\`css\n.container { display: grid; }\n\`\`\`\n\n## Grid Template Columns\n\n\`\`\`css\n.container {\n  grid-template-columns: 200px 200px 200px; /* 3 columns */\n  grid-template-columns: 1fr 2fr 1fr;        /* 3 columns: 1:2:1 ratio */\n  grid-template-columns: repeat(3, 1fr);    /* 3 columns, mỗi 1fr */\n}\n\`\`\`\n\n## Gap\n\n\`\`\`css\n.container {\n  gap: 20px; /* Khoảng cách giữa items */\n}\n\`\`\`\n\n## Grid Item Placement\n\n\`\`\`css\n.item {\n  grid-column: 1 / 3;  /* Từ column 1 đến 3 */\n  grid-row: 1 / 2;     /* Từ row 1 đến 2 */\n}\n\`\`\`\n\n## Grid Areas\n\n\`\`\`css\n.container {\n  grid-template-areas:\n    "header header header"\n    "sidebar main main"\n    "footer footer footer";\n}\n.header { grid-area: header; }\n\`\`\`\n\n## Tóm tắt\n\nCSS Grid là công cụ mạnh mẽ để tạo layout 2D phức tạp!`,
+        en: `# CSS Grid Layout\n\n## Introduction\n\n**CSS Grid** is a powerful layout system that allows you to create complex layouts with rows and columns.\n\n## Grid Container\n\n\`\`\`css\n.container { display: grid; }\n\`\`\`\n\n## Grid Template Columns\n\n\`\`\`css\n.container {\n  grid-template-columns: 200px 200px 200px; /* 3 columns */\n  grid-template-columns: 1fr 2fr 1fr;        /* 3 columns: 1:2:1 ratio */\n  grid-template-columns: repeat(3, 1fr);     /* 3 columns, each 1fr */\n}\n\`\`\`\n\n## Gap\n\n\`\`\`css\n.container {\n  gap: 20px; /* Space between items */\n}\n\`\`\`\n\n## Grid Item Placement\n\n\`\`\`css\n.item {\n  grid-column: 1 / 3;  /* From column 1 to 3 */\n  grid-row: 1 / 2;     /* From row 1 to 2 */\n}\n\`\`\`\n\n## Grid Areas\n\n\`\`\`css\n.container {\n  grid-template-areas:\n    "header header header"\n    "sidebar main main"\n    "footer footer footer";\n}\n.header { grid-area: header; }\n\`\`\`\n\n## Summary\n\nCSS Grid is a powerful tool for creating complex 2D layouts!`
+      },
+      codeExample: `<!DOCTYPE html>\n<html>\n<head><title>Grid Layout</title>\n<style>\n.container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }\n.item { padding: 20px; background-color: lightblue; }\n</style>\n</head>\n<body>\n<div class="container">\n<div class="item">Item 1</div>\n<div class="item">Item 2</div>\n<div class="item">Item 3</div>\n<div class="item">Item 4</div>\n<div class="item">Item 5</div>\n<div class="item">Item 6</div>\n</div>\n</body>\n</html>`,
+      codeExercise: { starterCode: `<!DOCTYPE html>\n<html>\n<head><title>Grid Practice</title>\n<style>\n.container { /* Set display: grid, grid-template-columns: repeat(3, 1fr), gap: 20px */ }\n.item { /* Set padding: 20px, background-color: lightblue */ }\n</style>\n</head>\n<body>\n<div class="container">\n<div class="item">Item 1</div>\n<div class="item">Item 2</div>\n<div class="item">Item 3</div>\n<div class="item">Item 4</div>\n<div class="item">Item 5</div>\n<div class="item">Item 6</div>\n</div>\n</body>\n</html>`, expectedOutput: 'Grid layout with 3 columns and 6 items' },
+      quiz: {
+        questions: [
+          { question: 'What property is used to create a grid container?', options: ['grid: 1', 'display: grid', 'grid-container: true', 'layout: grid'], correctAnswer: 1, explanation: 'display: grid creates a grid container, enabling CSS Grid layout.' },
+          { question: 'What does "fr" unit mean in grid-template-columns?', options: ['Fixed pixels', 'Fraction of available space', 'Font size', 'Frame rate'], correctAnswer: 1, explanation: '"fr" stands for fraction and represents a fraction of the available space in the grid container.' },
+          { question: 'What does repeat(3, 1fr) create?', options: ['3 rows with 1fr each', '3 columns with 1fr each', '1 column with 3fr', '3 grids'], correctAnswer: 1, explanation: 'repeat(3, 1fr) creates 3 columns, each taking 1 fraction of the available space.' },
+          { question: 'What does grid-column: 1 / 3 mean?', options: ['Item spans from column 1 to column 3', 'Item is in column 1 and row 3', 'Item has 1 column and 3 rows', 'Item is hidden'], correctAnswer: 0, explanation: 'grid-column: 1 / 3 means the item spans from grid line 1 to grid line 3 (columns 1 and 2).' },
+          { question: 'What is the purpose of grid-template-areas?', options: ['To define grid gaps', 'To create named grid areas for easier layout', 'To set grid item sizes', 'To animate the grid'], correctAnswer: 1, explanation: 'grid-template-areas allows you to define named areas in the grid, making complex layouts easier to manage.' },
+          { question: 'What does gap: 20px do?', options: ['Sets margin between items', 'Sets space between grid rows and columns', 'Sets padding inside items', 'Creates a gap in the layout'], correctAnswer: 1, explanation: 'gap: 20px sets the space between grid rows and columns to 20px.' },
+          { question: 'What is the difference between justify-items and justify-content in grid?', options: ['They are the same', 'justify-items aligns items within their cells, justify-content aligns the grid within the container', 'justify-content aligns items, justify-items aligns the grid', 'Neither exists in grid'], correctAnswer: 1, explanation: 'justify-items aligns grid items within their grid cells, while justify-content aligns the entire grid within its container.' }
+        ],
+        passingScore: 7
+      }
+    });
+
+    webDevLevel1.lessons = [htmlLesson1._id, htmlLesson2._id, cssLesson1._id, cssLesson2._id, cssLesson3._id, cssLesson4._id, jsLesson1._id];
+    await webDevLevel1.save();
+
+    webDevLevel2.lessons = [level2Lesson1._id, level2Lesson2._id, level2Lesson3._id, level2Lesson4._id, level2Lesson5._id];
+    await webDevLevel2.save();
+
+    console.log('Seed data created successfully!');
+    console.log('Admin: admin@learncode.com / admin123');
+    console.log('User: user@learncode.com / user123');
+    process.exit(0);
+  } catch (error) {
+    console.error('Error seeding data:', error);
+    process.exit(1);
+  }
+};
+
+seedData();
+
+\`\`\`html
+<input type="email" name="email" placeholder="Enter your email" required>
+\`\`\`
+
+### Password Input
+Ẩn ký tự khi nhập:
+\`\`\`html
+<input type="password" name="password" placeholder="Enter password">
+\`\`\`
+
+### Number Input
+Chỉ cho phép nhập số:
+\`\`\`html
+<input type="number" name="age" min="1" max="120" value="18">
+\`\`\`
+
+### Date Input
+Chọn ngày tháng:
+\`\`\`html
+<input type="date" name="birthday">
+\`\`\`
+
+### Checkbox
+Cho phép chọn nhiều lựa chọn:
+\`\`\`html
+<input type="checkbox" name="hobby" value="reading"> Reading
+<input type="checkbox" name="hobby" value="sports"> Sports
+\`\`\`
+
+### Radio Button
+Chỉ cho phép chọn một lựa chọn:
+\`\`\`html
+<input type="radio" name="gender" value="male" id="male">
+<label for="male">Male</label>
+<input type="radio" name="gender" value="female" id="female">
+<label for="female">Female</label>
+\`\`\`
+
+### Select Dropdown
+Danh sách lựa chọn:
+\`\`\`html
+<select name="country">
+  <option value="">Select a country</option>
+  <option value="us">United States</option>
+  <option value="vn">Vietnam</option>
+  <option value="uk">United Kingdom</option>
+</select>
+\`\`\`
+
+### Textarea
+Vùng nhập văn bản nhiều dòng:
+\`\`\`html
+<textarea name="message" rows="4" cols="50" placeholder="Enter your message"></textarea>
+\`\`\`
+
+## Form Attributes quan trọng
+
+- **\`required\`**: Bắt buộc phải điền
+- **\`placeholder\`**: Gợi ý nội dung
+- **\`value\`**: Giá trị mặc định
+- **\`name\`**: Tên field (quan trọng khi submit form)
+- **\`id\`**: Định danh duy nhất
+- **\`min\` / \`max\`**: Giới hạn giá trị (cho number, date)
+
+## Label và Form Accessibility
+
+Luôn sử dụng \`<label>\` để liên kết với input, giúp cải thiện accessibility:
+
+\`\`\`html
+<label for="email">Email Address:</label>
+<input type="email" id="email" name="email" required>
+\`\`\`
+
+## Submit Button
+
+Button để gửi form:
+\`\`\`html
+<button type="submit">Submit</button>
+<!-- hoặc -->
+<input type="submit" value="Submit Form">
+\`\`\`
+
+## Ví dụ Form hoàn chỉnh
+
+\`\`\`html
+<form action="/register" method="POST">
+  <div>
+    <label for="username">Username:</label>
+    <input type="text" id="username" name="username" required>
+  </div>
+  
+  <div>
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required>
+  </div>
+  
+  <div>
+    <label for="age">Age:</label>
+    <input type="number" id="age" name="age" min="13" max="100">
+  </div>
+  
+  <div>
+    <label>Gender:</label>
+    <input type="radio" id="male" name="gender" value="male">
+    <label for="male">Male</label>
+    <input type="radio" id="female" name="gender" value="female">
+    <label for="female">Female</label>
+  </div>
+  
+  <button type="submit">Register</button>
+</form>
+\`\`\`
+
+## Tóm tắt
+
+Bạn đã học về các loại input types trong HTML, cách tạo form hoàn chỉnh, và các attributes quan trọng. Forms là cầu nối giữa người dùng và website, vì vậy việc hiểu rõ chúng rất quan trọng!`,
+        en: `# Advanced HTML Forms and Input Types
+
+## Introduction
+
+After mastering basic HTML, we'll now learn about **HTML Forms** - one of the most important components for user interaction. Forms allow users to input data, submit information, and interact with websites.
+
+## Basic Form Structure
+
+Forms in HTML are created using the \`<form>\` tag. This tag contains input fields and has important attributes:
+
+- **\`action\`**: URL where the form will be submitted
+- **\`method\`**: Submission method (GET or POST)
+
+\`\`\`html
+<form action="/submit" method="POST">
+  <!-- Input fields will be placed here -->
+</form>
+\`\`\`
+
+## Input Types
+
+HTML5 provides many different input types to collect appropriate data:
+
+### Text Input
+\`\`\`html
+<input type="text" name="username" placeholder="Enter your username">
+\`\`\`
+
+### Email Input
+Automatically validates email format:
+\`\`\`html
+<input type="email" name="email" placeholder="Enter your email" required>
+\`\`\`
+
+### Password Input
+Hides characters when typing:
+\`\`\`html
+<input type="password" name="password" placeholder="Enter password">
+\`\`\`
+
+### Number Input
+Only allows numeric input:
+\`\`\`html
+<input type="number" name="age" min="1" max="120" value="18">
+\`\`\`
+
+### Date Input
+Select date:
+\`\`\`html
+<input type="date" name="birthday">
+\`\`\`
+
+### Checkbox
+Allows multiple selections:
+\`\`\`html
+<input type="checkbox" name="hobby" value="reading"> Reading
+<input type="checkbox" name="hobby" value="sports"> Sports
+\`\`\`
+
+### Radio Button
+Allows only one selection:
+\`\`\`html
+<input type="radio" name="gender" value="male" id="male">
+<label for="male">Male</label>
+<input type="radio" name="gender" value="female" id="female">
+<label for="female">Female</label>
+\`\`\`
+
+### Select Dropdown
+Selection list:
+\`\`\`html
+<select name="country">
+  <option value="">Select a country</option>
+  <option value="us">United States</option>
+  <option value="vn">Vietnam</option>
+  <option value="uk">United Kingdom</option>
+</select>
+\`\`\`
+
+### Textarea
+Multi-line text input area:
+\`\`\`html
+<textarea name="message" rows="4" cols="50" placeholder="Enter your message"></textarea>
+\`\`\`
+
+## Important Form Attributes
+
+- **\`required\`**: Field must be filled
+- **\`placeholder\`**: Hint text
+- **\`value\`**: Default value
+- **\`name\`**: Field name (important when submitting form)
+- **\`id\`**: Unique identifier
+- **\`min\` / \`max\`**: Value limits (for number, date)
+
+## Label and Form Accessibility
+
+Always use \`<label>\` to link with input, improving accessibility:
+
+\`\`\`html
+<label for="email">Email Address:</label>
+<input type="email" id="email" name="email" required>
+\`\`\`
+
+## Submit Button
+
+Button to submit form:
+\`\`\`html
+<button type="submit">Submit</button>
+<!-- or -->
+<input type="submit" value="Submit Form">
+\`\`\`
+
+## Complete Form Example
+
+\`\`\`html
+<form action="/register" method="POST">
+  <div>
+    <label for="username">Username:</label>
+    <input type="text" id="username" name="username" required>
+  </div>
+  
+  <div>
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required>
+  </div>
+  
+  <div>
+    <label for="age">Age:</label>
+    <input type="number" id="age" name="age" min="13" max="100">
+  </div>
+  
+  <div>
+    <label>Gender:</label>
+    <input type="radio" id="male" name="gender" value="male">
+    <label for="male">Male</label>
+    <input type="radio" id="female" name="gender" value="female">
+    <label for="female">Female</label>
+  </div>
+  
+  <button type="submit">Register</button>
+</form>
+\`\`\`
+
+## Summary
+
+You've learned about different input types in HTML, how to create complete forms, and important attributes. Forms are the bridge between users and websites, so understanding them is crucial!`
+      },
+      codeExample: `<!DOCTYPE html>
+<html>
+<head>
+    <title>Advanced Forms</title>
+</head>
+<body>
+    <h1>Registration Form</h1>
+    <form action="/register" method="POST">
+        <div>
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" placeholder="Enter username" required>
+        </div>
+        
+        <div>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" placeholder="your@email.com" required>
+        </div>
+        
+        <div>
+            <label for="age">Age:</label>
+            <input type="number" id="age" name="age" min="13" max="100" value="18">
+        </div>
+        
+        <div>
+            <label>Gender:</label>
+            <input type="radio" id="male" name="gender" value="male">
+            <label for="male">Male</label>
+            <input type="radio" id="female" name="gender" value="female">
+            <label for="female">Female</label>
+        </div>
+        
+        <div>
+            <label for="country">Country:</label>
+            <select id="country" name="country">
+                <option value="">Select country</option>
+                <option value="us">United States</option>
+                <option value="vn">Vietnam</option>
+            </select>
+        </div>
+        
+        <button type="submit">Register</button>
+    </form>
+</body>
+</html>`,
+      codeExercise: {
+        starterCode: `<!DOCTYPE html>
+<html>
+<head>
+    <title>Contact Form</title>
+</head>
+<body>
+    <h1>Contact Us</h1>
+    <form>
+    <!-- 
+        BÀI TẬP: Tạo form liên hệ hoàn chỉnh
+    
+    Yêu cầu:
+        1. Thêm input text cho tên (name="name") với label "Name:" và required
+        2. Thêm input email cho email (name="email") với label "Email:" và required
+        3. Thêm textarea cho message (name="message") với label "Message:" và rows="5"
+        4. Thêm checkbox với value="newsletter" và label "Subscribe to newsletter"
+        5. Thêm submit button với text "Send Message"
+        -->
+    </form>
+</body>
+</html>`,
+        expectedOutput: 'Form with name input, email input, message textarea, newsletter checkbox, and submit button'
+      },
+      quiz: {
+        questions: [
+          {
+            question: 'Which input type automatically validates email format?',
+            options: ['type="text"', 'type="email"', 'type="mail"', 'type="emailaddress"'],
+            correctAnswer: 1,
+            explanation: 'The type="email" input automatically validates that the entered value is a valid email format.'
+          },
+          {
+            question: 'Which attribute makes an input field required?',
+            options: ['mandatory', 'required', 'must', 'needed'],
+            correctAnswer: 1,
+            explanation: 'The required attribute makes an input field mandatory and prevents form submission if empty.'
+          },
+          {
+            question: 'What is the difference between checkbox and radio buttons?',
+            options: [
+              'Checkbox allows multiple selections, radio allows only one',
+              'Radio allows multiple selections, checkbox allows only one',
+              'They are the same',
+              'Checkbox is for text, radio is for numbers'
+            ],
+            correctAnswer: 0,
+            explanation: 'Checkboxes allow multiple selections, while radio buttons allow only one selection from a group.'
+          },
+          {
+            question: 'Which tag is used to create a dropdown selection list?',
+            options: ['<dropdown>', '<select>', '<list>', '<option>'],
+            correctAnswer: 1,
+            explanation: 'The <select> tag creates a dropdown list, with <option> tags for each choice.'
+          },
+          {
+            question: 'What does the "name" attribute do in form inputs?',
+            options: [
+              'Sets the placeholder text',
+              'Identifies the field when the form is submitted',
+              'Sets the default value',
+              'Makes the field required'
+            ],
+            correctAnswer: 1,
+            explanation: 'The name attribute identifies the field when the form is submitted, allowing the server to process the data.'
+          },
+          {
+            question: 'Which input type hides the characters as the user types?',
+            options: ['type="text"', 'type="hidden"', 'type="password"', 'type="secret"'],
+            correctAnswer: 2,
+            explanation: 'The type="password" input hides characters as the user types for security purposes.'
+          },
+          {
+            question: 'What is the purpose of the <label> tag in forms?',
+            options: [
+              'To style the form',
+              'To improve accessibility and link text to input fields',
+              'To submit the form',
+              'To validate the input'
+            ],
+            correctAnswer: 1,
+            explanation: 'The <label> tag improves accessibility by linking descriptive text to input fields, making forms more user-friendly.'
+          }
+        ],
+        passingScore: 7
+      }
+    });
+
+    const level2Lesson3 = await Lesson.create({
+      levelId: webDevLevel2._id,
+      lessonNumber: 3,
+      title: { vi: 'Advanced CSS Selectors và Pseudo-classes', en: 'Advanced CSS Selectors and Pseudo-classes' },
+      content: {
+        vi: `# Advanced CSS Selectors và Pseudo-classes\n\n## Giới thiệu\n\nSau khi đã nắm vững CSS cơ bản, bây giờ chúng ta sẽ học về **Advanced Selectors** và **Pseudo-classes**.\n\n## Advanced Selectors\n\n### Descendant Selector\n\`\`\`css\ndiv p { color: blue; }\n\`\`\`\n\n### Child Selector (>)\n\`\`\`css\ndiv > p { color: red; }\n\`\`\`\n\n### Attribute Selectors\n\`\`\`css\n[type="text"] { border: 1px solid #ccc; }\n[href^="https"] { color: green; }\n\`\`\`\n\n## Pseudo-classes\n\n\`\`\`css\na:hover { color: red; }\ninput:focus { border: 2px solid blue; }\np:first-child { font-weight: bold; }\nli:nth-child(even) { background-color: #f0f0f0; }\n\`\`\`\n\n## Pseudo-elements\n\n\`\`\`css\np::before { content: "Note: "; }\np::first-letter { font-size: 2em; color: red; }\n\`\`\`\n\n## Tóm tắt\n\nAdvanced selectors và pseudo-classes giúp bạn target elements chính xác hơn!`,
+        en: `# Advanced CSS Selectors and Pseudo-classes\n\n## Introduction\n\nAfter mastering basic CSS, we'll learn about **Advanced Selectors** and **Pseudo-classes**.\n\n## Advanced Selectors\n\n### Descendant Selector\n\`\`\`css\ndiv p { color: blue; }\n\`\`\`\n\n### Child Selector (>)\n\`\`\`css\ndiv > p { color: red; }\n\`\`\`\n\n### Attribute Selectors\n\`\`\`css\n[type="text"] { border: 1px solid #ccc; }\n[href^="https"] { color: green; }\n\`\`\`\n\n## Pseudo-classes\n\n\`\`\`css\na:hover { color: red; }\ninput:focus { border: 2px solid blue; }\np:first-child { font-weight: bold; }\nli:nth-child(even) { background-color: #f0f0f0; }\n\`\`\`\n\n## Pseudo-elements\n\n\`\`\`css\np::before { content: "Note: "; }\np::first-letter { font-size: 2em; color: red; }\n\`\`\`\n\n## Summary\n\nAdvanced selectors and pseudo-classes help you target elements more precisely!`
+      },
+      codeExample: `<!DOCTYPE html>\n<html>\n<head><title>Advanced CSS Selectors</title>\n<style>\ndiv p { color: blue; }\nul > li { font-weight: bold; }\ninput[type="text"] { border: 2px solid blue; }\na:hover { color: red; }\nli:nth-child(odd) { background-color: #f0f0f0; }\np::first-letter { font-size: 2em; color: red; }\n</style>\n</head>\n<body>\n<div><p>Paragraph in div</p></div>\n<ul><li>Item 1</li><li>Item 2</li></ul>\n<input type="text" placeholder="Type here">\n<a href="#">Hover me</a>\n</body>\n</html>`,
+      codeExercise: { starterCode: `<!DOCTYPE html>\n<html>\n<head><title>CSS Selectors Practice</title>\n<style>\n/* Style div p, ul > li, input[type="email"], a:hover, li:nth-child(even), p::before */\n</style>\n</head>\n<body>\n<div><p>Paragraph 1</p><p>Paragraph 2</p></div>\n<ul><li>Item 1</li><li>Item 2</li><li>Item 3</li></ul>\n<input type="email" placeholder="Email">\n<a href="#">Hover Link</a>\n</body>\n</html>`, expectedOutput: 'Styled elements using advanced selectors and pseudo-classes' },
+      quiz: {
+        questions: [
+          { question: 'What is the difference between "div p" and "div > p"?', options: ['"div p" selects direct children, "div > p" selects all descendants', '"div p" selects all descendants, "div > p" selects direct children', 'They are the same', '"div p" is invalid syntax'], correctAnswer: 1, explanation: '"div p" selects all <p> inside <div> at any level, while "div > p" only selects direct children.' },
+          { question: 'Which pseudo-class styles a link when hovering?', options: [':active', ':hover', ':focus', ':visited'], correctAnswer: 1, explanation: ':hover styles an element when the user hovers over it.' },
+          { question: 'What does [href^="https"] select?', options: ['Links ending with "https"', 'Links containing "https"', 'Links starting with "https"', 'Links with exact value "https"'], correctAnswer: 2, explanation: 'The ^= operator selects elements whose attribute value starts with the specified value.' },
+          { question: 'Which selector targets the second child element?', options: [':first-child', ':second-child', ':nth-child(2)', ':child(2)'], correctAnswer: 2, explanation: ':nth-child(2) targets the second child element.' },
+          { question: 'What is the purpose of ::before pseudo-element?', options: ['To add content before an element', 'To select elements before', 'To create animations', 'To hide elements'], correctAnswer: 0, explanation: '::before is used to insert content before an element\'s content.' },
+          { question: 'Which selector selects all paragraphs that are siblings following h2?', options: ['h2 p', 'h2 > p', 'h2 + p', 'h2 ~ p'], correctAnswer: 3, explanation: 'h2 ~ p (general sibling selector) selects all <p> elements that are siblings following <h2>.' },
+          { question: 'What does :not(.class) selector do?', options: ['Selects elements with the class', 'Selects all elements except those with the class', 'Selects elements without any class', 'It is invalid syntax'], correctAnswer: 1, explanation: ':not(.class) selects all elements except those that have the specified class.' }
+        ],
+        passingScore: 7
+      }
+    });
+
+    const level2Lesson4 = await Lesson.create({
+      levelId: webDevLevel2._id,
+      lessonNumber: 4,
+      title: { vi: 'CSS Flexbox Layout', en: 'CSS Flexbox Layout' },
+      content: {
+        vi: `# CSS Flexbox Layout\n\n## Giới thiệu\n\n**Flexbox** là một layout model mạnh mẽ trong CSS, giúp bạn dễ dàng tạo các layout responsive và flexible.\n\n## Flex Container\n\n\`\`\`css\n.container { display: flex; }\n\`\`\`\n\n## Flex Direction\n\n\`\`\`css\n.container {\n  flex-direction: row;        /* Mặc định: ngang */\n  flex-direction: column;     /* Dọc */\n}\n\`\`\`\n\n## Justify Content\n\n\`\`\`css\n.container {\n  justify-content: flex-start;   /* Bên trái */\n  justify-content: center;       /* Giữa */\n  justify-content: space-between; /* Cách đều */\n}\n\`\`\`\n\n## Align Items\n\n\`\`\`css\n.container {\n  align-items: center;      /* Giữa cross axis */\n  align-items: stretch;     /* Mặc định */\n}\n\`\`\`\n\n## Flex Properties\n\n\`\`\`css\n.item {\n  flex: 1; /* Grow và shrink */\n}\n\`\`\`\n\n## Tóm tắt\n\nFlexbox giúp tạo layout linh hoạt và responsive một cách dễ dàng!`,
+        en: `# CSS Flexbox Layout\n\n## Introduction\n\n**Flexbox** is a powerful CSS layout model that makes it easy to create responsive and flexible layouts.\n\n## Flex Container\n\n\`\`\`css\n.container { display: flex; }\n\`\`\`\n\n## Flex Direction\n\n\`\`\`css\n.container {\n  flex-direction: row;        /* Default: horizontal */\n  flex-direction: column;     /* Vertical */\n}\n\`\`\`\n\n## Justify Content\n\n\`\`\`css\n.container {\n  justify-content: flex-start;   /* Left */\n  justify-content: center;       /* Center */\n  justify-content: space-between; /* Even spacing */\n}\n\`\`\`\n\n## Align Items\n\n\`\`\`css\n.container {\n  align-items: center;      /* Center of cross axis */\n  align-items: stretch;     /* Default */\n}\n\`\`\`\n\n## Flex Properties\n\n\`\`\`css\n.item {\n  flex: 1; /* Grow and shrink */\n}\n\`\`\`\n\n## Summary\n\nFlexbox makes it easy to create flexible and responsive layouts!`
+      },
+      codeExample: `<!DOCTYPE html>\n<html>\n<head><title>Flexbox Layout</title>\n<style>\n.container { display: flex; justify-content: space-between; align-items: center; height: 200px; border: 2px solid #333; }\n.item { flex: 1; padding: 20px; background-color: lightblue; margin: 10px; }\n</style>\n</head>\n<body>\n<div class="container">\n<div class="item">Item 1</div>\n<div class="item">Item 2</div>\n<div class="item">Item 3</div>\n</div>\n</body>\n</html>`,
+      codeExercise: { starterCode: `<!DOCTYPE html>\n<html>\n<head><title>Flexbox Practice</title>\n<style>\n.container { /* Set display: flex, justify-content: center, align-items: center */ }\n.item { /* Set flex: 1, padding: 20px, background-color: lightblue */ }\n</style>\n</head>\n<body>\n<div class="container">\n<div class="item">Item 1</div>\n<div class="item">Item 2</div>\n<div class="item">Item 3</div>\n</div>\n</body>\n</html>`, expectedOutput: 'Flexbox container with centered items' },
+      quiz: {
+        questions: [
+          { question: 'What property is used to create a flex container?', options: ['flex: 1', 'display: flex', 'flex-container: true', 'layout: flex'], correctAnswer: 1, explanation: 'display: flex creates a flex container, enabling flexbox layout for its children.' },
+          { question: 'What does justify-content: space-between do?', options: ['Centers items', 'Distributes space evenly with no space at ends', 'Distributes space evenly with space at ends', 'Aligns items to the start'], correctAnswer: 1, explanation: 'space-between distributes items evenly with space between them but no space at the ends.' },
+          { question: 'What is the default flex-direction?', options: ['column', 'row', 'row-reverse', 'column-reverse'], correctAnswer: 1, explanation: 'The default flex-direction is row, which arranges items horizontally.' },
+          { question: 'What does flex: 1 mean?', options: ['Item cannot grow or shrink', 'Item can grow and shrink, with basis of 0', 'Item has fixed width of 1px', 'Item is hidden'], correctAnswer: 1, explanation: 'flex: 1 is shorthand for flex: 1 1 0, meaning the item can grow and shrink with a basis of 0.' },
+          { question: 'Which property aligns items along the cross axis?', options: ['justify-content', 'align-items', 'align-content', 'flex-align'], correctAnswer: 1, explanation: 'align-items aligns items along the cross axis (perpendicular to the main axis).' },
+          { question: 'What does flex-wrap: wrap do?', options: ['Prevents items from wrapping', 'Allows items to wrap to new lines', 'Reverses the order of items', 'Centers items'], correctAnswer: 1, explanation: 'flex-wrap: wrap allows flex items to wrap to new lines when they don\'t fit in one line.' },
+          { question: 'How do you center content both horizontally and vertically with flexbox?', options: ['justify-content: center', 'align-items: center', 'Both justify-content: center and align-items: center', 'flex-center: true'], correctAnswer: 2, explanation: 'You need both justify-content: center (horizontal) and align-items: center (vertical) to center content in both directions.' }
+        ],
+        passingScore: 7
+      }
+    });
+
+    const level2Lesson5 = await Lesson.create({
+      levelId: webDevLevel2._id,
+      lessonNumber: 5,
+      title: { vi: 'CSS Grid Layout', en: 'CSS Grid Layout' },
+      content: {
+        vi: `# CSS Grid Layout\n\n## Giới thiệu\n\n**CSS Grid** là một layout system mạnh mẽ cho phép bạn tạo các layout phức tạp với rows và columns.\n\n## Grid Container\n\n\`\`\`css\n.container { display: grid; }\n\`\`\`\n\n## Grid Template Columns\n\n\`\`\`css\n.container {\n  grid-template-columns: 200px 200px 200px; /* 3 columns */\n  grid-template-columns: 1fr 2fr 1fr;        /* 3 columns: 1:2:1 ratio */\n  grid-template-columns: repeat(3, 1fr);    /* 3 columns, mỗi 1fr */\n}\n\`\`\`\n\n## Gap\n\n\`\`\`css\n.container {\n  gap: 20px; /* Khoảng cách giữa items */\n}\n\`\`\`\n\n## Grid Item Placement\n\n\`\`\`css\n.item {\n  grid-column: 1 / 3;  /* Từ column 1 đến 3 */\n  grid-row: 1 / 2;     /* Từ row 1 đến 2 */\n}\n\`\`\`\n\n## Grid Areas\n\n\`\`\`css\n.container {\n  grid-template-areas:\n    "header header header"\n    "sidebar main main"\n    "footer footer footer";\n}\n.header { grid-area: header; }\n\`\`\`\n\n## Tóm tắt\n\nCSS Grid là công cụ mạnh mẽ để tạo layout 2D phức tạp!`,
+        en: `# CSS Grid Layout\n\n## Introduction\n\n**CSS Grid** is a powerful layout system that allows you to create complex layouts with rows and columns.\n\n## Grid Container\n\n\`\`\`css\n.container { display: grid; }\n\`\`\`\n\n## Grid Template Columns\n\n\`\`\`css\n.container {\n  grid-template-columns: 200px 200px 200px; /* 3 columns */\n  grid-template-columns: 1fr 2fr 1fr;        /* 3 columns: 1:2:1 ratio */\n  grid-template-columns: repeat(3, 1fr);     /* 3 columns, each 1fr */\n}\n\`\`\`\n\n## Gap\n\n\`\`\`css\n.container {\n  gap: 20px; /* Space between items */\n}\n\`\`\`\n\n## Grid Item Placement\n\n\`\`\`css\n.item {\n  grid-column: 1 / 3;  /* From column 1 to 3 */\n  grid-row: 1 / 2;     /* From row 1 to 2 */\n}\n\`\`\`\n\n## Grid Areas\n\n\`\`\`css\n.container {\n  grid-template-areas:\n    "header header header"\n    "sidebar main main"\n    "footer footer footer";\n}\n.header { grid-area: header; }\n\`\`\`\n\n## Summary\n\nCSS Grid is a powerful tool for creating complex 2D layouts!`
+      },
+      codeExample: `<!DOCTYPE html>\n<html>\n<head><title>Grid Layout</title>\n<style>\n.container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }\n.item { padding: 20px; background-color: lightblue; }\n</style>\n</head>\n<body>\n<div class="container">\n<div class="item">Item 1</div>\n<div class="item">Item 2</div>\n<div class="item">Item 3</div>\n<div class="item">Item 4</div>\n<div class="item">Item 5</div>\n<div class="item">Item 6</div>\n</div>\n</body>\n</html>`,
+      codeExercise: { starterCode: `<!DOCTYPE html>\n<html>\n<head><title>Grid Practice</title>\n<style>\n.container { /* Set display: grid, grid-template-columns: repeat(3, 1fr), gap: 20px */ }\n.item { /* Set padding: 20px, background-color: lightblue */ }\n</style>\n</head>\n<body>\n<div class="container">\n<div class="item">Item 1</div>\n<div class="item">Item 2</div>\n<div class="item">Item 3</div>\n<div class="item">Item 4</div>\n<div class="item">Item 5</div>\n<div class="item">Item 6</div>\n</div>\n</body>\n</html>`, expectedOutput: 'Grid layout with 3 columns and 6 items' },
+      quiz: {
+        questions: [
+          { question: 'What property is used to create a grid container?', options: ['grid: 1', 'display: grid', 'grid-container: true', 'layout: grid'], correctAnswer: 1, explanation: 'display: grid creates a grid container, enabling CSS Grid layout.' },
+          { question: 'What does "fr" unit mean in grid-template-columns?', options: ['Fixed pixels', 'Fraction of available space', 'Font size', 'Frame rate'], correctAnswer: 1, explanation: '"fr" stands for fraction and represents a fraction of the available space in the grid container.' },
+          { question: 'What does repeat(3, 1fr) create?', options: ['3 rows with 1fr each', '3 columns with 1fr each', '1 column with 3fr', '3 grids'], correctAnswer: 1, explanation: 'repeat(3, 1fr) creates 3 columns, each taking 1 fraction of the available space.' },
+          { question: 'What does grid-column: 1 / 3 mean?', options: ['Item spans from column 1 to column 3', 'Item is in column 1 and row 3', 'Item has 1 column and 3 rows', 'Item is hidden'], correctAnswer: 0, explanation: 'grid-column: 1 / 3 means the item spans from grid line 1 to grid line 3 (columns 1 and 2).' },
+          { question: 'What is the purpose of grid-template-areas?', options: ['To define grid gaps', 'To create named grid areas for easier layout', 'To set grid item sizes', 'To animate the grid'], correctAnswer: 1, explanation: 'grid-template-areas allows you to define named areas in the grid, making complex layouts easier to manage.' },
+          { question: 'What does gap: 20px do?', options: ['Sets margin between items', 'Sets space between grid rows and columns', 'Sets padding inside items', 'Creates a gap in the layout'], correctAnswer: 1, explanation: 'gap: 20px sets the space between grid rows and columns to 20px.' },
+          { question: 'What is the difference between justify-items and justify-content in grid?', options: ['They are the same', 'justify-items aligns items within their cells, justify-content aligns the grid within the container', 'justify-content aligns items, justify-items aligns the grid', 'Neither exists in grid'], correctAnswer: 1, explanation: 'justify-items aligns grid items within their grid cells, while justify-content aligns the entire grid within its container.' }
+        ],
+        passingScore: 7
+      }
+    });
+
+    webDevLevel1.lessons = [htmlLesson1._id, htmlLesson2._id, cssLesson1._id, cssLesson2._id, cssLesson3._id, cssLesson4._id, jsLesson1._id];
+    await webDevLevel1.save();
+
+    webDevLevel2.lessons = [level2Lesson1._id, level2Lesson2._id, level2Lesson3._id, level2Lesson4._id, level2Lesson5._id];
+    await webDevLevel2.save();
+
+    console.log('Seed data created successfully!');
+    console.log('Admin: admin@learncode.com / admin123');
+    console.log('User: user@learncode.com / user123');
+    process.exit(0);
+  } catch (error) {
+    console.error('Error seeding data:', error);
+    process.exit(1);
+  }
+};
+
+seedData();
+
+\`\`\`html
+<input type="email" name="email" placeholder="Enter your email" required>
+\`\`\`
+
+### Password Input
+Ẩn ký tự khi nhập:
+\`\`\`html
+<input type="password" name="password" placeholder="Enter password">
+\`\`\`
+
+### Number Input
+Chỉ cho phép nhập số:
+\`\`\`html
+<input type="number" name="age" min="1" max="120" value="18">
+\`\`\`
+
+### Date Input
+Chọn ngày tháng:
+\`\`\`html
+<input type="date" name="birthday">
+\`\`\`
+
+### Checkbox
+Cho phép chọn nhiều lựa chọn:
+\`\`\`html
+<input type="checkbox" name="hobby" value="reading"> Reading
+<input type="checkbox" name="hobby" value="sports"> Sports
+\`\`\`
+
+### Radio Button
+Chỉ cho phép chọn một lựa chọn:
+\`\`\`html
+<input type="radio" name="gender" value="male" id="male">
+<label for="male">Male</label>
+<input type="radio" name="gender" value="female" id="female">
+<label for="female">Female</label>
+\`\`\`
+
+### Select Dropdown
+Danh sách lựa chọn:
+\`\`\`html
+<select name="country">
+  <option value="">Select a country</option>
+  <option value="us">United States</option>
+  <option value="vn">Vietnam</option>
+  <option value="uk">United Kingdom</option>
+</select>
+\`\`\`
+
+### Textarea
+Vùng nhập văn bản nhiều dòng:
+\`\`\`html
+<textarea name="message" rows="4" cols="50" placeholder="Enter your message"></textarea>
+\`\`\`
+
+## Form Attributes quan trọng
+
+- **\`required\`**: Bắt buộc phải điền
+- **\`placeholder\`**: Gợi ý nội dung
+- **\`value\`**: Giá trị mặc định
+- **\`name\`**: Tên field (quan trọng khi submit form)
+- **\`id\`**: Định danh duy nhất
+- **\`min\` / \`max\`**: Giới hạn giá trị (cho number, date)
+
+## Label và Form Accessibility
+
+Luôn sử dụng \`<label>\` để liên kết với input, giúp cải thiện accessibility:
+
+\`\`\`html
+<label for="email">Email Address:</label>
+<input type="email" id="email" name="email" required>
+\`\`\`
+
+## Submit Button
+
+Button để gửi form:
+\`\`\`html
+<button type="submit">Submit</button>
+<!-- hoặc -->
+<input type="submit" value="Submit Form">
+\`\`\`
+
+## Ví dụ Form hoàn chỉnh
+
+\`\`\`html
+<form action="/register" method="POST">
+  <div>
+    <label for="username">Username:</label>
+    <input type="text" id="username" name="username" required>
+  </div>
+  
+  <div>
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required>
+  </div>
+  
+  <div>
+    <label for="age">Age:</label>
+    <input type="number" id="age" name="age" min="13" max="100">
+  </div>
+  
+  <div>
+    <label>Gender:</label>
+    <input type="radio" id="male" name="gender" value="male">
+    <label for="male">Male</label>
+    <input type="radio" id="female" name="gender" value="female">
+    <label for="female">Female</label>
+  </div>
+  
+  <button type="submit">Register</button>
+</form>
+\`\`\`
+
+## Tóm tắt
+
+Bạn đã học về các loại input types trong HTML, cách tạo form hoàn chỉnh, và các attributes quan trọng. Forms là cầu nối giữa người dùng và website, vì vậy việc hiểu rõ chúng rất quan trọng!`,
+        en: `# Advanced HTML Forms and Input Types
+
+## Introduction
+
+After mastering basic HTML, we'll now learn about **HTML Forms** - one of the most important components for user interaction. Forms allow users to input data, submit information, and interact with websites.
+
+## Basic Form Structure
+
+Forms in HTML are created using the \`<form>\` tag. This tag contains input fields and has important attributes:
+
+- **\`action\`**: URL where the form will be submitted
+- **\`method\`**: Submission method (GET or POST)
+
+\`\`\`html
+<form action="/submit" method="POST">
+  <!-- Input fields will be placed here -->
+</form>
+\`\`\`
+
+## Input Types
+
+HTML5 provides many different input types to collect appropriate data:
+
+### Text Input
+\`\`\`html
+<input type="text" name="username" placeholder="Enter your username">
+\`\`\`
+
+### Email Input
+Automatically validates email format:
+\`\`\`html
+<input type="email" name="email" placeholder="Enter your email" required>
+\`\`\`
+
+### Password Input
+Hides characters when typing:
+\`\`\`html
+<input type="password" name="password" placeholder="Enter password">
+\`\`\`
+
+### Number Input
+Only allows numeric input:
+\`\`\`html
+<input type="number" name="age" min="1" max="120" value="18">
+\`\`\`
+
+### Date Input
+Select date:
+\`\`\`html
+<input type="date" name="birthday">
+\`\`\`
+
+### Checkbox
+Allows multiple selections:
+\`\`\`html
+<input type="checkbox" name="hobby" value="reading"> Reading
+<input type="checkbox" name="hobby" value="sports"> Sports
+\`\`\`
+
+### Radio Button
+Allows only one selection:
+\`\`\`html
+<input type="radio" name="gender" value="male" id="male">
+<label for="male">Male</label>
+<input type="radio" name="gender" value="female" id="female">
+<label for="female">Female</label>
+\`\`\`
+
+### Select Dropdown
+Selection list:
+\`\`\`html
+<select name="country">
+  <option value="">Select a country</option>
+  <option value="us">United States</option>
+  <option value="vn">Vietnam</option>
+  <option value="uk">United Kingdom</option>
+</select>
+\`\`\`
+
+### Textarea
+Multi-line text input area:
+\`\`\`html
+<textarea name="message" rows="4" cols="50" placeholder="Enter your message"></textarea>
+\`\`\`
+
+## Important Form Attributes
+
+- **\`required\`**: Field must be filled
+- **\`placeholder\`**: Hint text
+- **\`value\`**: Default value
+- **\`name\`**: Field name (important when submitting form)
+- **\`id\`**: Unique identifier
+- **\`min\` / \`max\`**: Value limits (for number, date)
+
+## Label and Form Accessibility
+
+Always use \`<label>\` to link with input, improving accessibility:
+
+\`\`\`html
+<label for="email">Email Address:</label>
+<input type="email" id="email" name="email" required>
+\`\`\`
+
+## Submit Button
+
+Button to submit form:
+\`\`\`html
+<button type="submit">Submit</button>
+<!-- or -->
+<input type="submit" value="Submit Form">
+\`\`\`
+
+## Complete Form Example
+
+\`\`\`html
+<form action="/register" method="POST">
+  <div>
+    <label for="username">Username:</label>
+    <input type="text" id="username" name="username" required>
+  </div>
+  
+  <div>
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required>
+  </div>
+  
+  <div>
+    <label for="age">Age:</label>
+    <input type="number" id="age" name="age" min="13" max="100">
+  </div>
+  
+  <div>
+    <label>Gender:</label>
+    <input type="radio" id="male" name="gender" value="male">
+    <label for="male">Male</label>
+    <input type="radio" id="female" name="gender" value="female">
+    <label for="female">Female</label>
+  </div>
+  
+  <button type="submit">Register</button>
+</form>
+\`\`\`
+
+## Summary
+
+You've learned about different input types in HTML, how to create complete forms, and important attributes. Forms are the bridge between users and websites, so understanding them is crucial!`
+      },
+      codeExample: `<!DOCTYPE html>
+<html>
+<head>
+    <title>Advanced Forms</title>
+</head>
+<body>
+    <h1>Registration Form</h1>
+    <form action="/register" method="POST">
+        <div>
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" placeholder="Enter username" required>
+        </div>
+        
+        <div>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" placeholder="your@email.com" required>
+        </div>
+        
+        <div>
+            <label for="age">Age:</label>
+            <input type="number" id="age" name="age" min="13" max="100" value="18">
+        </div>
+        
+        <div>
+            <label>Gender:</label>
+            <input type="radio" id="male" name="gender" value="male">
+            <label for="male">Male</label>
+            <input type="radio" id="female" name="gender" value="female">
+            <label for="female">Female</label>
+        </div>
+        
+        <div>
+            <label for="country">Country:</label>
+            <select id="country" name="country">
+                <option value="">Select country</option>
+                <option value="us">United States</option>
+                <option value="vn">Vietnam</option>
+            </select>
+        </div>
+        
+        <button type="submit">Register</button>
+    </form>
+</body>
+</html>`,
+      codeExercise: {
+        starterCode: `<!DOCTYPE html>
+<html>
+<head>
+    <title>Contact Form</title>
+</head>
+<body>
+    <h1>Contact Us</h1>
+    <form>
+    <!-- 
+        BÀI TẬP: Tạo form liên hệ hoàn chỉnh
+    
+    Yêu cầu:
+        1. Thêm input text cho tên (name="name") với label "Name:" và required
+        2. Thêm input email cho email (name="email") với label "Email:" và required
+        3. Thêm textarea cho message (name="message") với label "Message:" và rows="5"
+        4. Thêm checkbox với value="newsletter" và label "Subscribe to newsletter"
+        5. Thêm submit button với text "Send Message"
+        -->
+    </form>
+</body>
+</html>`,
+        expectedOutput: 'Form with name input, email input, message textarea, newsletter checkbox, and submit button'
+      },
+      quiz: {
+        questions: [
+          {
+            question: 'Which input type automatically validates email format?',
+            options: ['type="text"', 'type="email"', 'type="mail"', 'type="emailaddress"'],
+            correctAnswer: 1,
+            explanation: 'The type="email" input automatically validates that the entered value is a valid email format.'
+          },
+          {
+            question: 'Which attribute makes an input field required?',
+            options: ['mandatory', 'required', 'must', 'needed'],
+            correctAnswer: 1,
+            explanation: 'The required attribute makes an input field mandatory and prevents form submission if empty.'
+          },
+          {
+            question: 'What is the difference between checkbox and radio buttons?',
+            options: [
+              'Checkbox allows multiple selections, radio allows only one',
+              'Radio allows multiple selections, checkbox allows only one',
+              'They are the same',
+              'Checkbox is for text, radio is for numbers'
+            ],
+            correctAnswer: 0,
+            explanation: 'Checkboxes allow multiple selections, while radio buttons allow only one selection from a group.'
+          },
+          {
+            question: 'Which tag is used to create a dropdown selection list?',
+            options: ['<dropdown>', '<select>', '<list>', '<option>'],
+            correctAnswer: 1,
+            explanation: 'The <select> tag creates a dropdown list, with <option> tags for each choice.'
+          },
+          {
+            question: 'What does the "name" attribute do in form inputs?',
+            options: [
+              'Sets the placeholder text',
+              'Identifies the field when the form is submitted',
+              'Sets the default value',
+              'Makes the field required'
+            ],
+            correctAnswer: 1,
+            explanation: 'The name attribute identifies the field when the form is submitted, allowing the server to process the data.'
+          },
+          {
+            question: 'Which input type hides the characters as the user types?',
+            options: ['type="text"', 'type="hidden"', 'type="password"', 'type="secret"'],
+            correctAnswer: 2,
+            explanation: 'The type="password" input hides characters as the user types for security purposes.'
+          },
+          {
+            question: 'What is the purpose of the <label> tag in forms?',
+            options: [
+              'To style the form',
+              'To improve accessibility and link text to input fields',
+              'To submit the form',
+              'To validate the input'
+            ],
+            correctAnswer: 1,
+            explanation: 'The <label> tag improves accessibility by linking descriptive text to input fields, making forms more user-friendly.'
+          }
+        ],
+        passingScore: 7
+      }
+    });
+
+    const level2Lesson3 = await Lesson.create({
+      levelId: webDevLevel2._id,
+      lessonNumber: 3,
+      title: { vi: 'Advanced CSS Selectors và Pseudo-classes', en: 'Advanced CSS Selectors and Pseudo-classes' },
+      content: {
+        vi: `# Advanced CSS Selectors và Pseudo-classes\n\n## Giới thiệu\n\nSau khi đã nắm vững CSS cơ bản, bây giờ chúng ta sẽ học về **Advanced Selectors** và **Pseudo-classes**.\n\n## Advanced Selectors\n\n### Descendant Selector\n\`\`\`css\ndiv p { color: blue; }\n\`\`\`\n\n### Child Selector (>)\n\`\`\`css\ndiv > p { color: red; }\n\`\`\`\n\n### Attribute Selectors\n\`\`\`css\n[type="text"] { border: 1px solid #ccc; }\n[href^="https"] { color: green; }\n\`\`\`\n\n## Pseudo-classes\n\n\`\`\`css\na:hover { color: red; }\ninput:focus { border: 2px solid blue; }\np:first-child { font-weight: bold; }\nli:nth-child(even) { background-color: #f0f0f0; }\n\`\`\`\n\n## Pseudo-elements\n\n\`\`\`css\np::before { content: "Note: "; }\np::first-letter { font-size: 2em; color: red; }\n\`\`\`\n\n## Tóm tắt\n\nAdvanced selectors và pseudo-classes giúp bạn target elements chính xác hơn!`,
+        en: `# Advanced CSS Selectors and Pseudo-classes\n\n## Introduction\n\nAfter mastering basic CSS, we'll learn about **Advanced Selectors** and **Pseudo-classes**.\n\n## Advanced Selectors\n\n### Descendant Selector\n\`\`\`css\ndiv p { color: blue; }\n\`\`\`\n\n### Child Selector (>)\n\`\`\`css\ndiv > p { color: red; }\n\`\`\`\n\n### Attribute Selectors\n\`\`\`css\n[type="text"] { border: 1px solid #ccc; }\n[href^="https"] { color: green; }\n\`\`\`\n\n## Pseudo-classes\n\n\`\`\`css\na:hover { color: red; }\ninput:focus { border: 2px solid blue; }\np:first-child { font-weight: bold; }\nli:nth-child(even) { background-color: #f0f0f0; }\n\`\`\`\n\n## Pseudo-elements\n\n\`\`\`css\np::before { content: "Note: "; }\np::first-letter { font-size: 2em; color: red; }\n\`\`\`\n\n## Summary\n\nAdvanced selectors and pseudo-classes help you target elements more precisely!`
+      },
+      codeExample: `<!DOCTYPE html>\n<html>\n<head><title>Advanced CSS Selectors</title>\n<style>\ndiv p { color: blue; }\nul > li { font-weight: bold; }\ninput[type="text"] { border: 2px solid blue; }\na:hover { color: red; }\nli:nth-child(odd) { background-color: #f0f0f0; }\np::first-letter { font-size: 2em; color: red; }\n</style>\n</head>\n<body>\n<div><p>Paragraph in div</p></div>\n<ul><li>Item 1</li><li>Item 2</li></ul>\n<input type="text" placeholder="Type here">\n<a href="#">Hover me</a>\n</body>\n</html>`,
+      codeExercise: { starterCode: `<!DOCTYPE html>\n<html>\n<head><title>CSS Selectors Practice</title>\n<style>\n/* Style div p, ul > li, input[type="email"], a:hover, li:nth-child(even), p::before */\n</style>\n</head>\n<body>\n<div><p>Paragraph 1</p><p>Paragraph 2</p></div>\n<ul><li>Item 1</li><li>Item 2</li><li>Item 3</li></ul>\n<input type="email" placeholder="Email">\n<a href="#">Hover Link</a>\n</body>\n</html>`, expectedOutput: 'Styled elements using advanced selectors and pseudo-classes' },
+      quiz: {
+        questions: [
+          { question: 'What is the difference between "div p" and "div > p"?', options: ['"div p" selects direct children, "div > p" selects all descendants', '"div p" selects all descendants, "div > p" selects direct children', 'They are the same', '"div p" is invalid syntax'], correctAnswer: 1, explanation: '"div p" selects all <p> inside <div> at any level, while "div > p" only selects direct children.' },
+          { question: 'Which pseudo-class styles a link when hovering?', options: [':active', ':hover', ':focus', ':visited'], correctAnswer: 1, explanation: ':hover styles an element when the user hovers over it.' },
+          { question: 'What does [href^="https"] select?', options: ['Links ending with "https"', 'Links containing "https"', 'Links starting with "https"', 'Links with exact value "https"'], correctAnswer: 2, explanation: 'The ^= operator selects elements whose attribute value starts with the specified value.' },
+          { question: 'Which selector targets the second child element?', options: [':first-child', ':second-child', ':nth-child(2)', ':child(2)'], correctAnswer: 2, explanation: ':nth-child(2) targets the second child element.' },
+          { question: 'What is the purpose of ::before pseudo-element?', options: ['To add content before an element', 'To select elements before', 'To create animations', 'To hide elements'], correctAnswer: 0, explanation: '::before is used to insert content before an element\'s content.' },
+          { question: 'Which selector selects all paragraphs that are siblings following h2?', options: ['h2 p', 'h2 > p', 'h2 + p', 'h2 ~ p'], correctAnswer: 3, explanation: 'h2 ~ p (general sibling selector) selects all <p> elements that are siblings following <h2>.' },
+          { question: 'What does :not(.class) selector do?', options: ['Selects elements with the class', 'Selects all elements except those with the class', 'Selects elements without any class', 'It is invalid syntax'], correctAnswer: 1, explanation: ':not(.class) selects all elements except those that have the specified class.' }
+        ],
+        passingScore: 7
+      }
+    });
+
+    const level2Lesson4 = await Lesson.create({
+      levelId: webDevLevel2._id,
+      lessonNumber: 4,
+      title: { vi: 'CSS Flexbox Layout', en: 'CSS Flexbox Layout' },
+      content: {
+        vi: `# CSS Flexbox Layout\n\n## Giới thiệu\n\n**Flexbox** là một layout model mạnh mẽ trong CSS, giúp bạn dễ dàng tạo các layout responsive và flexible.\n\n## Flex Container\n\n\`\`\`css\n.container { display: flex; }\n\`\`\`\n\n## Flex Direction\n\n\`\`\`css\n.container {\n  flex-direction: row;        /* Mặc định: ngang */\n  flex-direction: column;     /* Dọc */\n}\n\`\`\`\n\n## Justify Content\n\n\`\`\`css\n.container {\n  justify-content: flex-start;   /* Bên trái */\n  justify-content: center;       /* Giữa */\n  justify-content: space-between; /* Cách đều */\n}\n\`\`\`\n\n## Align Items\n\n\`\`\`css\n.container {\n  align-items: center;      /* Giữa cross axis */\n  align-items: stretch;     /* Mặc định */\n}\n\`\`\`\n\n## Flex Properties\n\n\`\`\`css\n.item {\n  flex: 1; /* Grow và shrink */\n}\n\`\`\`\n\n## Tóm tắt\n\nFlexbox giúp tạo layout linh hoạt và responsive một cách dễ dàng!`,
+        en: `# CSS Flexbox Layout\n\n## Introduction\n\n**Flexbox** is a powerful CSS layout model that makes it easy to create responsive and flexible layouts.\n\n## Flex Container\n\n\`\`\`css\n.container { display: flex; }\n\`\`\`\n\n## Flex Direction\n\n\`\`\`css\n.container {\n  flex-direction: row;        /* Default: horizontal */\n  flex-direction: column;     /* Vertical */\n}\n\`\`\`\n\n## Justify Content\n\n\`\`\`css\n.container {\n  justify-content: flex-start;   /* Left */\n  justify-content: center;       /* Center */\n  justify-content: space-between; /* Even spacing */\n}\n\`\`\`\n\n## Align Items\n\n\`\`\`css\n.container {\n  align-items: center;      /* Center of cross axis */\n  align-items: stretch;     /* Default */\n}\n\`\`\`\n\n## Flex Properties\n\n\`\`\`css\n.item {\n  flex: 1; /* Grow and shrink */\n}\n\`\`\`\n\n## Summary\n\nFlexbox makes it easy to create flexible and responsive layouts!`
+      },
+      codeExample: `<!DOCTYPE html>\n<html>\n<head><title>Flexbox Layout</title>\n<style>\n.container { display: flex; justify-content: space-between; align-items: center; height: 200px; border: 2px solid #333; }\n.item { flex: 1; padding: 20px; background-color: lightblue; margin: 10px; }\n</style>\n</head>\n<body>\n<div class="container">\n<div class="item">Item 1</div>\n<div class="item">Item 2</div>\n<div class="item">Item 3</div>\n</div>\n</body>\n</html>`,
+      codeExercise: { starterCode: `<!DOCTYPE html>\n<html>\n<head><title>Flexbox Practice</title>\n<style>\n.container { /* Set display: flex, justify-content: center, align-items: center */ }\n.item { /* Set flex: 1, padding: 20px, background-color: lightblue */ }\n</style>\n</head>\n<body>\n<div class="container">\n<div class="item">Item 1</div>\n<div class="item">Item 2</div>\n<div class="item">Item 3</div>\n</div>\n</body>\n</html>`, expectedOutput: 'Flexbox container with centered items' },
+      quiz: {
+        questions: [
+          { question: 'What property is used to create a flex container?', options: ['flex: 1', 'display: flex', 'flex-container: true', 'layout: flex'], correctAnswer: 1, explanation: 'display: flex creates a flex container, enabling flexbox layout for its children.' },
+          { question: 'What does justify-content: space-between do?', options: ['Centers items', 'Distributes space evenly with no space at ends', 'Distributes space evenly with space at ends', 'Aligns items to the start'], correctAnswer: 1, explanation: 'space-between distributes items evenly with space between them but no space at the ends.' },
+          { question: 'What is the default flex-direction?', options: ['column', 'row', 'row-reverse', 'column-reverse'], correctAnswer: 1, explanation: 'The default flex-direction is row, which arranges items horizontally.' },
+          { question: 'What does flex: 1 mean?', options: ['Item cannot grow or shrink', 'Item can grow and shrink, with basis of 0', 'Item has fixed width of 1px', 'Item is hidden'], correctAnswer: 1, explanation: 'flex: 1 is shorthand for flex: 1 1 0, meaning the item can grow and shrink with a basis of 0.' },
+          { question: 'Which property aligns items along the cross axis?', options: ['justify-content', 'align-items', 'align-content', 'flex-align'], correctAnswer: 1, explanation: 'align-items aligns items along the cross axis (perpendicular to the main axis).' },
+          { question: 'What does flex-wrap: wrap do?', options: ['Prevents items from wrapping', 'Allows items to wrap to new lines', 'Reverses the order of items', 'Centers items'], correctAnswer: 1, explanation: 'flex-wrap: wrap allows flex items to wrap to new lines when they don\'t fit in one line.' },
+          { question: 'How do you center content both horizontally and vertically with flexbox?', options: ['justify-content: center', 'align-items: center', 'Both justify-content: center and align-items: center', 'flex-center: true'], correctAnswer: 2, explanation: 'You need both justify-content: center (horizontal) and align-items: center (vertical) to center content in both directions.' }
+        ],
+        passingScore: 7
+      }
+    });
+
+    const level2Lesson5 = await Lesson.create({
+      levelId: webDevLevel2._id,
+      lessonNumber: 5,
+      title: { vi: 'CSS Grid Layout', en: 'CSS Grid Layout' },
+      content: {
+        vi: `# CSS Grid Layout\n\n## Giới thiệu\n\n**CSS Grid** là một layout system mạnh mẽ cho phép bạn tạo các layout phức tạp với rows và columns.\n\n## Grid Container\n\n\`\`\`css\n.container { display: grid; }\n\`\`\`\n\n## Grid Template Columns\n\n\`\`\`css\n.container {\n  grid-template-columns: 200px 200px 200px; /* 3 columns */\n  grid-template-columns: 1fr 2fr 1fr;        /* 3 columns: 1:2:1 ratio */\n  grid-template-columns: repeat(3, 1fr);    /* 3 columns, mỗi 1fr */\n}\n\`\`\`\n\n## Gap\n\n\`\`\`css\n.container {\n  gap: 20px; /* Khoảng cách giữa items */\n}\n\`\`\`\n\n## Grid Item Placement\n\n\`\`\`css\n.item {\n  grid-column: 1 / 3;  /* Từ column 1 đến 3 */\n  grid-row: 1 / 2;     /* Từ row 1 đến 2 */\n}\n\`\`\`\n\n## Grid Areas\n\n\`\`\`css\n.container {\n  grid-template-areas:\n    "header header header"\n    "sidebar main main"\n    "footer footer footer";\n}\n.header { grid-area: header; }\n\`\`\`\n\n## Tóm tắt\n\nCSS Grid là công cụ mạnh mẽ để tạo layout 2D phức tạp!`,
+        en: `# CSS Grid Layout\n\n## Introduction\n\n**CSS Grid** is a powerful layout system that allows you to create complex layouts with rows and columns.\n\n## Grid Container\n\n\`\`\`css\n.container { display: grid; }\n\`\`\`\n\n## Grid Template Columns\n\n\`\`\`css\n.container {\n  grid-template-columns: 200px 200px 200px; /* 3 columns */\n  grid-template-columns: 1fr 2fr 1fr;        /* 3 columns: 1:2:1 ratio */\n  grid-template-columns: repeat(3, 1fr);     /* 3 columns, each 1fr */\n}\n\`\`\`\n\n## Gap\n\n\`\`\`css\n.container {\n  gap: 20px; /* Space between items */\n}\n\`\`\`\n\n## Grid Item Placement\n\n\`\`\`css\n.item {\n  grid-column: 1 / 3;  /* From column 1 to 3 */\n  grid-row: 1 / 2;     /* From row 1 to 2 */\n}\n\`\`\`\n\n## Grid Areas\n\n\`\`\`css\n.container {\n  grid-template-areas:\n    "header header header"\n    "sidebar main main"\n    "footer footer footer";\n}\n.header { grid-area: header; }\n\`\`\`\n\n## Summary\n\nCSS Grid is a powerful tool for creating complex 2D layouts!`
+      },
+      codeExample: `<!DOCTYPE html>\n<html>\n<head><title>Grid Layout</title>\n<style>\n.container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }\n.item { padding: 20px; background-color: lightblue; }\n</style>\n</head>\n<body>\n<div class="container">\n<div class="item">Item 1</div>\n<div class="item">Item 2</div>\n<div class="item">Item 3</div>\n<div class="item">Item 4</div>\n<div class="item">Item 5</div>\n<div class="item">Item 6</div>\n</div>\n</body>\n</html>`,
+      codeExercise: { starterCode: `<!DOCTYPE html>\n<html>\n<head><title>Grid Practice</title>\n<style>\n.container { /* Set display: grid, grid-template-columns: repeat(3, 1fr), gap: 20px */ }\n.item { /* Set padding: 20px, background-color: lightblue */ }\n</style>\n</head>\n<body>\n<div class="container">\n<div class="item">Item 1</div>\n<div class="item">Item 2</div>\n<div class="item">Item 3</div>\n<div class="item">Item 4</div>\n<div class="item">Item 5</div>\n<div class="item">Item 6</div>\n</div>\n</body>\n</html>`, expectedOutput: 'Grid layout with 3 columns and 6 items' },
+      quiz: {
+        questions: [
+          { question: 'What property is used to create a grid container?', options: ['grid: 1', 'display: grid', 'grid-container: true', 'layout: grid'], correctAnswer: 1, explanation: 'display: grid creates a grid container, enabling CSS Grid layout.' },
+          { question: 'What does "fr" unit mean in grid-template-columns?', options: ['Fixed pixels', 'Fraction of available space', 'Font size', 'Frame rate'], correctAnswer: 1, explanation: '"fr" stands for fraction and represents a fraction of the available space in the grid container.' },
+          { question: 'What does repeat(3, 1fr) create?', options: ['3 rows with 1fr each', '3 columns with 1fr each', '1 column with 3fr', '3 grids'], correctAnswer: 1, explanation: 'repeat(3, 1fr) creates 3 columns, each taking 1 fraction of the available space.' },
+          { question: 'What does grid-column: 1 / 3 mean?', options: ['Item spans from column 1 to column 3', 'Item is in column 1 and row 3', 'Item has 1 column and 3 rows', 'Item is hidden'], correctAnswer: 0, explanation: 'grid-column: 1 / 3 means the item spans from grid line 1 to grid line 3 (columns 1 and 2).' },
+          { question: 'What is the purpose of grid-template-areas?', options: ['To define grid gaps', 'To create named grid areas for easier layout', 'To set grid item sizes', 'To animate the grid'], correctAnswer: 1, explanation: 'grid-template-areas allows you to define named areas in the grid, making complex layouts easier to manage.' },
+          { question: 'What does gap: 20px do?', options: ['Sets margin between items', 'Sets space between grid rows and columns', 'Sets padding inside items', 'Creates a gap in the layout'], correctAnswer: 1, explanation: 'gap: 20px sets the space between grid rows and columns to 20px.' },
+          { question: 'What is the difference between justify-items and justify-content in grid?', options: ['They are the same', 'justify-items aligns items within their cells, justify-content aligns the grid within the container', 'justify-content aligns items, justify-items aligns the grid', 'Neither exists in grid'], correctAnswer: 1, explanation: 'justify-items aligns grid items within their grid cells, while justify-content aligns the entire grid within its container.' }
+        ],
+        passingScore: 7
+      }
+    });
+
+    webDevLevel1.lessons = [htmlLesson1._id, htmlLesson2._id, cssLesson1._id, cssLesson2._id, cssLesson3._id, cssLesson4._id, jsLesson1._id];
+    await webDevLevel1.save();
+
+    webDevLevel2.lessons = [level2Lesson1._id, level2Lesson2._id, level2Lesson3._id, level2Lesson4._id, level2Lesson5._id];
+    await webDevLevel2.save();
+
+    console.log('Seed data created successfully!');
+    console.log('Admin: admin@learncode.com / admin123');
+    console.log('User: user@learncode.com / user123');
+    process.exit(0);
+  } catch (error) {
+    console.error('Error seeding data:', error);
+    process.exit(1);
+  }
+};
+
+seedData();
+
 \`\`\`html
 <input type="email" name="email" placeholder="Enter your email" required>
 \`\`\`

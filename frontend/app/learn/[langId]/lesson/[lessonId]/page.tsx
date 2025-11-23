@@ -204,28 +204,28 @@ export default function LessonPage() {
               <div className="mt-8 pt-6 border-t">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <Code className="h-5 w-5 text-primary" />
-                    <h3 className="text-xl font-semibold">Code Example</h3>
-                  </div>
-                  <Button
+                  <Code className="h-5 w-5 text-primary" />
+                  <h3 className="text-xl font-semibold">Code Example</h3>
+                </div>
+                    <Button
                     variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      navigator.clipboard.writeText(lesson.codeExample || '')
-                    }}
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText(lesson.codeExample || '')
+                      }}
                     className="gap-2"
-                  >
+                    >
                     <Copy className="h-4 w-4" />
                     Copy Code
-                  </Button>
-                </div>
+                    </Button>
+                  </div>
                 <Card className="bg-muted/50 border-2">
                   <CardContent className="p-0">
                     <div className="relative">
-                      <MarkdownContent 
-                        content={`\`\`\`html\n${lesson.codeExample}\n\`\`\``} 
-                      />
-                    </div>
+                  <MarkdownContent 
+                    content={`\`\`\`html\n${lesson.codeExample}\n\`\`\``} 
+                  />
+                </div>
                   </CardContent>
                 </Card>
               </div>
@@ -247,7 +247,7 @@ export default function LessonPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Quiz Card */}
               <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-lg cursor-pointer group"
-                onClick={handleShowQuiz}
+                onClick={handleShowQuiz} 
               >
                 <CardContent className="pt-6">
                   <div className="flex flex-col items-center text-center space-y-4">
@@ -276,7 +276,7 @@ export default function LessonPage() {
 
               {/* Code Exercise Card */}
               <Card className="border-2 hover:border-secondary/50 transition-all duration-300 hover:shadow-lg cursor-pointer group"
-                onClick={() => router.push(`/learn/${params.langId}/lesson/${params.lessonId}/code`)}
+                onClick={() => router.push(`/learn/${params.langId}/lesson/${params.lessonId}/code`)} 
               >
                 <CardContent className="pt-6">
                   <div className="flex flex-col items-center text-center space-y-4">
@@ -289,6 +289,105 @@ export default function LessonPage() {
                         Practice coding with hands-on exercises and real-time feedback
                       </p>
                       <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                        <FileCode className="h-3 w-3" />
+                        <span>Interactive IDE</span>
+                        <span>•</span>
+                        <span>Live Preview</span>
+                      </div>
+                    </div>
+                    <Button variant="outline" className="w-full group/btn border-2">
+                      Start Coding
+                      <ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quiz Modal */}
+        {showQuiz && lesson.quiz.questions.length > 0 && (
+          <QuizModal
+            questions={lesson.quiz.questions}
+            passingScore={lesson.quiz.passingScore}
+            lessonId={lesson._id}
+            onComplete={handleQuizComplete}
+            onClose={() => setShowQuiz(false)}
+          />
+        )}
+      </div>
+    </div>
+  )
+}
+
+
+                        <FileCode className="h-3 w-3" />
+                        <span>Interactive IDE</span>
+                        <span>•</span>
+                        <span>Live Preview</span>
+                      </div>
+                    </div>
+                    <Button variant="outline" className="w-full group/btn border-2">
+                      Start Coding
+                      <ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quiz Modal */}
+        {showQuiz && lesson.quiz.questions.length > 0 && (
+          <QuizModal
+            questions={lesson.quiz.questions}
+            passingScore={lesson.quiz.passingScore}
+            lessonId={lesson._id}
+            onComplete={handleQuizComplete}
+            onClose={() => setShowQuiz(false)}
+          />
+        )}
+      </div>
+    </div>
+  )
+}
+
+
+                        <FileCode className="h-3 w-3" />
+                        <span>Interactive IDE</span>
+                        <span>•</span>
+                        <span>Live Preview</span>
+                      </div>
+                    </div>
+                    <Button variant="outline" className="w-full group/btn border-2">
+                      Start Coding
+                      <ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quiz Modal */}
+        {showQuiz && lesson.quiz.questions.length > 0 && (
+          <QuizModal
+            questions={lesson.quiz.questions}
+            passingScore={lesson.quiz.passingScore}
+            lessonId={lesson._id}
+            onComplete={handleQuizComplete}
+            onClose={() => setShowQuiz(false)}
+          />
+        )}
+      </div>
+    </div>
+  )
+}
+
+
                         <FileCode className="h-3 w-3" />
                         <span>Interactive IDE</span>
                         <span>•</span>
