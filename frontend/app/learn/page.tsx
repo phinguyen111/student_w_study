@@ -93,7 +93,7 @@ export default function LearnPage() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_hsl(200_80%_94%)_0%,_white_50%)] dark:bg-[radial-gradient(circle_at_top,_hsl(215_30%_15%)_0%,_hsl(220_30%_10%)_60%)]">
-      <div className="container mx-auto px-4 py-20 space-y-12">
+      <div className="container mx-auto px-4 py-4 space-y-4">
         {/* Hero */}
         <div className="grid gap-6 lg:grid-cols-[3fr,2fr]">
           <div className="rounded-3xl border border-blue-100/60 dark:border-white/10 bg-white/90 dark:bg-slate-900/60 shadow-[0_25px_60px_rgba(15,23,42,0.08)] p-10 space-y-5">
@@ -167,7 +167,7 @@ export default function LearnPage() {
 
         {/* Languages grid */}
         {loading || loadingLangs ? (
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 6 }).map((_, idx) => (
               <div key={idx} className="h-60 rounded-2xl border-2 border-dashed border-border/60 animate-pulse bg-card/40" />
             ))}
