@@ -254,16 +254,17 @@ ${js}
       const savedCode = codeAnswers[currentQuestionIndex]
       
       // Handle starterCode - can be object or string
-      let starterCodeObj = q.starterCode
-      if (typeof starterCodeObj === 'string') {
-        try {
-          starterCodeObj = JSON.parse(starterCodeObj)
-        } catch {
-          starterCodeObj = {
-            [q.codeType]: starterCodeObj
-          }
-        }
-      }
+      let starterCodeObj: { html?: string; css?: string; javascript?: string; [key: string]: any } = typeof q.starterCode === 'string'
+        ? (() => {
+            try {
+              return JSON.parse(q.starterCode)
+            } catch {
+              return {
+                [q.codeType]: q.starterCode
+              }
+            }
+          })()
+        : q.starterCode
       
       const instructions = extractInstructions(
         q.codeType === 'html-css-js' 
@@ -393,16 +394,17 @@ ${js}
     const q = assignment.questions[currentQuestionIndex] as CodeQuestion
     if (q.type !== 'code') return
     
-    let starterCodeObj = q.starterCode
-    if (typeof starterCodeObj === 'string') {
-      try {
-        starterCodeObj = JSON.parse(starterCodeObj)
-      } catch {
-        starterCodeObj = {
-          [q.codeType]: starterCodeObj
-        }
-      }
-    }
+    let starterCodeObj: { html?: string; css?: string; javascript?: string; [key: string]: any } = typeof q.starterCode === 'string'
+      ? (() => {
+          try {
+            return JSON.parse(q.starterCode)
+          } catch {
+            return {
+              [q.codeType]: q.starterCode
+            }
+          }
+        })()
+      : q.starterCode
     
     if (q.codeType === 'html-css-js') {
       setHtmlCode(removeComments(starterCodeObj.html || ''))
@@ -484,16 +486,17 @@ ${js}
 
   const calculateCodeScore = (codeAnswer: string, question: CodeQuestion): number => {
     // Get starter code
-    let starterCodeObj = question.starterCode
-    if (typeof starterCodeObj === 'string') {
-      try {
-        starterCodeObj = JSON.parse(starterCodeObj)
-      } catch {
-        starterCodeObj = {
-          [question.codeType]: starterCodeObj
-        }
-      }
-    }
+    let starterCodeObj: { html?: string; css?: string; javascript?: string; [key: string]: any } = typeof question.starterCode === 'string'
+      ? (() => {
+          try {
+            return JSON.parse(question.starterCode)
+          } catch {
+            return {
+              [question.codeType]: question.starterCode
+            }
+          }
+        })()
+      : question.starterCode
     
     // Combine starter code based on codeType
     const starterCode = question.codeType === 'html-css-js'
