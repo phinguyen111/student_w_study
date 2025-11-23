@@ -207,38 +207,37 @@ ${js}
         if (q.type === 'code') {
           setQuestion(q)
           
-          // Handle starterCode - can be object or string
-          let starterCodeObj = q.starterCode
-          if (typeof starterCodeObj === 'string') {
-            // If it's a string, try to parse it or use it directly
+      // Handle starterCode - can be object or string
+      let starterCodeObj: { html?: string; css?: string; javascript?: string; [key: string]: any } = typeof q.starterCode === 'string' 
+        ? (() => {
             try {
-              starterCodeObj = JSON.parse(starterCodeObj)
+              return JSON.parse(q.starterCode)
             } catch {
-              // If not JSON, create object based on codeType
-              starterCodeObj = {
-                [q.codeType]: starterCodeObj
+              return {
+                [q.codeType]: q.starterCode
               }
             }
-          }
-          
-          const instructions = extractInstructions(
-            q.codeType === 'html-css-js' 
-              ? (starterCodeObj.html || starterCodeObj.css || starterCodeObj.javascript || '')
-              : (starterCodeObj[q.codeType] || starterCodeObj.html || starterCodeObj.css || starterCodeObj.javascript || '')
-          )
-          setExerciseInstructions(instructions)
-          
-          if (q.codeType === 'html-css-js') {
-            setHtmlCode(removeComments(starterCodeObj.html || ''))
-            setCssCode(removeComments(starterCodeObj.css || ''))
-            setJsCode(removeComments(starterCodeObj.javascript || ''))
-            setActiveTab('multi')
-          } else {
-            const codeValue = starterCodeObj[q.codeType] || starterCodeObj.html || starterCodeObj.css || starterCodeObj.javascript || ''
-            const cleanedStarterCode = removeComments(codeValue)
-            setCode(cleanedStarterCode)
-            setActiveTab('single')
-          }
+          })()
+        : q.starterCode
+      
+      const instructions = extractInstructions(
+        q.codeType === 'html-css-js' 
+          ? (starterCodeObj.html || starterCodeObj.css || starterCodeObj.javascript || '')
+          : (starterCodeObj[q.codeType] || starterCodeObj.html || starterCodeObj.css || starterCodeObj.javascript || '')
+      )
+      setExerciseInstructions(instructions)
+      
+      if (q.codeType === 'html-css-js') {
+        setHtmlCode(removeComments(starterCodeObj.html || ''))
+        setCssCode(removeComments(starterCodeObj.css || ''))
+        setJsCode(removeComments(starterCodeObj.javascript || ''))
+        setActiveTab('multi')
+      } else {
+        const codeValue = starterCodeObj[q.codeType] || starterCodeObj.html || starterCodeObj.css || starterCodeObj.javascript || ''
+        const cleanedStarterCode = removeComments(codeValue)
+        setCode(cleanedStarterCode)
+        setActiveTab('single')
+      }
         }
       }
     } catch (error) {
@@ -316,16 +315,17 @@ ${js}
 
   const handleReset = () => {
     if (question) {
-      let starterCodeObj = question.starterCode
-      if (typeof starterCodeObj === 'string') {
-        try {
-          starterCodeObj = JSON.parse(starterCodeObj)
-        } catch {
-          starterCodeObj = {
-            [question.codeType]: starterCodeObj
-          }
-        }
-      }
+      let starterCodeObj: { html?: string; css?: string; javascript?: string; [key: string]: any } = typeof question.starterCode === 'string'
+        ? (() => {
+            try {
+              return JSON.parse(question.starterCode)
+            } catch {
+              return {
+                [question.codeType]: question.starterCode
+              }
+            }
+          })()
+        : question.starterCode
       
       if (question.codeType === 'html-css-js') {
         setHtmlCode(removeComments(starterCodeObj.html || ''))
