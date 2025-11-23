@@ -7,7 +7,7 @@ import api from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { User, Lock, Mail, Loader2, AlertCircle, CheckCircle, Eye, EyeOff, Save, X, Edit2, Shield, Sparkles, KeyRound, CheckCircle2, Upload, Camera } from 'lucide-react'
+import { User, Lock, Mail, Loader2, AlertCircle, CheckCircle, Eye, EyeOff, Save, X, Edit2, Shield, Sparkles, KeyRound, CheckCircle2, Camera } from 'lucide-react'
 
 export default function ProfilePage() {
   const { isAuthenticated, user, loading, refreshUser } = useAuth()
@@ -403,35 +403,6 @@ export default function ProfilePage() {
                       </div>
                     </div>
                   )}
-                  
-                  {/* Manual Upload Button */}
-                  <label className="w-full">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarUpload}
-                      disabled={isUploadingAvatar}
-                      className="hidden"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={isUploadingAvatar}
-                      className="w-full h-11 text-sm font-semibold border-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-300"
-                    >
-                      {isUploadingAvatar ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Uploading...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="h-4 w-4 mr-2" />
-                          Change Avatar
-                        </>
-                      )}
-                    </Button>
-                  </label>
 
                   {/* User Info */}
                   <div className="space-y-3 w-full">
