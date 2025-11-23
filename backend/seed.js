@@ -3483,7 +3483,7 @@ Page footer (copyright, links, contact info):
             <ul>
                 <li><a href="/">Home</a></li>
                 <li><a href="/about">About</a></li>
-            </ul>
+    </ul>
         </nav>
     </header>
     

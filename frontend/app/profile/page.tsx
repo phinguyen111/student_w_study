@@ -5,45 +5,30 @@ import { useAuth } from '@/hooks/useAuth'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Flame, Clock, BookOpen, ClipboardList, CheckCircle2, XCircle } from 'lucide-react'
-
-interface UserProgress {
-  currentStreak: number
-  totalStudyTime: number
-  completedLessonIds: string[]
-  lessonScores: Array<{
-    lessonId: { title: string; lessonNumber: number }
-    quizScore: number | null
-    codeScore: number | null
-    totalScore: number
-    quizAttempts: number
-    codeAttempts: number
-  }>
-  levelScores: Array<{
-    levelId: { title: string; levelNumber: number }
-    averageScore: number
-  }>
-}
-
-interface QuizAssignmentResult {
-  _id: string
-  assignmentId: {
-    _id: string
-    title: string
-    deadline: string
-    passingScore: number
-  }
-  score: number
-  passed: boolean
-  submittedAt: string
-}
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { User, Lock, Mail, Loader2, AlertCircle, CheckCircle, Eye, EyeOff, Save, X, Edit2, Shield, Sparkles, KeyRound, CheckCircle2 } from 'lucide-react'
 
 export default function ProfilePage() {
-  const { isAuthenticated, user, loading } = useAuth()
+  const { isAuthenticated, user, loading, refreshUser } = useAuth()
   const router = useRouter()
-  const [progress, setProgress] = useState<UserProgress | null>(null)
-  const [loadingProgress, setLoadingProgress] = useState(true)
-  const [assignmentResults, setAssignmentResults] = useState<QuizAssignmentResult[]>([])
+  
+  // Profile edit states
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [isEditingProfile, setIsEditingProfile] = useState(false)
+  const [isSavingProfile, setIsSavingProfile] = useState(false)
+  const [profileError, setProfileError] = useState('')
+  const [profileSuccess, setProfileSuccess] = useState('')
+  
+  // Password change states
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [passwordError, setPasswordError] = useState('')
+  const [passwordSuccess, setPasswordSuccess] = useState('')
+  const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false })
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -51,321 +36,572 @@ export default function ProfilePage() {
     }
   }, [isAuthenticated, loading, router])
 
-
-  const fetchProgress = async () => {
-    try {
-      const response = await api.get('/progress?lang=en')
-      setProgress(response.data.progress)
-    } catch (error) {
-      console.error('Error fetching progress:', error)
-    } finally {
-      setLoadingProgress(false)
-    }
-  }
-
-  const fetchAssignmentResults = async () => {
-    try {
-      const response = await api.get('/progress/quiz-assignments/results')
-      setAssignmentResults(response.data.results || [])
-    } catch (error) {
-      console.error('Error fetching assignment results:', error)
-    }
-  }
-
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchProgress()
-      fetchAssignmentResults()
+    if (user) {
+      setName(user.name || '')
+      setEmail(user.email || '')
     }
-  }, [isAuthenticated])
+  }, [user])
 
-  if (loading || loadingProgress) {
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setProfileError('')
+    setProfileSuccess('')
+    setIsSavingProfile(true)
+
+    try {
+      const response = await api.put('/auth/profile', {
+        name: name.trim(),
+        email: email.trim()
+      })
+
+      if (response.data.success) {
+        setProfileSuccess('Profile updated successfully!')
+        setIsEditingProfile(false)
+        await refreshUser()
+        setTimeout(() => setProfileSuccess(''), 4000)
+      }
+    } catch (error: any) {
+      setProfileError(error.response?.data?.message || 'Failed to update profile. Please try again.')
+    } finally {
+      setIsSavingProfile(false)
+    }
+  }
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setPasswordError('')
+    setPasswordSuccess('')
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New passwords do not match')
+      return
+    }
+
+    if (newPassword.length < 6) {
+      setPasswordError('Password must be at least 6 characters')
+      return
+    }
+
+    setIsChangingPassword(true)
+
+    try {
+      const response = await api.put('/auth/change-password', {
+        currentPassword,
+        newPassword
+      })
+
+      if (response.data.success) {
+        setPasswordSuccess('Password changed successfully!')
+        setCurrentPassword('')
+        setNewPassword('')
+        setConfirmPassword('')
+        setTimeout(() => setPasswordSuccess(''), 4000)
+      }
+    } catch (error: any) {
+      setPasswordError(error.response?.data?.message || 'Failed to change password. Please try again.')
+    } finally {
+      setIsChangingPassword(false)
+    }
+  }
+
+  const cancelEdit = () => {
+    setIsEditingProfile(false)
+    setName(user?.name || '')
+    setEmail(user?.email || '')
+    setProfileError('')
+    setProfileSuccess('')
+  }
+
+  const getPasswordStrength = (password: string) => {
+    if (!password) return { strength: 0, label: '', color: '' }
+    let strength = 0
+    if (password.length >= 6) strength++
+    if (password.length >= 8) strength++
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++
+    if (/\d/.test(password)) strength++
+    if (/[^a-zA-Z\d]/.test(password)) strength++
+    
+    const levels = [
+      { label: 'Very Weak', color: 'bg-red-500' },
+      { label: 'Weak', color: 'bg-orange-500' },
+      { label: 'Fair', color: 'bg-yellow-500' },
+      { label: 'Good', color: 'bg-blue-500' },
+      { label: 'Strong', color: 'bg-green-500' },
+    ]
+    return { strength, ...levels[Math.min(strength, 4)] }
+  }
+
+  const passwordStrength = getPasswordStrength(newPassword)
+  const passwordsMatch = newPassword && confirmPassword && newPassword === confirmPassword
+
+  if (loading) {
     return (
-      <div className="container mx-auto px-4 py-16 text-center">
-        <p>Loading...</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center">
+        <div className="text-center space-y-6">
+          <div className="relative inline-block">
+            <div className="w-20 h-20 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Sparkles className="h-8 w-8 text-primary animate-pulse" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <p className="text-xl font-semibold text-foreground">Loading your profile</p>
+            <p className="text-sm text-muted-foreground">Please wait a moment...</p>
+          </div>
+        </div>
       </div>
     )
   }
 
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2) || 'U'
+  }
+
+  const avatarBgColors = [
+    'from-blue-500 via-purple-500 to-pink-500',
+    'from-pink-500 via-rose-500 to-orange-500',
+    'from-green-500 via-emerald-500 to-teal-500',
+    'from-orange-500 via-amber-500 to-yellow-500',
+    'from-indigo-500 via-blue-500 to-cyan-500',
+    'from-cyan-500 via-teal-500 to-green-500',
+  ]
+  const avatarColor = avatarBgColors[(user?.name?.length || 0) % avatarBgColors.length]
+
   return (
-    <div className="container mx-auto px-4 py-16 max-w-4xl min-h-screen bg-gradient-to-br from-[hsl(185_80%_98%)] via-[hsl(210_60%_98%)] to-[hsl(250_60%_98%)] dark:from-[hsl(220_30%_8%)] dark:via-[hsl(230_30%_10%)] dark:to-[hsl(240_30%_12%)]">
-      <h1 className="text-4xl font-bold mb-8 bg-gradient-to-r from-[hsl(185_80%_45%)] via-[hsl(210_60%_55%)] to-[hsl(250_60%_55%)] bg-clip-text text-transparent">
-        Profile
-      </h1>
-
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Flame className="h-5 w-5 text-orange-500" />
-              Streak
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{progress?.currentStreak || 0} days</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-blue-500" />
-              Study Time
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{Math.round((progress?.totalStudyTime || 0) / 60)} hours</p>
-            <p className="text-sm text-muted-foreground">
-              {progress?.totalStudyTime || 0} minutes total
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-green-500" />
-              Lessons Completed
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{progress?.completedLessonIds.length || 0}</p>
-          </CardContent>
-        </Card>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      {/* Enhanced animated background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-primary/20 to-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-blue-500/20 to-cyan-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-primary/5 to-purple-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
       </div>
 
-      {/* Quiz and Code Statistics */}
-      {progress && progress.lessonScores.length > 0 && (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Score Statistics</CardTitle>
-            <CardDescription>Quiz and Code Exercise scores by lesson</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {progress.lessonScores.map((lessonScore, index) => (
-                <div key={index} className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <p className="font-semibold">
-                        Lesson {lessonScore.lessonId.lessonNumber}: {lessonScore.lessonId.title}
-                      </p>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-6xl relative z-10">
+        {/* Enhanced Header Section */}
+        <div className="mb-10 md:mb-14">
+          <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-gradient-to-r from-primary/10 via-purple-500/10 to-primary/10 text-primary text-sm font-semibold mb-5 shadow-sm border border-primary/20 backdrop-blur-sm">
+            <Sparkles className="h-4 w-4 animate-pulse" />
+            <span>Account Management</span>
+          </div>
+          <h1 className="text-4xl md:text-6xl font-extrabold mb-4 bg-gradient-to-r from-primary via-purple-600 to-primary bg-clip-text text-transparent leading-tight">
+            Profile Settings
+          </h1>
+          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl leading-relaxed">
+            Manage your account information, security settings, and preferences with ease
+          </p>
+        </div>
+
+        <div className="grid gap-6 md:gap-8 lg:grid-cols-3">
+          {/* Profile Avatar & Info Card - Sidebar */}
+          <div className="lg:col-span-1">
+            <Card className="sticky top-6 border-0 shadow-2xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md hover:shadow-3xl transition-all duration-500">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5 rounded-lg"></div>
+              <CardContent className="p-6 md:p-8 relative">
+                <div className="flex flex-col items-center text-center space-y-6">
+                  {/* Enhanced Avatar */}
+                  <div className="relative group">
+                    <div className={`absolute -inset-2 bg-gradient-to-br ${avatarColor} rounded-full blur-2xl opacity-60 group-hover:opacity-80 transition-opacity duration-500`}></div>
+                    <div className={`relative w-28 h-28 md:w-32 md:h-32 rounded-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white text-4xl md:text-5xl font-extrabold shadow-2xl transform group-hover:scale-110 transition-all duration-500 ring-4 ring-white dark:ring-slate-900`}>
+                      {getInitials(user?.name || 'User')}
                     </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold">
-                        Total: {lessonScore.totalScore.toFixed(1)}/20
-                      </p>
+                    <div className="absolute -bottom-1 -right-1 w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full border-4 border-white dark:border-slate-900 flex items-center justify-center shadow-lg">
+                      <div className="w-4 h-4 bg-white rounded-full animate-pulse"></div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 mt-3">
-                    <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                          Quiz Score
-                        </span>
-                        <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
-                          {lessonScore.quizScore !== null ? `${lessonScore.quizScore.toFixed(1)}/10` : 'Not done'}
-                        </span>
+
+                  {/* User Info */}
+                  <div className="space-y-3 w-full">
+                    <div>
+                      <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+                        {user?.name || 'User'}
+                      </h2>
+                      <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                        <Mail className="h-4 w-4 flex-shrink-0" />
+                        <span className="text-sm md:text-base break-all">{user?.email}</span>
                       </div>
-                      <p className="text-xs text-blue-700 dark:text-blue-300">
-                        {lessonScore.quizAttempts} attempts
-                      </p>
                     </div>
-                    <div className="p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-green-900 dark:text-green-100">
-                          Code Score
-                        </span>
-                        <span className="text-sm font-bold text-green-600 dark:text-green-400">
-                          {lessonScore.codeScore !== null ? `${lessonScore.codeScore.toFixed(1)}/10` : 'Not done'}
-                        </span>
-                      </div>
-                      <p className="text-xs text-green-700 dark:text-green-300">
-                        {lessonScore.codeAttempts} attempts
-                      </p>
+                    <div className="pt-2">
+                      <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/10 to-purple-500/10 text-primary text-sm font-semibold border border-primary/20">
+                        <Shield className="h-4 w-4" />
+                        Verified Account
+                      </span>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              </CardContent>
+            </Card>
+          </div>
 
-      {/* Overall Statistics */}
-      {progress && progress.lessonScores.length > 0 && (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Overall Statistics</CardTitle>
-            <CardDescription>Summary of Quiz and Code scores</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <p className="text-sm text-blue-900 dark:text-blue-100 mb-2">Average Quiz Score</p>
-                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  {(() => {
-                    const quizScores = progress.lessonScores
-                      .filter(ls => ls.quizScore !== null)
-                      .map(ls => ls.quizScore!);
-                    return quizScores.length > 0
-                      ? (quizScores.reduce((a, b) => a + b, 0) / quizScores.length).toFixed(1)
-                      : '0.0';
-                  })()}/10
-                </p>
-                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                  {progress.lessonScores.filter(ls => ls.quizScore !== null).length} lessons done
-                </p>
-              </div>
-              <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
-                <p className="text-sm text-green-900 dark:text-green-100 mb-2">Average Code Score</p>
-                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  {(() => {
-                    const codeScores = progress.lessonScores
-                      .filter(ls => ls.codeScore !== null)
-                      .map(ls => ls.codeScore!);
-                    return codeScores.length > 0
-                      ? (codeScores.reduce((a, b) => a + b, 0) / codeScores.length).toFixed(1)
-                      : '0.0';
-                  })()}/10
-                </p>
-                  <p className="text-xs text-green-700 dark:text-green-300 mt-1">
-                  {progress.lessonScores.filter(ls => ls.codeScore !== null).length} lessons done
-                </p>
-              </div>
-              <div className="p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                <p className="text-sm text-purple-900 dark:text-purple-100 mb-2">Average Total Score</p>
-                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                  {(() => {
-                    const totalScores = progress.lessonScores
-                      .filter(ls => ls.totalScore > 0)
-                      .map(ls => ls.totalScore);
-                    return totalScores.length > 0
-                      ? (totalScores.reduce((a, b) => a + b, 0) / totalScores.length / 2).toFixed(1)
-                      : '0.0';
-                  })()}/10
-                </p>
-                  <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">
-                  {progress.lessonScores.filter(ls => ls.totalScore > 0).length} lessons completed
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Quiz Assignments Results */}
-      {assignmentResults.length > 0 && (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ClipboardList className="h-5 w-5" />
-              Quiz Assignment Scores
-            </CardTitle>
-            <CardDescription>Quiz Assignment scores (separate from lesson quizzes)</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {assignmentResults.map((result) => {
-                const deadlineDate = new Date(result.assignmentId.deadline)
-                return (
-                  <div 
-                    key={result._id} 
-                    className={`p-4 border-2 rounded-lg ${
-                      result.passed
-                        ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20'
-                        : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex-1">
-                        <p className="font-semibold text-lg">{result.assignmentId.title}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Deadline: {deadlineDate.toLocaleString()} • Passing: {result.assignmentId.passingScore}/10
-                        </p>
+          {/* Main Content Area */}
+          <div className="lg:col-span-2 space-y-6 md:space-y-8">
+            {/* Account Information Card */}
+            <Card className="border-0 shadow-2xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md hover:shadow-3xl transition-all duration-500">
+              <CardHeader className="pb-5 border-b border-border/50">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 text-primary shadow-lg">
+                    <User className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl md:text-3xl font-bold">Account Information</CardTitle>
+                    <CardDescription className="text-base mt-1.5">Update your personal details and contact information</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-6 md:p-8 space-y-6">
+                <form onSubmit={handleUpdateProfile} className="space-y-6">
+                  {/* Enhanced Alert Messages */}
+                  {profileError && (
+                    <div className="p-5 rounded-2xl bg-gradient-to-r from-destructive/10 to-red-500/10 border-2 border-destructive/30 text-destructive animate-in slide-in-from-top-3 duration-500 shadow-lg">
+                      <div className="flex items-start gap-4">
+                        <div className="p-2 rounded-lg bg-destructive/20 flex-shrink-0">
+                          <AlertCircle className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm mb-1">Update Failed</p>
+                          <p className="text-sm leading-relaxed">{profileError}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setProfileError('')}
+                          className="text-destructive/60 hover:text-destructive transition-colors p-1 rounded-lg hover:bg-destructive/10 flex-shrink-0"
+                          aria-label="Close error"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
                       </div>
-                      <div className="flex items-center gap-2 ml-4">
-                        {result.passed ? (
-                          <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-                        ) : (
-                          <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
-                        )}
-                        <div className="text-right">
-                          <p className="font-bold text-xl">
-                            {result.score.toFixed(1)}/10
-                          </p>
-                          <p className={`text-sm font-medium ${result.passed ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                            {result.passed ? 'Passed' : 'Failed'}
-                          </p>
+                    </div>
+                  )}
+                  
+                  {profileSuccess && (
+                    <div className="p-5 rounded-2xl bg-gradient-to-r from-green-50/80 to-emerald-50/80 dark:from-green-950/40 dark:to-emerald-950/40 border-2 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 animate-in slide-in-from-top-3 duration-500 shadow-lg">
+                      <div className="flex items-start gap-4">
+                        <div className="p-2 rounded-lg bg-green-500/20 flex-shrink-0">
+                          <CheckCircle2 className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm mb-1">Success!</p>
+                          <p className="text-sm leading-relaxed">{profileSuccess}</p>
                         </div>
                       </div>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Submitted: {new Date(result.submittedAt).toLocaleString()}
-                    </p>
-                  </div>
-                )
-              })}
-            </div>
-            <div className="mt-6 pt-4 border-t">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="p-3 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-1">Quiz Assignments Done</p>
-                  <p className="text-2xl font-bold">{assignmentResults.length}</p>
-                </div>
-                <div className="p-3 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-1">Average Score</p>
-                  <p className="text-2xl font-bold">
-                    {assignmentResults.length > 0
-                      ? (assignmentResults.reduce((sum, r) => sum + r.score, 0) / assignmentResults.length).toFixed(1)
-                      : '0.0'}/10
-                  </p>
-                </div>
-                <div className="p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
-                  <p className="text-sm text-green-900 dark:text-green-100 mb-1">Passed</p>
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {assignmentResults.filter(r => r.passed).length}
-                  </p>
-                </div>
-                <div className="p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
-                  <p className="text-sm text-red-900 dark:text-red-100 mb-1">Failed</p>
-                  <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                    {assignmentResults.filter(r => !r.passed).length}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                  )}
 
-      {progress && progress.levelScores.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Level Progress</CardTitle>
-            <CardDescription>Your scores by level</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {progress.levelScores.map((levelScore, index) => (
-                <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                  {/* Enhanced Form Fields */}
+                  <div className="grid gap-6">
+                    <div className="space-y-3">
+                      <label htmlFor="name" className="text-sm font-bold flex items-center gap-2.5 text-foreground">
+                        <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                          <User className="h-4 w-4" />
+                        </div>
+                        Full Name
+                      </label>
+                      <Input
+                        id="name"
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Enter your full name"
+                        required
+                        disabled={!isEditingProfile || isSavingProfile}
+                        className="h-14 text-base border-2 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                      />
+                    </div>
+
+                    <div className="space-y-3">
+                      <label htmlFor="email" className="text-sm font-bold flex items-center gap-2.5 text-foreground">
+                        <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                          <Mail className="h-4 w-4" />
+                        </div>
+                        Email Address
+                      </label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Enter your email address"
+                        required
+                        disabled={!isEditingProfile || isSavingProfile}
+                        className="h-14 text-base border-2 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Enhanced Action Buttons */}
+                  <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                    {!isEditingProfile ? (
+                      <Button
+                        type="button"
+                        onClick={() => setIsEditingProfile(true)}
+                        className="flex-1 h-14 text-base font-bold shadow-xl hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+                        size="lg"
+                      >
+                        <Edit2 className="h-5 w-5 mr-2.5" />
+                        Edit Profile
+                      </Button>
+                    ) : (
+                      <>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={cancelEdit}
+                          disabled={isSavingProfile}
+                          className="flex-1 h-14 text-base font-bold border-2 hover:bg-slate-50 dark:hover:bg-slate-800 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 disabled:opacity-50"
+                          size="lg"
+                        >
+                          <X className="h-5 w-5 mr-2.5" />
+                          Cancel
+                        </Button>
+                        <Button
+                          type="submit"
+                          disabled={isSavingProfile}
+                          className="flex-1 h-14 text-base font-bold shadow-xl hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+                          size="lg"
+                        >
+                          {isSavingProfile ? (
+                            <>
+                              <Loader2 className="h-5 w-5 mr-2.5 animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="h-5 w-5 mr-2.5" />
+                              Save Changes
+                            </>
+                          )}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+
+            {/* Change Password Card */}
+            <Card className="border-0 shadow-2xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md hover:shadow-3xl transition-all duration-500">
+              <CardHeader className="pb-5 border-b border-border/50">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-500/5 text-purple-600 dark:text-purple-400 shadow-lg">
+                    <KeyRound className="h-6 w-6" />
+                  </div>
                   <div>
-                    <p className="font-semibold">
-                      Level {levelScore.levelId.levelNumber}: {levelScore.levelId.title}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Average score: {levelScore.averageScore.toFixed(1)}/10
-                    </p>
+                    <CardTitle className="text-2xl md:text-3xl font-bold">Security Settings</CardTitle>
+                    <CardDescription className="text-base mt-1.5">Change your password to keep your account secure</CardDescription>
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              </CardHeader>
+              <CardContent className="p-6 md:p-8">
+                <form onSubmit={handleChangePassword} className="space-y-6">
+                  {/* Enhanced Alert Messages */}
+                  {passwordError && (
+                    <div className="p-5 rounded-2xl bg-gradient-to-r from-destructive/10 to-red-500/10 border-2 border-destructive/30 text-destructive animate-in slide-in-from-top-3 duration-500 shadow-lg">
+                      <div className="flex items-start gap-4">
+                        <div className="p-2 rounded-lg bg-destructive/20 flex-shrink-0">
+                          <AlertCircle className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm mb-1">Password Change Failed</p>
+                          <p className="text-sm leading-relaxed">{passwordError}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setPasswordError('')}
+                          className="text-destructive/60 hover:text-destructive transition-colors p-1 rounded-lg hover:bg-destructive/10 flex-shrink-0"
+                          aria-label="Close error"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {passwordSuccess && (
+                    <div className="p-5 rounded-2xl bg-gradient-to-r from-green-50/80 to-emerald-50/80 dark:from-green-950/40 dark:to-emerald-950/40 border-2 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 animate-in slide-in-from-top-3 duration-500 shadow-lg">
+                      <div className="flex items-start gap-4">
+                        <div className="p-2 rounded-lg bg-green-500/20 flex-shrink-0">
+                          <CheckCircle2 className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm mb-1">Password Changed!</p>
+                          <p className="text-sm leading-relaxed">{passwordSuccess}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Enhanced Password Fields */}
+                  <div className="grid gap-6">
+                    <div className="space-y-3">
+                      <label htmlFor="currentPassword" className="text-sm font-bold text-foreground flex items-center gap-2.5">
+                        <Lock className="h-4 w-4 text-primary" />
+                        Current Password
+                      </label>
+                      <div className="relative group">
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-300" />
+                        <Input
+                          id="currentPassword"
+                          type={showPasswords.current ? 'text' : 'password'}
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
+                          placeholder="Enter your current password"
+                          required
+                          disabled={isChangingPassword}
+                          className="pl-12 pr-12 h-14 text-base border-2 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-300 disabled:opacity-60"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95"
+                          tabIndex={-1}
+                          aria-label={showPasswords.current ? 'Hide password' : 'Show password'}
+                        >
+                          {showPasswords.current ? (
+                            <EyeOff className="h-5 w-5" />
+                          ) : (
+                            <Eye className="h-5 w-5" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <label htmlFor="newPassword" className="text-sm font-bold text-foreground flex items-center gap-2.5">
+                        <Lock className="h-4 w-4 text-primary" />
+                        New Password
+                      </label>
+                      <div className="relative group">
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-300" />
+                        <Input
+                          id="newPassword"
+                          type={showPasswords.new ? 'text' : 'password'}
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="Enter new password (minimum 6 characters)"
+                          required
+                          disabled={isChangingPassword}
+                          className="pl-12 pr-12 h-14 text-base border-2 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-300 disabled:opacity-60"
+                          minLength={6}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95"
+                          tabIndex={-1}
+                          aria-label={showPasswords.new ? 'Hide password' : 'Show password'}
+                        >
+                          {showPasswords.new ? (
+                            <EyeOff className="h-5 w-5" />
+                          ) : (
+                            <Eye className="h-5 w-5" />
+                          )}
+                        </button>
+                      </div>
+                      {/* Password Strength Indicator */}
+                      {newPassword && (
+                        <div className="space-y-2 pt-2">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">Password strength:</span>
+                            <span className={`font-semibold ${passwordStrength.color.replace('bg-', 'text-')}`}>
+                              {passwordStrength.label}
+                            </span>
+                          </div>
+                          <div className="h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full ${passwordStrength.color} transition-all duration-500 rounded-full`}
+                              style={{ width: `${(passwordStrength.strength / 5) * 100}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-3">
+                      <label htmlFor="confirmPassword" className="text-sm font-bold text-foreground flex items-center gap-2.5">
+                        <Lock className="h-4 w-4 text-primary" />
+                        Confirm New Password
+                      </label>
+                      <div className="relative group">
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-300" />
+                        <Input
+                          id="confirmPassword"
+                          type={showPasswords.confirm ? 'text' : 'password'}
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="Confirm your new password"
+                          required
+                          disabled={isChangingPassword}
+                          className={`pl-12 pr-12 h-14 text-base border-2 focus:ring-2 transition-all duration-300 disabled:opacity-60 ${
+                            confirmPassword && passwordsMatch
+                              ? 'border-green-500 focus:border-green-500 focus:ring-green-500/20'
+                              : confirmPassword && !passwordsMatch
+                              ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
+                              : 'focus:border-primary focus:ring-primary/20'
+                          }`}
+                          minLength={6}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95"
+                          tabIndex={-1}
+                          aria-label={showPasswords.confirm ? 'Hide password' : 'Show password'}
+                        >
+                          {showPasswords.confirm ? (
+                            <EyeOff className="h-5 w-5" />
+                          ) : (
+                            <Eye className="h-5 w-5" />
+                          )}
+                        </button>
+                      </div>
+                      {/* Password Match Indicator */}
+                      {confirmPassword && (
+                        <div className="flex items-center gap-2 text-sm">
+                          {passwordsMatch ? (
+                            <>
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                              <span className="text-green-600 dark:text-green-400 font-medium">Passwords match</span>
+                            </>
+                          ) : (
+                            <>
+                              <AlertCircle className="h-4 w-4 text-destructive" />
+                              <span className="text-destructive font-medium">Passwords do not match</span>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={isChangingPassword || !passwordsMatch || !newPassword}
+                    className="w-full h-14 text-base font-bold shadow-xl hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    size="lg"
+                  >
+                    {isChangingPassword ? (
+                      <>
+                        <Loader2 className="h-5 w-5 mr-2.5 animate-spin" />
+                        Changing Password...
+                      </>
+                    ) : (
+                      <>
+                        <KeyRound className="h-5 w-5 mr-2.5" />
+                        Update Password
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
-
-
-
