@@ -46,19 +46,22 @@ export default function ProfilePage() {
       setName(user.name || '')
       setEmail(user.email || '')
       if (user.avatar) {
-        // Get API URL from window location or env
-        const getApiBaseUrl = () => {
-          if (typeof window !== 'undefined') {
-            // In production, use the backend URL
-            if (window.location.hostname.includes('vercel.app')) {
-              return 'https://codecatalyst-azure.vercel.app'
-            }
-          }
-          return process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000'
-        }
-        // Thêm timestamp để force reload ảnh
-        const baseUrl = getApiBaseUrl()
-        const avatarUrl = `${baseUrl}${user.avatar}${user.avatar.includes('?') ? '&' : '?'}t=${Date.now()}`
+        // Nếu là Cloudinary URL (đã là full URL), dùng trực tiếp
+        // Nếu là relative path (local), thêm base URL
+        const avatarUrl = user.avatar.startsWith('http')
+          ? `${user.avatar}${user.avatar.includes('?') ? '&' : '?'}t=${Date.now()}`
+          : (() => {
+              const getApiBaseUrl = () => {
+                if (typeof window !== 'undefined') {
+                  if (window.location.hostname.includes('vercel.app')) {
+                    return 'https://codecatalyst-azure.vercel.app'
+                  }
+                }
+                return process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000'
+              }
+              const baseUrl = getApiBaseUrl()
+              return `${baseUrl}${user.avatar}${user.avatar.includes('?') ? '&' : '?'}t=${Date.now()}`
+            })()
         console.log('Loading avatar from:', avatarUrl)
         setAvatarPreview(avatarUrl)
       } else {
@@ -202,21 +205,27 @@ export default function ProfilePage() {
         console.log('Upload successful! Avatar path:', data.avatar)
         console.log('User data from response:', data.user)
         
-        // Cập nhật avatar preview ngay từ response với timestamp để force reload
+        // Cập nhật avatar preview ngay từ response
+        // Avatar từ Cloudinary đã là full URL, không cần thêm base URL
         if (data.avatar || data.user?.avatar) {
-          const avatarPath = data.avatar || data.user?.avatar
-          const getApiBaseUrl = () => {
-            if (typeof window !== 'undefined') {
-              if (window.location.hostname.includes('vercel.app')) {
-                return 'https://codecatalyst-azure.vercel.app'
-              }
-            }
-            return process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000'
-          }
-          // Thêm timestamp để force browser reload ảnh mới
-          const avatarUrl = `${getApiBaseUrl()}${avatarPath}?t=${Date.now()}`
-          console.log('Setting avatar URL to:', avatarUrl)
-          setAvatarPreview(avatarUrl)
+          const avatarUrl = data.avatar || data.user?.avatar
+          // Nếu là Cloudinary URL (đã là full URL), dùng trực tiếp
+          // Nếu là relative path (local), thêm base URL
+          const finalUrl = avatarUrl.startsWith('http') 
+            ? `${avatarUrl}?t=${Date.now()}` // Cloudinary URL - thêm timestamp để force reload
+            : (() => {
+                const getApiBaseUrl = () => {
+                  if (typeof window !== 'undefined') {
+                    if (window.location.hostname.includes('vercel.app')) {
+                      return 'https://codecatalyst-azure.vercel.app'
+                    }
+                  }
+                  return process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000'
+                }
+                return `${getApiBaseUrl()}${avatarUrl}?t=${Date.now()}`
+              })()
+          console.log('Setting avatar URL to:', finalUrl)
+          setAvatarPreview(finalUrl)
         } else {
           console.error('No avatar path in response!', data)
         }
@@ -235,15 +244,22 @@ export default function ProfilePage() {
       setAvatarError(error.message || 'Failed to upload avatar')
       // Reset to original avatar on error
       if (user?.avatar) {
-        const getApiBaseUrl = () => {
-          if (typeof window !== 'undefined') {
-            if (window.location.hostname.includes('vercel.app')) {
-              return 'https://codecatalyst-azure.vercel.app'
-            }
-          }
-          return process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000'
-        }
-        setAvatarPreview(`${getApiBaseUrl()}${user.avatar}`)
+        // Nếu là Cloudinary URL (đã là full URL), dùng trực tiếp
+        // Nếu là relative path (local), thêm base URL
+        const avatarUrl = user.avatar.startsWith('http')
+          ? user.avatar
+          : (() => {
+              const getApiBaseUrl = () => {
+                if (typeof window !== 'undefined') {
+                  if (window.location.hostname.includes('vercel.app')) {
+                    return 'https://codecatalyst-azure.vercel.app'
+                  }
+                }
+                return process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000'
+              }
+              return `${getApiBaseUrl()}${user.avatar}`
+            })()
+        setAvatarPreview(avatarUrl)
       } else {
         setAvatarPreview(null)
       }
@@ -422,10 +438,10 @@ export default function ProfilePage() {
                       </span>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+            </div>
+          </CardContent>
+        </Card>
+              </div>
 
           {/* Main Content Area */}
           <div className="lg:col-span-2 space-y-6 md:space-y-8">
@@ -435,13 +451,13 @@ export default function ProfilePage() {
                 <div className="flex items-center gap-4">
                   <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 text-primary shadow-lg">
                     <User className="h-6 w-6" />
-                  </div>
+              </div>
                   <div>
                     <CardTitle className="text-2xl md:text-3xl font-bold">Account Information</CardTitle>
                     <CardDescription className="text-base mt-1.5">Update your personal details and contact information</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
+              </div>
+            </div>
+          </CardHeader>
               <CardContent className="p-6 md:p-8 space-y-6">
                 <form onSubmit={handleUpdateProfile} className="space-y-6">
                   {/* Enhanced Alert Messages */}
@@ -487,7 +503,7 @@ export default function ProfilePage() {
                       <label htmlFor="name" className="text-sm font-bold flex items-center gap-2.5 text-foreground">
                         <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
                           <User className="h-4 w-4" />
-                        </div>
+                  </div>
                         Full Name
                       </label>
                       <Input
@@ -500,13 +516,13 @@ export default function ProfilePage() {
                         disabled={!isEditingProfile || isSavingProfile}
                         className="h-14 text-base border-2 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
                       />
-                    </div>
+            </div>
 
                     <div className="space-y-3">
                       <label htmlFor="email" className="text-sm font-bold flex items-center gap-2.5 text-foreground">
                         <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
                           <Mail className="h-4 w-4" />
-                        </div>
+                </div>
                         Email Address
                       </label>
                       <Input
@@ -519,8 +535,8 @@ export default function ProfilePage() {
                         disabled={!isEditingProfile || isSavingProfile}
                         className="h-14 text-base border-2 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
                       />
-                    </div>
-                  </div>
+                </div>
+              </div>
 
                   {/* Enhanced Action Buttons */}
                   <div className="flex flex-col sm:flex-row gap-4 pt-4">
@@ -567,10 +583,10 @@ export default function ProfilePage() {
                         </Button>
                       </>
                     )}
-                  </div>
+            </div>
                 </form>
-              </CardContent>
-            </Card>
+          </CardContent>
+        </Card>
 
             {/* Change Password Card */}
             <Card className="border-0 shadow-2xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md hover:shadow-3xl transition-all duration-500">
@@ -765,7 +781,7 @@ export default function ProfilePage() {
                         </div>
                       )}
                     </div>
-                  </div>
+            </div>
 
                   <Button
                     type="submit"
@@ -786,8 +802,8 @@ export default function ProfilePage() {
                     )}
                   </Button>
                 </form>
-              </CardContent>
-            </Card>
+          </CardContent>
+        </Card>
           </div>
         </div>
       </div>

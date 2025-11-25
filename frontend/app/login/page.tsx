@@ -64,55 +64,55 @@ export default function LoginPage() {
             <CardDescription className="text-center text-base">
               Sign in to continue your learning journey
             </CardDescription>
-          </CardHeader>
-          <CardContent>
+        </CardHeader>
+        <CardContent>
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Error Message */}
-              {error && (
+            {error && (
                 <div className="p-4 bg-destructive/10 border border-destructive/20 text-destructive rounded-lg flex items-start gap-3 animate-in slide-in-from-top-2">
                   <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
                   <div className="flex-1">
                     <p className="font-medium text-sm">Login Failed</p>
                     <p className="text-sm mt-1">{error}</p>
                   </div>
-                </div>
-              )}
+              </div>
+            )}
 
               {/* Email Field */}
               <div className="space-y-2">
                 <label htmlFor="email" className="text-sm font-medium text-foreground">
                   Email Address
-                </label>
+              </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email"
                     className="pl-10 h-12 text-base"
-                    required
+                required
                     disabled={loading}
-                  />
-                </div>
+              />
+            </div>
               </div>
 
               {/* Password Field */}
               <div className="space-y-2">
                 <label htmlFor="password" className="text-sm font-medium text-foreground">
-                  Password
-                </label>
+                Password
+              </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <Input
-                    id="password"
+              <Input
+                id="password"
                     type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
                     className="pl-10 pr-10 h-12 text-base"
-                    required
+                required
                     disabled={loading}
                   />
                   <button
@@ -128,7 +128,7 @@ export default function LoginPage() {
                     )}
                   </button>
                 </div>
-              </div>
+            </div>
 
               {/* Submit Button */}
               <Button 
@@ -145,10 +145,10 @@ export default function LoginPage() {
                 ) : (
                   'Sign In'
                 )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
         {/* Footer */}
         <div className="mt-8 text-center text-sm text-muted-foreground">

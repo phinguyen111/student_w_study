@@ -1,29 +1,9 @@
 import multer from 'multer';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Đảm bảo thư mục uploads tồn tại
-const uploadsDir = path.join(__dirname, '../public/uploads/avatars');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-// Cấu hình storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    // Tạo tên file unique: userId-timestamp.extension
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
-    const ext = path.extname(file.originalname);
-    cb(null, `avatar-${uniqueSuffix}${ext}`);
-  }
-});
+// Sử dụng memory storage thay vì disk storage để tương thích với serverless
+// File sẽ được upload lên Cloudinary thay vì lưu local
+const storage = multer.memoryStorage();
 
 // Filter chỉ cho phép ảnh
 const fileFilter = (req, file, cb) => {

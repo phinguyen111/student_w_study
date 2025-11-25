@@ -313,6 +313,15 @@ export default function AdminPage() {
   // Search states
   const [usersTabSearch, setUsersTabSearch] = useState<string>('')
   const [userProgressTabSearch, setUserProgressTabSearch] = useState<string>('')
+  const [activityLogTabSwitchFilter, setActivityLogTabSwitchFilter] = useState<{
+    type: 'all' | 'greater' | 'greaterEqual' | 'less' | 'lessEqual' | 'exact' | 'range'
+    value1: string
+    value2: string
+  }>({
+    type: 'all',
+    value1: '',
+    value2: ''
+  })
   const [userProgressSummaries, setUserProgressSummaries] = useState<Record<string, { level: string; language: string; score: number; completedLessons: number }>>({})
   
   // Content Management
@@ -2330,7 +2339,7 @@ export default function AdminPage() {
                   <Filter className="h-4 w-4 text-muted-foreground" />
                   <span className="font-semibold">Filters:</span>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
                     <label className="text-sm font-medium mb-2 block">User</label>
                     <select
@@ -2365,6 +2374,71 @@ export default function AdminPage() {
                     </select>
                   </div>
                   <div>
+                    <label className="text-sm font-medium mb-2 block">Search Tab Switches</label>
+                    <div className="space-y-2">
+                      <select
+                        className="w-full px-3 py-2 border rounded-md"
+                        value={activityLogTabSwitchFilter.type}
+                        onChange={(e) => {
+                          setActivityLogTabSwitchFilter({
+                            ...activityLogTabSwitchFilter,
+                            type: e.target.value as any,
+                            value1: '',
+                            value2: ''
+                          })
+                        }}
+                      >
+                        <option value="all">Tất cả</option>
+                        <option value="greater">Lớn hơn (&gt;)</option>
+                        <option value="greaterEqual">Lớn hơn hoặc bằng (&gt;=)</option>
+                        <option value="less">Nhỏ hơn (&lt;)</option>
+                        <option value="lessEqual">Nhỏ hơn hoặc bằng (&lt;=)</option>
+                        <option value="exact">Chính xác (=)</option>
+                        <option value="range">Từ ... đến ...</option>
+                      </select>
+                      {activityLogTabSwitchFilter.type !== 'all' && activityLogTabSwitchFilter.type !== 'range' && (
+                        <Input
+                          type="number"
+                          placeholder="Nhập số"
+                          className="w-full"
+                          value={activityLogTabSwitchFilter.value1}
+                          onChange={(e) => setActivityLogTabSwitchFilter({
+                            ...activityLogTabSwitchFilter,
+                            value1: e.target.value
+                          })}
+                          min="0"
+                        />
+                      )}
+                      {activityLogTabSwitchFilter.type === 'range' && (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            placeholder="Từ"
+                            className="w-full"
+                            value={activityLogTabSwitchFilter.value1}
+                            onChange={(e) => setActivityLogTabSwitchFilter({
+                              ...activityLogTabSwitchFilter,
+                              value1: e.target.value
+                            })}
+                            min="0"
+                          />
+                          <span className="text-muted-foreground">-</span>
+                          <Input
+                            type="number"
+                            placeholder="Đến"
+                            className="w-full"
+                            value={activityLogTabSwitchFilter.value2}
+                            onChange={(e) => setActivityLogTabSwitchFilter({
+                              ...activityLogTabSwitchFilter,
+                              value2: e.target.value
+                            })}
+                            min="0"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div>
                     <label className="text-sm font-medium mb-2 block">Limit</label>
                     <select
                       className="w-full px-3 py-2 border rounded-md"
@@ -2396,7 +2470,88 @@ export default function AdminPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {activityLog.map((session: any) => {
+                  {(() => {
+                    // Filter activity log by tab switch search
+                    let filteredLog = activityLog
+                    
+                    if (activityLogTabSwitchFilter.type !== 'all') {
+                      const { type, value1, value2 } = activityLogTabSwitchFilter
+                      
+                      if (type === 'range') {
+                        const from = parseInt(value1)
+                        const to = parseInt(value2)
+                        if (!isNaN(from) && !isNaN(to)) {
+                          filteredLog = filteredLog.filter((session: any) => {
+                            const count = session.tabSwitchCount || 0
+                            return count >= from && count <= to
+                          })
+                        } else if (!isNaN(from)) {
+                          // Only "from" is set, filter >= from
+                          filteredLog = filteredLog.filter((session: any) => 
+                            (session.tabSwitchCount || 0) >= from
+                          )
+                        } else if (!isNaN(to)) {
+                          // Only "to" is set, filter <= to
+                          filteredLog = filteredLog.filter((session: any) => 
+                            (session.tabSwitchCount || 0) <= to
+                          )
+                        }
+                      } else if (value1.trim()) {
+                        const threshold = parseInt(value1)
+                        if (!isNaN(threshold)) {
+                          switch (type) {
+                            case 'greater':
+                              filteredLog = filteredLog.filter((session: any) => 
+                                (session.tabSwitchCount || 0) > threshold
+                              )
+                              break
+                            case 'greaterEqual':
+                              filteredLog = filteredLog.filter((session: any) => 
+                                (session.tabSwitchCount || 0) >= threshold
+                              )
+                              break
+                            case 'less':
+                              filteredLog = filteredLog.filter((session: any) => 
+                                (session.tabSwitchCount || 0) < threshold
+                              )
+                              break
+                            case 'lessEqual':
+                              filteredLog = filteredLog.filter((session: any) => 
+                                (session.tabSwitchCount || 0) <= threshold
+                              )
+                              break
+                            case 'exact':
+                              filteredLog = filteredLog.filter((session: any) => 
+                                (session.tabSwitchCount || 0) === threshold
+                              )
+                              break
+                          }
+                        }
+                      }
+                    }
+                    
+                    if (filteredLog.length === 0) {
+                      return (
+                        <div className="text-center py-8">
+                          <Activity className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                          <p className="text-muted-foreground">No activities match your search criteria</p>
+                          {activityLogTabSwitchFilter.type !== 'all' && (
+                            <p className="text-sm text-muted-foreground mt-2">
+                              Filter: {activityLogTabSwitchFilter.type === 'range' 
+                                ? `Từ ${activityLogTabSwitchFilter.value1 || '...'} đến ${activityLogTabSwitchFilter.value2 || '...'}`
+                                : activityLogTabSwitchFilter.type === 'greater' ? `> ${activityLogTabSwitchFilter.value1}`
+                                : activityLogTabSwitchFilter.type === 'greaterEqual' ? `>= ${activityLogTabSwitchFilter.value1}`
+                                : activityLogTabSwitchFilter.type === 'less' ? `< ${activityLogTabSwitchFilter.value1}`
+                                : activityLogTabSwitchFilter.type === 'lessEqual' ? `<= ${activityLogTabSwitchFilter.value1}`
+                                : `= ${activityLogTabSwitchFilter.value1}`
+                              }
+                            </p>
+                          )}
+                        </div>
+                      )
+                    }
+                    
+                    return filteredLog.map((session: any) => {
                     const isExpanded = expandedSessions.has(session._id)
                     const hasDetails = session.activityTimeline && session.activityTimeline.length > 0
                     const isSelected = selectedSessions.has(session._id)
@@ -2769,7 +2924,8 @@ export default function AdminPage() {
                         </CardContent>
                       </Card>
                     )
-                  })}
+                  })
+                })()}
                 </div>
               )}
             </CardContent>

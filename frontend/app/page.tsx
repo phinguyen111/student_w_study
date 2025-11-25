@@ -396,7 +396,12 @@ export default function Home() {
                             </div>
                             <div className="flex items-center gap-4">
                               <div className="text-right">
-                                <p className="font-semibold text-foreground">{learner.totalPoints.toFixed(1)} pts</p>
+                                <p className="font-semibold text-foreground">
+                                  {learner.lessonCount > 0 
+                                    ? (learner.totalPoints / learner.lessonCount).toFixed(1) 
+                                    : '0.0'
+                                  } pts
+                                </p>
                                 <p className="text-xs text-muted-foreground">
                                   {learner.lessonCount} lessons scored
                                 </p>
@@ -570,9 +575,12 @@ export default function Home() {
                   </p>
                 </div>
                 <div className="p-3 rounded-lg bg-muted/40">
-                  <p className="text-muted-foreground text-xs uppercase">Total points</p>
+                  <p className="text-muted-foreground text-xs uppercase">Average points</p>
                   <p className="text-xl font-semibold">
-                    {selectedLearner.learner.totalPoints.toFixed(2)} pts
+                    {selectedLearner.learner.lessonCount > 0
+                      ? (selectedLearner.learner.totalPoints / selectedLearner.learner.lessonCount).toFixed(2)
+                      : '0.00'
+                    } pts
                   </p>
                 </div>
               </div>

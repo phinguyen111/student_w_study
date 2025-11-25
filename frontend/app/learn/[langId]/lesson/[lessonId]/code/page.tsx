@@ -668,12 +668,12 @@ ${js}
                       </TabsContent>
                     </Tabs>
                   ) : (
-                    <CodeEditor
-                      value={code}
-                      onChange={setCode}
-                      language={lesson.codeExercise.language}
-                      height="500px"
-                      placeholder="Write your code here..."
+              <CodeEditor
+                value={code}
+                onChange={setCode}
+                language={lesson.codeExercise.language}
+                height="500px"
+                placeholder="Write your code here..."
                       showErrors={true}
                       onErrorsChange={setCodeErrors}
                     />
