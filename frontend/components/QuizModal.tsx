@@ -8,11 +8,13 @@ import { CodeEditor } from '@/components/CodeEditor'
 import { X, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Trophy, AlertCircle, Play, RotateCcw, Code2, ListChecks } from 'lucide-react'
 import { useQuizTracker } from '@/hooks/useQuizTracker'
 
+type LocalizedString = string | { vi?: string; en?: string }
+
 interface Question {
   question: string
   options?: (string | { vi?: string; en?: string; [key: string]: any })[]
   correctAnswer?: number
-  explanation?: string
+  explanation?: LocalizedString
   type?: 'multiple-choice' | 'code'
   codeType?: 'html' | 'css' | 'javascript' | 'html-css-js'
   starterCode?: {
