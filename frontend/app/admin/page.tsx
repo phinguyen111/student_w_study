@@ -4337,7 +4337,7 @@ export default function AdminPage() {
                                       </div>
                                       <div className="space-y-2">
                                         {readOnlyRules.length ? (
-                                          readOnlyRules.map((rule: OutputRule, ruleIndex) => (
+                                          readOnlyRules.map((rule: OutputRule, ruleIndex: number) => (
                                             <div
                                               key={rule.id || `create-preview-rule-${qIndex}-${ruleIndex}`}
                                               className="flex items-center justify-between gap-3 rounded-lg border bg-background/70 p-2"
@@ -4464,7 +4464,7 @@ export default function AdminPage() {
                                         Add Rule
                                       </Button>
                                     </div>
-                                    {(q.outputCriteria || []).map((rule: OutputRule, ruleIndex) => (
+                                    {(q.outputCriteria || []).map((rule: OutputRule, ruleIndex: number) => (
                                       <div
                                         key={rule.id || `${qIndex}-rule-${ruleIndex}`}
                                         className="grid gap-2 md:grid-cols-[2fr_auto_auto_auto] items-start"
@@ -5601,7 +5601,7 @@ export default function AdminPage() {
                               </div>
                               <div className="space-y-2">
                                 {readOnlyRules.length ? (
-                                  readOnlyRules.map((rule: OutputRule, ruleIndex) => (
+                                  readOnlyRules.map((rule: OutputRule, ruleIndex: number) => (
                                     <div
                                       key={rule.id || `preview-rule-${qIndex}-${ruleIndex}`}
                                       className="flex items-center justify-between gap-3 rounded-lg border bg-background/70 p-2"
@@ -5726,7 +5726,7 @@ export default function AdminPage() {
                                 Add Rule
                               </Button>
                             </div>
-                            {(q.outputCriteria || []).map((rule: OutputRule, ruleIndex) => (
+                            {(q.outputCriteria || []).map((rule: OutputRule, ruleIndex: number) => (
                               <div
                                 key={rule.id || `${qIndex}-edit-rule-${ruleIndex}`}
                                 className="grid gap-2 md:grid-cols-[2fr_auto_auto_auto] items-start"
