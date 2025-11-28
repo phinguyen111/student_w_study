@@ -81,6 +81,8 @@ export interface Question {
   }>
 }
 
+export type LocalizedString = string | { en?: string; vi?: string }
+
 export type OutputRule = {
   id?: string
   snippet: string

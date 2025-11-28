@@ -46,6 +46,7 @@ import type {
   Level,
   Question,
   OutputRule,
+  LocalizedString,
   Lesson,
   Stats,
   QuizAssignment,
@@ -435,14 +436,11 @@ export default function AdminPage() {
     return (criteria || []).reduce((sum, rule) => sum + (Number(rule.points) || 0), 0)
   }
 
-  type LocalizedDescription = { en?: string; vi?: string }
-
-  const getLocalizedDescription = (value?: string | LocalizedDescription) => {
+  const getLocalizedDescription = (value?: LocalizedString) => {
     if (!value) return ''
     if (typeof value === 'string') return value
     if (typeof value === 'object') {
-      const localized = value as LocalizedDescription
-      return localized.en || localized.vi || ''
+      return value.en || value.vi || ''
     }
     return ''
   }
@@ -450,7 +448,7 @@ export default function AdminPage() {
   const normalizeCodeExercise = (exercise?: {
     language?: string
     starterCode?: string
-    description?: string | LocalizedDescription
+    description?: LocalizedString
     outputCriteria?: OutputRule[]
   }): {
     language: string
@@ -481,7 +479,7 @@ export default function AdminPage() {
   const sanitizeCodeExerciseForApi = (exercise?: {
     language?: string
     starterCode?: string
-    description?: string | LocalizedDescription
+    description?: LocalizedString
     outputCriteria?: OutputRule[]
   }) => {
     if (!exercise) return undefined
@@ -4651,11 +4649,7 @@ export default function AdminPage() {
                             <label className="text-sm font-medium mb-2 block">Title *</label>
                             <Input
                               placeholder="Lesson Title"
-                              value={typeof editingLessonData.title === 'string' 
-                                ? editingLessonData.title 
-                                : (typeof editingLessonData.title === 'object' && editingLessonData.title !== null
-                                  ? (editingLessonData.title.en || editingLessonData.title.vi || '')
-                                  : '')}
+                              value={getLocalizedDescription(editingLessonData.title)}
                               onChange={(e) => setEditingLessonData({ ...editingLessonData, title: e.target.value })}
                             />
                           </div>
@@ -4665,11 +4659,7 @@ export default function AdminPage() {
                               className="w-full p-2 border rounded-lg"
                               rows={6}
                               placeholder="Lesson content (markdown supported)"
-                              value={typeof editingLessonData.content === 'string' 
-                                ? editingLessonData.content 
-                                : (typeof editingLessonData.content === 'object' && editingLessonData.content !== null
-                                  ? (editingLessonData.content.en || editingLessonData.content.vi || '')
-                                  : '')}
+                              value={getLocalizedDescription(editingLessonData.content)}
                               onChange={(e) => setEditingLessonData({ ...editingLessonData, content: e.target.value })}
                             />
                           </div>
