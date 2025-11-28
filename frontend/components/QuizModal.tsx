@@ -499,7 +499,7 @@ export function QuizModal({ questions, passingScore, lessonId, onComplete, onClo
                     {q.explanation && (
                       <div className="mt-3 ml-8 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                         <p className="text-sm text-blue-900 dark:text-blue-100">
-                          <strong>Explanation:</strong> {q.explanation}
+                          <strong>Explanation:</strong> {getExplanationText(q.explanation)}
                         </p>
                       </div>
                     )}
