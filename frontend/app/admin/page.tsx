@@ -4222,7 +4222,7 @@ export default function AdminPage() {
                         {newLesson.quiz.questions.map((q, qIndex) => {
                           const requirementPreview =
                             q.type === 'code' ? getCodeQuestionRequirementPreview(q as Question) : ''
-                          const readOnlyRules = Array.isArray(q.outputCriteria) ? q.outputCriteria : []
+                                const readOnlyRules: OutputRule[] = Array.isArray(q.outputCriteria) ? q.outputCriteria : []
                           return (
                           <Card key={qIndex} className="p-4 border-2">
                             <div className="flex justify-between items-center mb-3">
@@ -5500,7 +5500,7 @@ export default function AdminPage() {
                 {editingLessonData.quiz.questions.map((q, qIndex) => {
                   const requirementPreview =
                     q.type === 'code' ? getCodeQuestionRequirementPreview(q as Question) : ''
-                  const readOnlyRules = Array.isArray(q.outputCriteria) ? q.outputCriteria : []
+                  const readOnlyRules: OutputRule[] = Array.isArray(q.outputCriteria) ? q.outputCriteria : []
                   return (
                   <Card key={`edit-quiz-${qIndex}`} className="p-4 border-2">
                     <div className="flex justify-between items-center mb-3">
