@@ -14,6 +14,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useTimeTracker } from '@/hooks/useTimeTracker'
 import { useGATracking } from '@/hooks/useGATracking'
 
+interface OutputRule {
+  id?: string
+  snippet?: string
+  points?: number
+  penalty?: number
+}
+
 interface Lesson {
   _id: string
   title: string
@@ -21,6 +28,7 @@ interface Lesson {
     starterCode: string
     language: 'html' | 'javascript' | 'css' | 'python' | 'html-css-js'
     description?: string | { vi?: string; en?: string }
+    outputCriteria?: OutputRule[]
   }
 }
 
