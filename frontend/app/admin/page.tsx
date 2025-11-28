@@ -5339,24 +5339,19 @@ export default function AdminPage() {
                     <option value="html-css-js">HTML + CSS + JS</option>
                   </select>
                 </div>
-                                <div>
-                                  <label className="text-xs font-medium mb-1 block">Description</label>
-                                  <textarea
-                                    className="w-full p-2 border rounded text-sm"
-                                    rows={3}
-                                    placeholder="BÀI TẬP: Tên bài tập&#10;&#10;Yêu cầu:&#10;1. Yêu cầu 1&#10;2. Yêu cầu 2&#10;..."
-                                    value={(() => {
-                                      const desc = editingLessonData.codeExercise?.description
-                                      if (typeof desc === 'string') return desc
-                                      if (typeof desc === 'object' && desc !== null) return desc.en || desc.vi || ''
-                                      return ''
-                                    })()}
-                                    onChange={(e) => updateEditingCodeExercise('description', e.target.value)}
-                                  />
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    Nhập mô tả và yêu cầu bài tập. Format: BÀI TẬP: ... Yêu cầu: 1. ... 2. ...
-                                  </p>
-                                </div>
+                <div>
+                  <label className="text-xs font-medium mb-1 block">Description</label>
+                  <textarea
+                    className="w-full p-2 border rounded text-sm"
+                    rows={3}
+                    placeholder="BÀI TẬP: Tên bài tập&#10;&#10;Yêu cầu:&#10;1. Yêu cầu 1&#10;2. Yêu cầu 2&#10;..."
+                    value={getLocalizedDescription(editingLessonData.codeExercise?.description)}
+                    onChange={(e) => updateEditingCodeExercise('description', e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Nhập mô tả và yêu cầu bài tập. Format: BÀI TẬP: ... Yêu cầu: 1. ... 2. ...
+                  </p>
+                </div>
               </div>
               <div>
                 <label className="text-xs font-medium mb-1 block">Starter Code *</label>
