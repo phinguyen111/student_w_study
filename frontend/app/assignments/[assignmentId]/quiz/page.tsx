@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth'
 import api from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { CodeEditor } from '@/components/CodeEditor'
+import { DynamicCodeEditor } from '@/components/DynamicCodeEditor'
 import { ArrowLeft, Code, Loader2, FileCode, Play, RotateCcw, CheckCircle2, FileText, Palette, Zap, AlertCircle, ChevronLeft, ChevronRight, Clock } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useQuizTracker } from '@/hooks/useQuizTracker'
@@ -795,7 +795,7 @@ ${js}
                           </TabsTrigger>
                         </TabsList>
                         <TabsContent value="html" className="mt-4">
-                          <CodeEditor
+                          <DynamicCodeEditor
                             value={htmlCode}
                             onChange={setHtmlCode}
                             language="html"
@@ -806,7 +806,7 @@ ${js}
                           />
                         </TabsContent>
                         <TabsContent value="css" className="mt-4">
-                          <CodeEditor
+                          <DynamicCodeEditor
                             value={cssCode}
                             onChange={setCssCode}
                             language="css"
@@ -817,7 +817,7 @@ ${js}
                           />
                         </TabsContent>
                         <TabsContent value="javascript" className="mt-4">
-                          <CodeEditor
+                          <DynamicCodeEditor
                             value={jsCode}
                             onChange={setJsCode}
                             language="javascript"
@@ -829,7 +829,7 @@ ${js}
                         </TabsContent>
                       </Tabs>
                     ) : (
-                      <CodeEditor
+                      <DynamicCodeEditor
                         value={code}
                         onChange={setCode}
                         language={currentQuestion.codeType}

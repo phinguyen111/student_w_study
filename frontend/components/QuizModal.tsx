@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { CodeEditor } from '@/components/CodeEditor'
+import { DynamicCodeEditor } from '@/components/DynamicCodeEditor'
 import { X, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Trophy, AlertCircle, Play, RotateCcw, Code2, ListChecks } from 'lucide-react'
 import { useQuizTracker } from '@/hooks/useQuizTracker'
 
@@ -693,7 +693,7 @@ export function QuizModal({ questions, passingScore, lessonId, onComplete, onClo
                             Reset
                           </Button>
                         </div>
-                        <CodeEditor
+                        <DynamicCodeEditor
                           value={currentCode.html || ''}
                           onChange={(value) => handleCodeChange('html', value)}
                           language="html"
@@ -712,7 +712,7 @@ export function QuizModal({ questions, passingScore, lessonId, onComplete, onClo
                             Reset
                           </Button>
                         </div>
-                        <CodeEditor
+                        <DynamicCodeEditor
                           value={currentCode.css || ''}
                           onChange={(value) => handleCodeChange('css', value)}
                           language="css"
@@ -731,7 +731,7 @@ export function QuizModal({ questions, passingScore, lessonId, onComplete, onClo
                             Reset
                           </Button>
                         </div>
-                        <CodeEditor
+                        <DynamicCodeEditor
                           value={currentCode.javascript || ''}
                           onChange={(value) => handleCodeChange('javascript', value)}
                           language="javascript"
@@ -756,7 +756,7 @@ export function QuizModal({ questions, passingScore, lessonId, onComplete, onClo
                         Reset
                       </Button>
                     </div>
-                    <CodeEditor
+                    <DynamicCodeEditor
                       value={
                         question.codeType === 'html' ? (currentCode.html || '') :
                         question.codeType === 'css' ? (currentCode.css || '') :

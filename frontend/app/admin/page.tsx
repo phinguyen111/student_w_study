@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef, useDeferredValue } from 'react'
+import dynamic from 'next/dynamic'
 import { useAuth } from '@/hooks/useAuth'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
@@ -38,7 +39,17 @@ import {
   Code2,
   ListChecks
 } from 'lucide-react'
-import { ProgressTabSection } from './components/ProgressTabSection'
+const ProgressTabSection = dynamic(
+  () => import('./components/ProgressTabSection').then((mod) => mod.ProgressTabSection),
+  {
+    loading: () => (
+      <div className="py-10 text-center text-sm text-muted-foreground">
+        Đang tải dữ liệu tiến độ...
+      </div>
+    ),
+    ssr: false,
+  }
+)
 import type {
   User,
   UserProgress,
@@ -150,6 +161,14 @@ export default function AdminPage() {
   const { isAuthenticated, user, loading } = useAuth()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('dashboard')
+  const deferredActiveTab = useDeferredValue(activeTab)
+  const isAdminUser = isAuthenticated && user?.role === 'admin'
+  const loadedSectionsRef = useRef({
+    dashboard: false,
+    users: false,
+    content: false,
+    assignments: false,
+  })
   
   // Dashboard
   const [stats, setStats] = useState<Stats | null>(null)
@@ -532,7 +551,7 @@ export default function AdminPage() {
     })
   }
 
-  const fetchDashboard = async () => {
+  const fetchDashboard = useCallback(async () => {
     try {
       const response = await api.get('/admin/stats?lang=en')
       setStats(response.data.stats)
@@ -541,25 +560,25 @@ export default function AdminPage() {
     } catch (error) {
       console.error('Error fetching stats:', error)
     }
-  }
+  }, [])
 
-  const fetchTrackingStats = async () => {
+  const fetchTrackingStats = useCallback(async () => {
     try {
       const response = await api.get('/admin/tracking-stats?lang=en')
       setTrackingStats(response.data.stats)
     } catch (error) {
       console.error('Error fetching tracking stats:', error)
     }
-  }
+  }, [])
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       const response = await api.get('/admin/users')
       setUsers(response.data.users)
     } catch (error) {
       console.error('Error fetching users:', error)
     }
-  }
+  }, [])
 
   const fetchUserProgress = async (userId: string) => {
     try {
@@ -571,32 +590,32 @@ export default function AdminPage() {
     }
   }
 
-  const fetchLanguages = async () => {
+  const fetchLanguages = useCallback(async () => {
     try {
       const response = await api.get('/admin/languages?lang=en')
       setLanguages(response.data.languages)
     } catch (error) {
       console.error('Error fetching languages:', error)
     }
-  }
+  }, [])
 
-  const fetchLevels = async () => {
+  const fetchLevels = useCallback(async () => {
     try {
       const response = await api.get('/admin/levels?lang=en')
       setLevels(response.data.levels)
     } catch (error) {
       console.error('Error fetching levels:', error)
     }
-  }
+  }, [])
 
-  const fetchLessons = async () => {
+  const fetchLessons = useCallback(async () => {
     try {
       const response = await api.get('/admin/lessons?lang=en')
       setLessons(response.data.lessons)
     } catch (error) {
       console.error('Error fetching lessons:', error)
     }
-  }
+  }, [])
 
   const handleUnlockLevel = async (levelId?: string) => {
     if (!selectedUser) {
@@ -1881,14 +1900,14 @@ export default function AdminPage() {
   }
 
   // Quiz Assignment functions
-  const fetchQuizAssignments = async () => {
+  const fetchQuizAssignments = useCallback(async () => {
     try {
       const response = await api.get('/admin/quiz-assignments')
       setQuizAssignments(response.data.assignments || [])
     } catch (error) {
       console.error('Error fetching quiz assignments:', error)
     }
-  }
+  }, [])
 
   const fetchActivityLog = useCallback(async () => {
     setLoadingActivityLog(true)
@@ -1918,16 +1937,49 @@ export default function AdminPage() {
   }, [isAuthenticated, user, loading, router])
 
   useEffect(() => {
-    if (isAuthenticated && user?.role === 'admin') {
-      fetchDashboard()
-      fetchTrackingStats()
-      fetchUsers()
-      fetchLanguages()
-      fetchLevels()
-      fetchLessons()
-      fetchQuizAssignments()
+    if (!isAdminUser) {
+      loadedSectionsRef.current = {
+        dashboard: false,
+        users: false,
+        content: false,
+        assignments: false,
+      }
     }
-  }, [isAuthenticated, user])
+  }, [isAdminUser])
+
+  useEffect(() => {
+    if (!isAdminUser) return
+    if (loadedSectionsRef.current.dashboard) return
+    loadedSectionsRef.current.dashboard = true
+    fetchDashboard()
+    fetchTrackingStats()
+  }, [isAdminUser, fetchDashboard, fetchTrackingStats])
+
+  useEffect(() => {
+    if (!isAdminUser) return
+    if (!['users', 'progress', 'quiz-assignments'].includes(activeTab)) return
+    if (loadedSectionsRef.current.users) return
+    loadedSectionsRef.current.users = true
+    fetchUsers()
+  }, [isAdminUser, activeTab, fetchUsers])
+
+  useEffect(() => {
+    if (!isAdminUser) return
+    if (!(activeTab === 'content' || activeTab === 'progress')) return
+    if (loadedSectionsRef.current.content) return
+    loadedSectionsRef.current.content = true
+    fetchLanguages()
+    fetchLevels()
+    fetchLessons()
+  }, [isAdminUser, activeTab, fetchLanguages, fetchLevels, fetchLessons])
+
+  useEffect(() => {
+    if (!isAdminUser) return
+    if (activeTab !== 'quiz-assignments') return
+    if (loadedSectionsRef.current.assignments) return
+    loadedSectionsRef.current.assignments = true
+    fetchQuizAssignments()
+  }, [isAdminUser, activeTab, fetchQuizAssignments])
 
   useEffect(() => {
     if (isAuthenticated && user?.role === 'admin' && activeTab === 'activity-log') {
@@ -2190,6 +2242,7 @@ export default function AdminPage() {
         </TabsList>
 
         {/* Dashboard Tab */}
+        {deferredActiveTab === 'dashboard' && (
         <TabsContent value="dashboard" className="space-y-6">
           {/* Bulk Create Users */}
           <Card>
@@ -2744,8 +2797,10 @@ export default function AdminPage() {
             </>
           )}
         </TabsContent>
+        )}
 
         {/* Activity Log Tab */}
+        {deferredActiveTab === 'activity-log' && (
         <TabsContent value="activity-log" className="space-y-6">
           <Card>
             <CardHeader>
@@ -3427,8 +3482,10 @@ export default function AdminPage() {
             </CardContent>
           </Card>
         </TabsContent>
+        )}
 
         {/* Users Tab */}
+        {deferredActiveTab === 'users' && (
         <TabsContent value="users" className="space-y-6">
           <Card>
             <CardHeader>
@@ -3605,8 +3662,10 @@ export default function AdminPage() {
             </CardContent>
           </Card>
         </TabsContent>
+        )}
 
         {/* Content Management Tab */}
+        {deferredActiveTab === 'content' && (
         <TabsContent value="content" className="space-y-6">
           {/* Languages */}
           <Card>
@@ -4768,8 +4827,10 @@ export default function AdminPage() {
             </CardContent>
           </Card>
         </TabsContent>
+        )}
 
         {/* Quiz Assignments Tab */}
+        {deferredActiveTab === 'quiz-assignments' && (
         <TabsContent value="quiz-assignments" className="space-y-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -5282,33 +5343,36 @@ export default function AdminPage() {
             </CardContent>
           </Card>
         </TabsContent>
+        )}
 
         {/* Progress Tab */}
-        <ProgressTabSection
-          userProgressTabSearch={userProgressTabSearch}
-          onSearchChange={setUserProgressTabSearch}
-          userProgressTabSort={userProgressTabSort}
-          onSortChange={(value) => setUserProgressTabSort(value)}
-          userProgressTabSortOrder={userProgressTabSortOrder}
-          onSortOrderChange={(value) => setUserProgressTabSortOrder(value)}
-          getFilteredAndSortedUserProgressTab={getFilteredAndSortedUserProgressTab}
-          selectedUser={selectedUser}
-          fetchUserProgress={fetchUserProgress}
-          getUserInfoForSearch={getUserInfoForSearch}
-          userProgress={userProgress}
-          getCurrentLanguageAndLevel={getCurrentLanguageAndLevel}
-          selectedLanguageId={selectedLanguageId}
-          onSelectLanguage={(languageId) => {
-            setSelectedLanguageId(languageId)
-            setSelectedLevelId('')
-          }}
-          selectedLevelId={selectedLevelId}
-          onSelectLevel={setSelectedLevelId}
-          languages={languages}
-          getAvailableLevels={getAvailableLevels}
-          handleUnlockLevel={handleUnlockLevel}
-          handleLockLevel={handleLockLevel}
-        />
+        {deferredActiveTab === 'progress' && (
+          <ProgressTabSection
+            userProgressTabSearch={userProgressTabSearch}
+            onSearchChange={setUserProgressTabSearch}
+            userProgressTabSort={userProgressTabSort}
+            onSortChange={(value) => setUserProgressTabSort(value)}
+            userProgressTabSortOrder={userProgressTabSortOrder}
+            onSortOrderChange={(value) => setUserProgressTabSortOrder(value)}
+            getFilteredAndSortedUserProgressTab={getFilteredAndSortedUserProgressTab}
+            selectedUser={selectedUser}
+            fetchUserProgress={fetchUserProgress}
+            getUserInfoForSearch={getUserInfoForSearch}
+            userProgress={userProgress}
+            getCurrentLanguageAndLevel={getCurrentLanguageAndLevel}
+            selectedLanguageId={selectedLanguageId}
+            onSelectLanguage={(languageId) => {
+              setSelectedLanguageId(languageId)
+              setSelectedLevelId('')
+            }}
+            selectedLevelId={selectedLevelId}
+            onSelectLevel={setSelectedLevelId}
+            languages={languages}
+            getAvailableLevels={getAvailableLevels}
+            handleUnlockLevel={handleUnlockLevel}
+            handleLockLevel={handleLockLevel}
+          />
+        )}
       </Tabs>
 
       {editingLesson && editingLessonData && showCodeExerciseModal && (

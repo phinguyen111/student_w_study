@@ -7,7 +7,17 @@ import { useAuth } from '@/hooks/useAuth'
 import api from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { QuizModal } from '@/components/QuizModal'
+import dynamic from 'next/dynamic'
+const QuizModal = dynamic(() => import('@/components/QuizModal').then((mod) => mod.QuizModal), {
+  ssr: false,
+  loading: () => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80">
+      <div className="rounded-xl border bg-card px-6 py-4 text-center shadow-lg">
+        <p className="text-sm text-muted-foreground">Loading quiz…</p>
+      </div>
+    </div>
+  ),
+})
 import { MarkdownContent } from '@/components/MarkdownContent'
 import { useTimeTracker } from '@/hooks/useTimeTracker'
 import { useGATracking } from '@/hooks/useGATracking'
