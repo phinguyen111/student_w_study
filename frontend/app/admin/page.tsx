@@ -4084,7 +4084,7 @@ export default function AdminPage() {
                                 Add Rule
                               </Button>
                             </div>
-                            {(newLesson.codeExercise?.outputCriteria || []).map((rule, index) => (
+                            {(newLesson.codeExercise?.outputCriteria || []).map((rule: OutputRule, index) => (
                               <div key={rule.id || `new-code-ex-rule-${index}`} className="grid gap-2 md:grid-cols-[2fr_auto_auto_auto] items-start">
                                 <div className="md:col-span-1">
                                   <Input
@@ -4337,7 +4337,7 @@ export default function AdminPage() {
                                       </div>
                                       <div className="space-y-2">
                                         {readOnlyRules.length ? (
-                                          readOnlyRules.map((rule, ruleIndex) => (
+                                          readOnlyRules.map((rule: OutputRule, ruleIndex) => (
                                             <div
                                               key={rule.id || `create-preview-rule-${qIndex}-${ruleIndex}`}
                                               className="flex items-center justify-between gap-3 rounded-lg border bg-background/70 p-2"
@@ -4464,7 +4464,7 @@ export default function AdminPage() {
                                         Add Rule
                                       </Button>
                                     </div>
-                                    {(q.outputCriteria || []).map((rule, ruleIndex) => (
+                                    {(q.outputCriteria || []).map((rule: OutputRule, ruleIndex) => (
                                       <div
                                         key={rule.id || `${qIndex}-rule-${ruleIndex}`}
                                         className="grid gap-2 md:grid-cols-[2fr_auto_auto_auto] items-start"
@@ -5394,7 +5394,7 @@ export default function AdminPage() {
                     Add Rule
                   </Button>
                 </div>
-                {editingLessonData.codeExercise.outputCriteria.map((rule, index) => (
+                {editingLessonData.codeExercise.outputCriteria.map((rule: OutputRule, index) => (
                   <div key={rule.id || `code-ex-rule-${index}`} className="grid gap-2 md:grid-cols-[2fr_auto_auto_auto] items-start">
                     <div className="md:col-span-1">
                       <Input
@@ -5601,7 +5601,7 @@ export default function AdminPage() {
                               </div>
                               <div className="space-y-2">
                                 {readOnlyRules.length ? (
-                                  readOnlyRules.map((rule, ruleIndex) => (
+                                  readOnlyRules.map((rule: OutputRule, ruleIndex) => (
                                     <div
                                       key={rule.id || `preview-rule-${qIndex}-${ruleIndex}`}
                                       className="flex items-center justify-between gap-3 rounded-lg border bg-background/70 p-2"
@@ -5726,7 +5726,7 @@ export default function AdminPage() {
                                 Add Rule
                               </Button>
                             </div>
-                            {(q.outputCriteria || []).map((rule, ruleIndex) => (
+                            {(q.outputCriteria || []).map((rule: OutputRule, ruleIndex) => (
                               <div
                                 key={rule.id || `${qIndex}-edit-rule-${ruleIndex}`}
                                 className="grid gap-2 md:grid-cols-[2fr_auto_auto_auto] items-start"
