@@ -236,35 +236,35 @@ export function CodeEditor({
   return (
     <div className="relative">
       <div className="border rounded-lg overflow-hidden shadow-sm">
-        <CodeMirror
-          value={value}
-          height={height}
-          theme={themeExtension}
+      <CodeMirror
+        value={value}
+        height={height}
+        theme={themeExtension}
           extensions={extensions}
-          onChange={onChange}
-          placeholder={placeholder}
-          editable={!readOnly}
-          basicSetup={{
-            lineNumbers: true,
-            highlightSelectionMatches: true,
-            foldGutter: true,
-            dropCursor: false,
-            allowMultipleSelections: false,
-            indentOnInput: true,
-            bracketMatching: true,
-            closeBrackets: true,
-            autocompletion: true,
-            highlightActiveLine: true,
-            searchKeymap: true,
-            lintKeymap: true,
-            foldKeymap: true,
-            completionKeymap: true,
-            defaultKeymap: true,
-            historyKeymap: true,
-            drawSelection: true,
+        onChange={onChange}
+        placeholder={placeholder}
+        editable={!readOnly}
+        basicSetup={{
+          lineNumbers: true,
+          highlightSelectionMatches: true,
+          foldGutter: true,
+          dropCursor: false,
+          allowMultipleSelections: false,
+          indentOnInput: true,
+          bracketMatching: true,
+          closeBrackets: true,
+          autocompletion: true,
+          highlightActiveLine: true,
+          searchKeymap: true,
+          lintKeymap: true,
+          foldKeymap: true,
+          completionKeymap: true,
+          defaultKeymap: true,
+          historyKeymap: true,
+          drawSelection: true,
             tabSize: 2,
-          }}
-        />
+        }}
+      />
       </div>
     </div>
   )

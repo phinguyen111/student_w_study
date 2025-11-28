@@ -1,0 +1,184 @@
+[{
+  "_id": {
+    "$oid": "6923051bb743722e1c940547"
+  },
+  "email": "kwu1207@gmail.com",
+  "password": "$2a$10$PSJ61kdprwqOrF8AyF9VOueu11trTKsEyilUgRgVkOZcNxwjRj.ea",
+  "name": "Nguyen Minh Khang",
+  "role": "user",
+  "createdAt": {
+    "$date": "2025-11-23T12:59:07.354Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6923051bb743722e1c94054a"
+  },
+  "email": "ngogiahyaaaa@gmail.com",
+  "password": "$2a$10$sUiuUlXgAmCKa9F.Gkajt./nq6D2tvFGAwCTz1mhaK9ibHdSI79eG",
+  "name": "Ngô Gia Hy",
+  "role": "user",
+  "createdAt": {
+    "$date": "2025-11-23T12:59:07.859Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6923051cb743722e1c94054d"
+  },
+  "email": "phuoc1603@gmail.com",
+  "password": "$2a$10$AsT2qk9kPVHMTygde4FaeuM4FETSj1LrWuIug2xAaYOsP/CRDB9HC",
+  "name": "Thiều Quang Phước",
+  "role": "user",
+  "createdAt": {
+    "$date": "2025-11-23T12:59:08.396Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6923051cb743722e1c940550"
+  },
+  "email": "kevinlamkhai7@gmail.com",
+  "password": "$2a$10$jGykuCrar51SHwWjjqpa4uISS8c81fxAft0pJAaxhvCXwHCn8D5ki",
+  "name": "Nguyễn Lâm Khải",
+  "role": "user",
+  "createdAt": {
+    "$date": "2025-11-23T12:59:08.901Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6923051db743722e1c940553"
+  },
+  "email": "chauchanhnghi@gmail.com",
+  "password": "$2a$10$YzojFfpTB8kCuzQMRzzsl.wbk24qhzrAkEQoXlJbztyGVKNVMODIC",
+  "name": "Châu Chánh Nghị",
+  "role": "user",
+  "createdAt": {
+    "$date": "2025-11-23T12:59:09.404Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6923051db743722e1c940556"
+  },
+  "email": "mrpom.231@gmail.com",
+  "password": "$2a$10$V1ItcTXYIHoN6rGnGJp5f.gAHmuur37lYBd3MgBO4iPxauBWpExUi",
+  "name": "Nguyễn Quốc Bình",
+  "role": "user",
+  "createdAt": {
+    "$date": "2025-11-23T12:59:09.910Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6923051eb743722e1c94055a"
+  },
+  "email": "haiphonghaidang@gmail.com",
+  "password": "$2a$10$G5i5zB9QFPVlId9ik0bSUOWy7jVXAASix1mknFLGsEzN1P7s3RGWG",
+  "name": "Nguyễn Hải Đăng",
+  "role": "user",
+  "createdAt": {
+    "$date": "2025-11-23T12:59:10.431Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6923051eb743722e1c94055f"
+  },
+  "email": "leminhle1393@gmail.com",
+  "password": "$2a$10$.uoVYzIfuucs5CUPRsbo6.9rmoWTPUv4XwlIHGzO40hRFZ6aVSckW",
+  "name": "Lê Thanh Hoàng Minh",
+  "role": "user",
+  "createdAt": {
+    "$date": "2025-11-23T12:59:10.935Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6923051fb743722e1c940565"
+  },
+  "email": "phannguyennhukhanh2000@gmail.com",
+  "password": "$2a$10$MfK1nzUnjcHaOloOulHPEeluuF7dg3nWoZE8ZEFeaXWbUZAjNTzkC",
+  "name": "Phan Nguyễn Như Khanh",
+  "role": "user",
+  "createdAt": {
+    "$date": "2025-11-23T12:59:11.442Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6923051fb743722e1c94056a"
+  },
+  "email": "minhphuong6417@gmail.com",
+  "password": "$2a$10$hJyI7tjvEepgegn0xvrlpO0AAyCqIt9fCyN15fcLnKFWeFDYYIeMa",
+  "name": "Lê Ngọc Minh Phương",
+  "role": "user",
+  "createdAt": {
+    "$date": "2025-11-23T12:59:11.945Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69230520b743722e1c94056f"
+  },
+  "email": "baongoccle24@gmail.com",
+  "password": "$2a$10$4tNWon3WsRqI9zNzQ9I1se81VDQcs4KkHpyoDwnrjJoYz8dSaXpvu",
+  "name": "Lê Bảo Ngọc",
+  "role": "user",
+  "createdAt": {
+    "$date": "2025-11-23T12:59:12.448Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69230a9276285ab37bb057fd"
+  },
+  "email": "admin@gmail.com",
+  "password": "$2a$10$/z.wwp4iKsBqdc22zDHAS.TqYbfLZYML7BPYtP.4t/8bkag.D6uwe",
+  "name": "Admin Manager",
+  "role": "admin",
+  "createdAt": {
+    "$date": "2025-11-23T13:22:26.245Z"
+  },
+  "__v": 0,
+  "avatar": "/uploads/avatars/avatar-1763940212705-944157913.jpg"
+},
+{
+  "_id": {
+    "$oid": "692311d6382305e214aeaae4"
+  },
+  "email": "sang16032007@gmail.com",
+  "password": "$2a$10$R3vFhBeU.ZTqq2D13JdQduFHmXqo4q79ZDdRIFT7imCMNkt/HAdFO",
+  "name": "Trương Quốc Sang",
+  "role": "user",
+  "createdAt": {
+    "$date": "2025-11-23T13:53:26.411Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6927ff569479c0c00f6a355c"
+  },
+  "email": "test@gmail.com",
+  "password": "$2a$10$SS6rin5adJBFKDFpcsGr.unLNFENtBjdbFbhTGhamiPaEbEShvqMi",
+  "name": "test",
+  "role": "user",
+  "avatar": null,
+  "createdAt": {
+    "$date": "2025-11-27T07:35:50.679Z"
+  },
+  "__v": 0
+}]

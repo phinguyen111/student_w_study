@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { CodeEditor } from '@/components/CodeEditor'
-import { X, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Trophy, AlertCircle, Play, RotateCcw } from 'lucide-react'
+import { X, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Trophy, AlertCircle, Play, RotateCcw, Code2, ListChecks } from 'lucide-react'
 import { useQuizTracker } from '@/hooks/useQuizTracker'
 
 interface Question {
@@ -21,6 +21,12 @@ interface Question {
     javascript?: string
   }
   expectedOutput?: string
+  outputCriteria?: Array<{
+    id?: string
+    snippet: string
+    points: number
+    penalty?: number
+  }>
 }
 
 interface QuizModalProps {
@@ -528,6 +534,51 @@ export function QuizModal({ questions, passingScore, lessonId, onComplete, onClo
   const progress = ((currentQuestion + 1) / normalizedQuestions.length) * 100
   const currentCode = codeAnswers[currentQuestion] || { html: '', css: '', javascript: '' }
 
+  const getExplanationText = (value?: Question['explanation']) => {
+    if (!value) return ''
+    if (typeof value === 'string') return value
+    if (typeof value === 'object') {
+      return value.en || value.vi || ''
+    }
+    return ''
+  }
+
+  const extractCommentBlock = (code?: string) => {
+    if (!code) return ''
+    const htmlComment = code.match(/<!--([\s\S]*?)-->/)
+    if (htmlComment) return htmlComment[1].trim()
+    const blockComment = code.match(/\/\*([\s\S]*?)\*\//)
+    if (blockComment) return blockComment[1].trim()
+    const hashComment = code.match(/#\s*Yêu cầu:([\s\S]*)/i)
+    if (hashComment) return hashComment[1].trim()
+    return ''
+  }
+
+  const getStarterCodePreview = (starterCode?: Question['starterCode'], codeType?: Question['codeType']) => {
+    if (!starterCode) return ''
+    if (codeType === 'html-css-js') {
+      return [starterCode.html, starterCode.css, starterCode.javascript].filter(Boolean).join('\n')
+    }
+    if (codeType && codeType !== 'html-css-js') {
+      const langKey = codeType as 'html' | 'css' | 'javascript'
+      return starterCode[langKey] || ''
+    }
+    return starterCode.html || starterCode.css || starterCode.javascript || ''
+  }
+
+  const getCodeQuestionRequirementPreview = (question: Question) => {
+    const snippet = getStarterCodePreview(question.starterCode, question.codeType)
+    const comment = extractCommentBlock(snippet)
+    if (comment) return comment
+    if (question.expectedOutput?.trim()) return question.expectedOutput.trim()
+    return getExplanationText(question.explanation)
+  }
+
+  const requirementPreview = isCodeQuestion ? getCodeQuestionRequirementPreview(question) : ''
+  const readOnlyRules = isCodeQuestion && Array.isArray(question.outputCriteria)
+    ? question.outputCriteria
+    : []
+
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in">
       <Card className="w-full max-w-4xl max-h-[90vh] shadow-2xl border-2 animate-in zoom-in-95 duration-200 flex flex-col">
@@ -559,6 +610,51 @@ export function QuizModal({ questions, passingScore, lessonId, onComplete, onClo
             
             {isCodeQuestion ? (
               <div className="space-y-4">
+                {(requirementPreview || readOnlyRules.length) && (
+                  <div className="space-y-3 rounded-xl border bg-muted/30 p-4">
+                    {requirementPreview && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm font-semibold">
+                          <Code2 className="h-4 w-4 text-primary" />
+                          Yêu cầu bài tập
+                        </div>
+                        <div className="rounded-lg border bg-background/80 font-mono text-xs whitespace-pre-wrap max-h-48 overflow-auto p-3">
+                          {requirementPreview}
+                        </div>
+                      </div>
+                    )}
+                    {readOnlyRules.length ? (
+                      <div className="space-y-2 border-t pt-3">
+                        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          <ListChecks className="h-4 w-4" />
+                          Output rules & scoring
+                        </div>
+                        <div className="space-y-2">
+                          {readOnlyRules.map((rule, index) => (
+                            <div
+                              key={rule.id || `student-preview-rule-${currentQuestion}-${index}`}
+                              className="flex items-center justify-between gap-3 rounded-lg border bg-background/70 p-2"
+                            >
+                              <div className="flex-1 text-xs font-mono whitespace-pre-wrap pr-4">
+                                {rule.snippet?.trim() || `Rule ${index + 1}`}
+                              </div>
+                              <div className="text-right text-xs min-w-[80px]">
+                                <p className="font-semibold text-emerald-600">
+                                  {Number(rule.points || 0).toFixed(2)} pts
+                                </p>
+                                {rule.penalty ? (
+                                  <p className="text-red-500">
+                                    - {Number(rule.penalty || 0).toFixed(2)} pts
+                                  </p>
+                                ) : null}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
                 {/* Code Type Selection */}
                 {question.codeType === 'html-css-js' && (
                   <Tabs defaultValue="html" className="w-full">

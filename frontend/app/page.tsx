@@ -31,6 +31,11 @@ import {
   Users,
 } from 'lucide-react'
 
+interface StudyTimelineEntry {
+  date: string
+  minutes: number
+}
+
 interface LeaderboardLearner {
   userId: string
   name: string
@@ -43,6 +48,7 @@ interface LeaderboardLearner {
   totalStudyTime: number
   lastUpdated?: string
   rank: number
+  studyTimeline?: StudyTimelineEntry[]
 }
 
 interface LanguageLeaderboard {
@@ -96,12 +102,27 @@ export default function Home() {
     return `${hours}h${mins ? ` ${mins}m` : ''}`
   }
 
+  const formatTimelineDate = (value?: string) => {
+    if (!value) return 'N/A'
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return 'N/A'
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  };
+
+  const formatTimelineMinutes = (minutes?: number) => {
+    if (!minutes || minutes <= 0) return '0m'
+    if (minutes < 60) return `${minutes}m`
+    const hours = Math.floor(minutes / 60)
+    const mins = minutes % 60
+    return `${hours}h${mins ? ` ${mins}m` : ''}`
+  };
+
   const formatLastUpdated = (value?: string) => {
     if (!value) return 'N/A'
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) return 'N/A'
     return date.toLocaleString()
-  }
+  };
 
   useEffect(() => {
     let isMounted = true
@@ -164,12 +185,12 @@ export default function Home() {
       learner,
     })
     setIsLearnerDialogOpen(true)
-  }
+  };
 
   const closeLearnerDialog = () => {
     setIsLearnerDialogOpen(false)
     setSelectedLearner(null)
-  }
+  };
 
   return (
     <div className="min-h-screen">
@@ -380,20 +401,39 @@ export default function Home() {
                             key={`${language.languageId}-${learner.userId}`}
                             className="flex flex-col gap-4 rounded-2xl border bg-card/70 p-4 md:flex-row md:items-center md:justify-between hover:border-primary/40 transition-colors"
                           >
-                            <div className="flex items-center gap-4">
-                              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
-                                #{learner.rank}
-                              </div>
-                              <div>
-                                <p className="text-lg font-semibold text-foreground">{learner.name}</p>
-                                <p className="text-sm text-muted-foreground">{learner.email}</p>
-                                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mt-2">
-                                  <span>Avg score: {learner.averageScore.toFixed(1)}/10</span>
-                                  <span>{learner.completedLessons} lessons completed</span>
-                                  <span>Streak: {learner.currentStreak} days</span>
+                            <div className="flex flex-1 flex-col gap-3">
+                              <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
+                                  #{learner.rank}
+                                </div>
+                                <div>
+                                  <p className="text-lg font-semibold text-foreground">{learner.name}</p>
+                                  <p className="text-sm text-muted-foreground">{learner.email}</p>
+                                  <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mt-2">
+                                    <span>Avg score: {learner.averageScore.toFixed(1)}/10</span>
+                                    <span>{learner.completedLessons} lessons completed</span>
+                                    <span>Streak: {learner.currentStreak} days</span>
+                                  </div>
                                 </div>
                               </div>
                             </div>
+                            {learner.studyTimeline && learner.studyTimeline.length > 0 && (
+                              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground md:flex-1">
+                                {learner.studyTimeline.map((entry, index) => (
+                                  <div
+                                    key={`${learner.userId}-timeline-${index}`}
+                                    className="px-3 py-1 rounded-full bg-muted/50 border border-border/60 flex items-center gap-1"
+                                  >
+                                    <span className="font-semibold text-foreground">
+                                      {formatTimelineDate(entry.date)}
+                                    </span>
+                                    <span className="text-muted-foreground/80">
+                                      • {formatTimelineMinutes(entry.minutes)}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                             <div className="flex items-center gap-4">
                               <div className="text-right">
                                 <p className="font-semibold text-foreground">
@@ -617,6 +657,23 @@ export default function Home() {
               <div className="text-xs text-muted-foreground">
                 Last active: {formatLastUpdated(selectedLearner.learner.lastUpdated?.toString())}
               </div>
+
+              {selectedLearner.learner.studyTimeline && selectedLearner.learner.studyTimeline.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-muted-foreground text-xs uppercase mb-2">Recent study timeline</p>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedLearner.learner.studyTimeline.map((entry, index) => (
+                      <div
+                        key={`${selectedLearner.learner.userId}-modal-timeline-${index}`}
+                        className="px-3 py-1 rounded-full bg-muted/60 border border-border/60 text-xs"
+                      >
+                        <span className="font-semibold mr-1">{formatTimelineDate(entry.date)}</span>
+                        <span className="text-muted-foreground">• {formatTimelineMinutes(entry.minutes)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <AlertDialogFooter>
@@ -628,6 +685,3 @@ export default function Home() {
     </div>
   )
 }
-
-
-

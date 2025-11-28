@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
@@ -32,155 +32,25 @@ import {
   Eye,
   Activity,
   Filter,
-  RefreshCw
+  RefreshCw,
+  ChevronDown,
+  ChevronUp,
+  Code2,
+  ListChecks
 } from 'lucide-react'
-
-interface User {
-  _id: string
-  email: string
-  name: string
-  role: string
-  createdAt: string
-}
-
-interface UserProgress {
-  userId: { _id: string; name: string; email: string }
-  levelScores: Array<{
-    levelId: { 
-      _id: string
-      title: string
-      levelNumber: number
-      languageId?: { _id: string; name: string; slug: string; icon: string }
-    }
-    isUnlocked: boolean
-    averageScore: number
-    adminApproved: boolean
-  }>
-  lessonScores?: Array<{
-    lessonId: { 
-      _id: string
-      title: string
-      lessonNumber: number
-      levelId?: { 
-        _id: string
-        title: string
-        levelNumber: number
-        languageId?: { _id: string; name: string; slug: string; icon: string }
-      }
-    }
-    quizScore: number | null
-    codeScore: number | null
-    totalScore: number
-    completedAt?: string
-    quizAttempts?: number
-    codeAttempts?: number
-  }>
-}
-
-interface Language {
-  _id: string
-  name: string
-  slug: string
-  description: string
-  icon: string
-  levels: any[]
-}
-
-interface Level {
-  _id: string
-  levelNumber: number
-  title: string
-  description: string
-  languageId: { _id: string; name: string }
-  lessons: any[]
-}
-
-interface Question {
-  question: string
-  options?: string[]
-  correctAnswer?: number | string
-  explanation?: string
-  type?: 'multiple-choice' | 'code'
-  codeType?: 'html' | 'css' | 'javascript' | 'html-css-js'
-  starterCode?: {
-    html?: string
-    css?: string
-    javascript?: string
-  }
-  expectedOutput?: string
-}
-
-interface Lesson {
-  _id: string
-  lessonNumber: number
-  title: string
-  content?: string
-  codeExample?: string
-  levelId: { _id: string; title: string; levelNumber: number }
-  quiz?: {
-    questions: Question[]
-    passingScore: number
-  }
-}
-
-interface Stats {
-  totalUsers: number
-  totalAdmins: number
-  totalLanguages: number
-  totalLevels: number
-  totalLessons: number
-  totalProgress: number
-  newUsersLast30Days: number
-  activeUsers: number
-  avgQuizScore: string
-  avgCodeScore: string
-  avgTotalScore: string
-  grandTotalScore: number
-  totalQuizAttempts: number
-  totalCodeAttempts: number
-  scoreDistribution: {
-    excellent: number
-    good: number
-    average: number
-    poor: number
-  }
-}
-
-interface QuizAssignment {
-  _id: string
-  title: string
-  description: string
-  questions: Array<{
-    question: string | { vi?: string; en?: string }
-    options: Array<string | { vi?: string; en?: string }>
-    correctAnswer: number
-    explanation?: string | { vi?: string; en?: string }
-  }>
-  passingScore: number
-  assignedBy: { _id: string; name: string; email: string }
-  assignedTo: Array<{ _id: string; name: string; email: string }>
-  deadline: string
-  status: 'active' | 'expired' | 'completed'
-  submittedCount?: number
-  passedCount?: number
-  totalAssigned?: number
-  createdAt: string
-}
-
-interface TopUser {
-  userId: { _id: string; name: string; email: string }
-  name: string
-  email: string
-  completedLessons: number
-  quizAverage: number
-  codeAverage: number
-  totalAverage: number
-  totalScore: number
-  quizAttempts: number
-  codeAttempts: number
-  currentStreak: number
-  totalStudyTime: number
-}
+import { ProgressTabSection } from './components/ProgressTabSection'
+import type {
+  User,
+  UserProgress,
+  Language,
+  Level,
+  Question,
+  OutputRule,
+  Lesson,
+  Stats,
+  QuizAssignment,
+  TopUser
+} from './types'
 
 // Helper function to get friendly website name from domain
 const getWebsiteName = (domain: string): string => {
@@ -331,6 +201,8 @@ export default function AdminPage() {
   
   // Editing states
   const [editingUser, setEditingUser] = useState<string | null>(null)
+  const [userPasswordInputs, setUserPasswordInputs] = useState<Record<string, string>>({})
+  const [passwordUpdateLoading, setPasswordUpdateLoading] = useState<string | null>(null)
   const [editingLanguage, setEditingLanguage] = useState<string | null>(null)
   const [editingLanguageData, setEditingLanguageData] = useState<{
     name: string
@@ -352,11 +224,19 @@ export default function AdminPage() {
     title: string
     content: string
     codeExample: string
+    codeExercise: {
+      language: string
+      starterCode: string
+      description: string
+      outputCriteria: OutputRule[]
+    }
     quiz: {
       questions: any[]
       passingScore: number
     }
   } | null>(null)
+  const [showCodeExerciseModal, setShowCodeExerciseModal] = useState(false)
+  const [showQuizModal, setShowQuizModal] = useState(false)
   
   // Form states
   const [newLanguage, setNewLanguage] = useState({ name: '', slug: '', description: '', icon: '🌐' })
@@ -366,16 +246,61 @@ export default function AdminPage() {
   const [showNewLesson, setShowNewLesson] = useState(false)
   const [showBulkCreateUsers, setShowBulkCreateUsers] = useState(false)
   const [bulkUsers, setBulkUsers] = useState<Array<{ name: string; email: string; password: string }>>([{ name: '', email: '', password: '' }])
+  
+  // Helper function to generate unique IDs for criteria
+  const generateCriteriaId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+
+  // Sorted collections for cleaner UI listing
+  const sortedLanguages = useMemo(() => {
+    if (!languages?.length) return []
+    return [...languages].sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }))
+  }, [languages])
+
+  const sortedLevels = useMemo(() => {
+    if (!levels?.length) return []
+    return [...levels].sort((a, b) => {
+      const langA = (typeof a.languageId === 'object' && a.languageId?.name) ? a.languageId.name.toLowerCase() : ''
+      const langB = (typeof b.languageId === 'object' && b.languageId?.name) ? b.languageId.name.toLowerCase() : ''
+      if (langA !== langB) return langA.localeCompare(langB)
+      return (a.levelNumber || 0) - (b.levelNumber || 0)
+    })
+  }, [levels])
+
+  const sortedLessons = useMemo(() => {
+    if (!lessons?.length) return []
+    return [...lessons].sort((a, b) => {
+      const levelNumberA = (typeof a.levelId === 'object' && a.levelId?.levelNumber) ? a.levelId.levelNumber : 0
+      const levelNumberB = (typeof b.levelId === 'object' && b.levelId?.levelNumber) ? b.levelId.levelNumber : 0
+      if (levelNumberA !== levelNumberB) return levelNumberA - levelNumberB
+
+      const levelTitleA = (typeof a.levelId === 'object' && a.levelId?.title) ? a.levelId.title.toLowerCase() : ''
+      const levelTitleB = (typeof b.levelId === 'object' && b.levelId?.title) ? b.levelId.title.toLowerCase() : ''
+      if (levelTitleA !== levelTitleB) return levelTitleA.localeCompare(levelTitleB)
+
+      return (a.lessonNumber || 0) - (b.lessonNumber || 0)
+    })
+  }, [lessons])
+  
   const [newLesson, setNewLesson] = useState({
     levelId: '',
     lessonNumber: 1,
     title: '',
     content: '',
     codeExample: '',
+    codeExercise: {
+      language: 'html',
+      starterCode: '',
+      description: '',
+      outputCriteria: [{ id: generateCriteriaId(), snippet: '', points: 2, penalty: 0 }]
+    },
     quiz: {
       questions: [] as any[],
       passingScore: 7
     }
+  })
+  const [newLessonSectionVisibility, setNewLessonSectionVisibility] = useState({
+    codeExercise: true,
+    quiz: true
   })
   
   // Quiz Assignments
@@ -396,6 +321,222 @@ export default function AdminPage() {
     assignedTo: [] as string[],
     deadline: ''
   })
+
+  const toggleNewLessonSection = (section: 'quiz' | 'codeExercise') => {
+    setNewLessonSectionVisibility(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }))
+  }
+
+  const formatOutputCriteria = (criteria: Question['outputCriteria'] = []) => {
+    if (!criteria || criteria.length === 0) return ''
+    return criteria
+      .filter(rule => rule.snippet?.trim())
+      .map(rule => {
+        const snippet = rule.snippet.trim()
+        const points = Number(rule.points || 0).toFixed(2)
+        const penalty = Number(rule.penalty || 0)
+        const penaltyText = penalty ? ` (Penalty ${penalty.toFixed(2)} pts if missing)` : ''
+        return `${snippet} — ${points} pts${penaltyText}`
+      })
+      .join('\n')
+  }
+
+  const normalizeExplanationText = (value: Question['explanation']) => {
+    if (!value) return ''
+    if (typeof value === 'string') return value
+    if (typeof value === 'object') {
+      return (value as any).en || (value as any).vi || ''
+    }
+    return ''
+  }
+
+  const extractCommentBlock = (code: string) => {
+    const htmlComment = code.match(/<!--([\s\S]*?)-->/)
+    if (htmlComment) return htmlComment[1].trim()
+
+    const blockComment = code.match(/\/\*([\s\S]*?)\*\//)
+    if (blockComment) return blockComment[1].trim()
+
+    const hashComment = code.match(/#\s*Yêu cầu:([\s\S]*)/i)
+    if (hashComment) return hashComment[1].trim()
+
+    return ''
+  }
+
+  const getStarterCodeSnippet = (starterCode?: Question['starterCode'], codeType?: Question['codeType']) => {
+    if (!starterCode) return ''
+    if (codeType === 'html-css-js') {
+      return [starterCode.html, starterCode.css, starterCode.javascript].filter(Boolean).join('\n')
+    }
+    if (codeType && codeType !== 'html-css-js') {
+      const langKey = codeType as 'html' | 'css' | 'javascript'
+      return starterCode[langKey] || ''
+    }
+    return starterCode.html || starterCode.css || starterCode.javascript || ''
+  }
+
+  const getStarterCodeRequirementPreview = (starterCode?: Question['starterCode'], codeType?: Question['codeType']) => {
+    const snippet = getStarterCodeSnippet(starterCode, codeType)
+    if (!snippet) return ''
+    const comment = extractCommentBlock(snippet)
+    if (comment) return comment
+    return snippet.trim().split('\n').slice(0, 12).join('\n')
+  }
+
+  const getCodeQuestionRequirementPreview = (question: Question) => {
+    const starterPreview = getStarterCodeRequirementPreview(question.starterCode, question.codeType)
+    if (starterPreview) return starterPreview
+    if (typeof question.expectedOutput === 'string' && question.expectedOutput.trim()) {
+      return question.expectedOutput.trim()
+    }
+    return normalizeExplanationText(question.explanation)
+  }
+
+  const shouldAutoUpdateExpectedOutput = (question: any, previousSummary: string) => {
+    const currentValue = (question.expectedOutput || '').trim()
+    const previousValue = (previousSummary || '').trim()
+    return !currentValue || currentValue === previousValue
+  }
+
+  const ensureCodeQuestionStructure = (question: any) => {
+    if (question.type !== 'code') return question
+    const starterCode = {
+      html: question.starterCode?.html || '',
+      css: question.starterCode?.css || '',
+      javascript: question.starterCode?.javascript || ''
+    }
+    const outputCriteria = Array.isArray(question.outputCriteria) && question.outputCriteria.length > 0
+      ? question.outputCriteria.map((rule: any) => ({
+          id: rule.id || generateCriteriaId(),
+          snippet: rule.snippet || '',
+          points: Number(rule.points ?? 2),
+          penalty: Number(rule.penalty ?? 0)
+        }))
+      : [{
+          id: generateCriteriaId(),
+          snippet: question.expectedOutput || '',
+          points: 2,
+          penalty: 0
+        }]
+    return {
+      ...question,
+      codeType: question.codeType || 'html',
+      starterCode,
+      outputCriteria,
+      expectedOutput: question.expectedOutput && question.expectedOutput.length > 0
+        ? question.expectedOutput
+        : formatOutputCriteria(outputCriteria)
+    }
+  }
+
+  const calculateCriteriaPoints = (criteria: Question['outputCriteria'] = []) => {
+    return (criteria || []).reduce((sum, rule) => sum + (Number(rule.points) || 0), 0)
+  }
+
+  const normalizeCodeExercise = (exercise?: {
+    language?: string
+    starterCode?: string
+    description?: string
+    outputCriteria?: OutputRule[]
+  }): {
+    language: string
+    starterCode: string
+    description: string
+    outputCriteria: OutputRule[]
+  } => {
+    // Handle description: convert to string (from object if needed)
+    let descriptionValue: string = ''
+    if (exercise?.description) {
+      if (typeof exercise.description === 'string') {
+        descriptionValue = exercise.description
+      } else if (typeof exercise.description === 'object') {
+        // Convert from {vi, en} to string (prefer en, fallback to vi)
+        descriptionValue = exercise.description.en || exercise.description.vi || ''
+      }
+    }
+
+    const outputCriteria = Array.isArray(exercise?.outputCriteria) && exercise.outputCriteria.length > 0
+      ? exercise.outputCriteria.map(rule => ({
+          id: rule.id || generateCriteriaId(),
+          snippet: rule.snippet || '',
+          points: Number(rule.points ?? 0),
+          penalty: Number(rule.penalty ?? 0)
+        }))
+      : [{ id: generateCriteriaId(), snippet: '', points: 2, penalty: 0 }]
+
+    return {
+      language: exercise?.language || 'html',
+      starterCode: exercise?.starterCode || '',
+      description: descriptionValue,
+      outputCriteria
+    }
+  }
+
+  const sanitizeCodeExerciseForApi = (exercise?: {
+    language?: string
+    starterCode?: string
+    description?: string
+    outputCriteria?: OutputRule[]
+  }) => {
+    if (!exercise) return undefined
+    
+    // Keep description as string
+    let descriptionStr: string = ''
+    if (exercise.description) {
+      if (typeof exercise.description === 'string') {
+        descriptionStr = exercise.description
+      } else if (typeof exercise.description === 'object') {
+        // Convert from {vi, en} to string (prefer en, fallback to vi)
+        descriptionStr = exercise.description.en || exercise.description.vi || ''
+      }
+    }
+    
+    return {
+      language: exercise.language || 'html',
+      starterCode: exercise.starterCode || '',
+      description: descriptionStr,
+      outputCriteria: (exercise.outputCriteria || []).map(rule => ({
+        snippet: rule.snippet?.trim() || '',
+        points: Number(rule.points) || 0,
+        penalty: Number(rule.penalty) || 0
+      }))
+    }
+  }
+
+  const sanitizeQuizQuestionsForApi = (questions: Question[] = []) => {
+    return questions.map((question: any) => {
+      if (question.type === 'code') {
+        return {
+          type: 'code',
+          question: question.question || '',
+          codeType: question.codeType || 'html',
+          explanation: question.explanation || '',
+          starterCode: {
+            html: question.starterCode?.html || '',
+            css: question.starterCode?.css || '',
+            javascript: question.starterCode?.javascript || ''
+          },
+          expectedOutput: (question.expectedOutput || '').trim(),
+          outputCriteria: (question.outputCriteria || []).map((rule: any) => ({
+            snippet: rule.snippet?.trim() || '',
+            points: Number(rule.points) || 0,
+            penalty: Number(rule.penalty) || 0
+          }))
+        }
+      }
+
+      return {
+        type: 'multiple-choice',
+        question: question.question || '',
+        options: (question.options || []).map((opt: string) => opt || ''),
+        correctAnswer:
+          typeof question.correctAnswer === 'number' ? question.correctAnswer : 0,
+        explanation: question.explanation || ''
+      }
+    })
+  }
 
   const fetchDashboard = async () => {
     try {
@@ -821,20 +962,36 @@ export default function AdminPage() {
       }
     } else {
       // Fallback: find lesson in lessons array
+      if (!recentLesson.lessonId || typeof recentLesson.lessonId !== 'object' || !('_id' in recentLesson.lessonId)) {
+        return null
+      }
+      
       const lessonId = typeof recentLesson.lessonId._id === 'string' 
         ? recentLesson.lessonId._id 
         : (recentLesson.lessonId._id as any).toString()
       
       const lesson = lessons.find(l => l._id === lessonId)
       if (!lesson) return null
-      levelId = lesson.levelId._id
+      
+      if (lesson.levelId && typeof lesson.levelId === 'object' && '_id' in lesson.levelId) {
+        const levelIdValue = lesson.levelId._id
+        levelId = typeof levelIdValue === 'string' 
+          ? levelIdValue 
+          : (levelIdValue as any).toString()
+      } else {
+        return null
+      }
+      
+      if (!levelId) return null
     }
 
     // Get level and language if not already populated
-    if (!levelData) {
+    if (!levelData && levelId) {
       levelData = levels.find(l => l._id === levelId)
       if (!levelData) return null
     }
+    
+    if (!levelData) return null
 
     if (!languageData) {
       const langId = typeof levelData.languageId === 'object' && levelData.languageId._id
@@ -859,6 +1016,30 @@ export default function AdminPage() {
     } catch (error) {
       console.error('Error updating user role:', error)
       alert('Error updating user role')
+    }
+  }
+
+  const handleUpdateUserPassword = async (userId: string) => {
+    const newPassword = (userPasswordInputs[userId] || '').trim()
+    if (!newPassword) {
+      alert('Please enter a new password')
+      return
+    }
+    if (newPassword.length < 6) {
+      alert('Password must be at least 6 characters')
+      return
+    }
+    try {
+      setPasswordUpdateLoading(userId)
+      await api.put(`/admin/users/${userId}/password`, { password: newPassword })
+      alert('Password updated successfully')
+      setUserPasswordInputs(prev => ({ ...prev, [userId]: '' }))
+      setEditingUser(null)
+    } catch (error) {
+      console.error('Error updating password:', error)
+      alert('Error updating password')
+    } finally {
+      setPasswordUpdateLoading(null)
     }
   }
 
@@ -1022,7 +1203,15 @@ export default function AdminPage() {
         alert('Please fill in all required fields')
         return
       }
-      await api.post('/admin/lessons', newLesson)
+      const payload = {
+        ...newLesson,
+        codeExercise: sanitizeCodeExerciseForApi(newLesson.codeExercise),
+        quiz: {
+          ...newLesson.quiz,
+          questions: sanitizeQuizQuestionsForApi(newLesson.quiz.questions as Question[])
+        }
+      }
+      await api.post('/admin/lessons', payload)
       fetchLessons()
       fetchLevels()
       fetchDashboard()
@@ -1033,6 +1222,12 @@ export default function AdminPage() {
         title: '',
         content: '',
         codeExample: '',
+        codeExercise: {
+          language: 'html',
+          starterCode: '',
+          description: '',
+          outputCriteria: [{ id: generateCriteriaId(), snippet: '', points: 2, penalty: 0 }]
+        },
         quiz: {
           questions: [],
           passingScore: 7
@@ -1062,22 +1257,56 @@ export default function AdminPage() {
       const response = await api.get(`/lessons/${lessonId}`)
       const lesson = response.data.lesson
       setEditingLesson(lessonId)
-      setEditingLessonData({
-        levelId: lesson.levelId._id || lesson.levelId,
-        lessonNumber: lesson.lessonNumber,
-        title: lesson.title || '',
-        content: lesson.content || '',
-        codeExample: lesson.codeExample || '',
-        quiz: lesson.quiz || {
-          questions: [],
-          passingScore: 7
+      // Handle content - can be string or {vi, en} object
+      let contentValue = ''
+      if (lesson.content) {
+        if (typeof lesson.content === 'string') {
+          contentValue = lesson.content
+        } else if (typeof lesson.content === 'object') {
+          // Prefer en, fallback to vi
+          contentValue = lesson.content.en || lesson.content.vi || ''
         }
+      }
+      
+      // Handle title - can be string or {vi, en} object
+      // For editing, we'll use string format (prefer en, fallback to vi)
+      let titleValue = ''
+      if (lesson.title) {
+        if (typeof lesson.title === 'string') {
+          titleValue = lesson.title
+        } else if (typeof lesson.title === 'object') {
+          // Prefer en, fallback to vi
+          titleValue = lesson.title.en || lesson.title.vi || ''
+        }
+      }
+      
+      setEditingLessonData({
+        levelId: String(lesson.levelId?._id || lesson.levelId || ''),
+        lessonNumber: lesson.lessonNumber || 1,
+        title: titleValue || '',
+        content: contentValue,
+        codeExample: lesson.codeExample || '',
+        codeExercise: normalizeCodeExercise(lesson.codeExercise),
+        quiz: lesson.quiz
+          ? {
+              ...lesson.quiz,
+              questions: (lesson.quiz.questions || []).map((q: any) =>
+                q.type === 'code' ? ensureCodeQuestionStructure(q) : q
+              )
+            }
+          : {
+              questions: [],
+              passingScore: 7
+            }
       })
+      setShowCodeExerciseModal(false)
+      setShowQuizModal(false)
     } catch (error) {
       console.error('Error loading lesson:', error)
       alert('Error loading lesson data')
     }
   }
+
 
   const handleUpdateLesson = async () => {
     if (!editingLesson || !editingLessonData) return
@@ -1086,7 +1315,52 @@ export default function AdminPage() {
         alert('Please fill in all required fields')
         return
       }
-      await api.put(`/admin/lessons/${editingLesson}`, editingLessonData)
+      
+      // Handle content - convert string to {vi, en} if needed
+      let contentValue: any = editingLessonData.content
+      if (typeof editingLessonData.content === 'string') {
+        // If content is string, convert to {vi, en} object
+        contentValue = {
+          vi: editingLessonData.content,
+          en: editingLessonData.content
+        }
+      }
+      
+      // Handle title - keep as is (can be string or {vi, en})
+      let titleValue: any = editingLessonData.title
+      if (typeof editingLessonData.title === 'string') {
+        // If title is string, convert to {vi, en} object
+        titleValue = {
+          vi: editingLessonData.title,
+          en: editingLessonData.title
+        }
+      }
+      
+      const payload = {
+        levelId: editingLessonData.levelId,
+        lessonNumber: editingLessonData.lessonNumber,
+        title: titleValue,
+        content: contentValue,
+        codeExample: editingLessonData.codeExample || '',
+        codeExercise: sanitizeCodeExerciseForApi(editingLessonData.codeExercise),
+        quiz: {
+          ...editingLessonData.quiz,
+          questions: sanitizeQuizQuestionsForApi(editingLessonData.quiz.questions as Question[])
+        }
+      }
+      
+      // Debug log
+      console.log('Updating lesson with payload:', {
+        lessonId: editingLesson,
+        levelId: payload.levelId,
+        lessonNumber: payload.lessonNumber,
+        title: payload.title,
+        content: payload.content,
+        codeExercise: payload.codeExercise,
+        description: payload.codeExercise?.description
+      })
+      
+      await api.put(`/admin/lessons/${editingLesson}`, payload)
       fetchLessons()
       fetchLevels()
       fetchDashboard()
@@ -1131,34 +1405,29 @@ export default function AdminPage() {
 
   const updateQuizQuestion = (index: number, field: string, value: any) => {
     const newQuestions = [...newLesson.quiz.questions]
+    const currentQuestion = newQuestions[index] || {}
     if (field === 'type' && value === 'code') {
-      // Reset to code question structure
-      newQuestions[index] = {
-        type: 'code',
-        question: newQuestions[index].question || '',
-        codeType: 'html',
-        starterCode: {
-          html: '',
-          css: '',
-          javascript: ''
-        },
-        expectedOutput: '',
-        explanation: ''
-      }
+      newQuestions[index] = ensureCodeQuestionStructure({
+        ...currentQuestion,
+        type: 'code'
+      })
     } else if (field === 'type' && value === 'multiple-choice') {
-      // Reset to multiple-choice structure
       newQuestions[index] = {
         type: 'multiple-choice',
-        question: newQuestions[index].question || '',
+        question: currentQuestion.question || '',
         options: ['', '', '', ''],
         correctAnswer: 0,
         explanation: ''
       }
     } else {
-      newQuestions[index] = {
-        ...newQuestions[index],
+      const updatedQuestion = {
+        ...currentQuestion,
         [field]: value
       }
+      newQuestions[index] =
+        updatedQuestion.type === 'code'
+          ? ensureCodeQuestionStructure(updatedQuestion)
+          : updatedQuestion
     }
     setNewLesson({
       ...newLesson,
@@ -1247,6 +1516,86 @@ export default function AdminPage() {
     })
   }
 
+  const addOutputCriteriaRow = (qIndex: number) => {
+    const newQuestions = [...newLesson.quiz.questions]
+    const question = ensureCodeQuestionStructure({ ...newQuestions[qIndex] })
+    const previousSummary = formatOutputCriteria(question.outputCriteria)
+    const shouldSyncExpected = shouldAutoUpdateExpectedOutput(question, previousSummary)
+    const updatedCriteria = [
+      ...(question.outputCriteria || []),
+      { id: generateCriteriaId(), snippet: '', points: 1, penalty: 0 }
+    ]
+    question.outputCriteria = updatedCriteria
+    const nextSummary = formatOutputCriteria(updatedCriteria)
+    if (shouldSyncExpected) {
+      question.expectedOutput = nextSummary
+    }
+    newQuestions[qIndex] = question
+    setNewLesson({
+      ...newLesson,
+      quiz: {
+        ...newLesson.quiz,
+        questions: newQuestions
+      }
+    })
+  }
+
+  const updateOutputCriteriaRow = (
+    qIndex: number,
+    criteriaIndex: number,
+    field: 'snippet' | 'points' | 'penalty',
+    value: string
+  ) => {
+    const newQuestions = [...newLesson.quiz.questions]
+    const question = ensureCodeQuestionStructure({ ...newQuestions[qIndex] })
+    const previousSummary = formatOutputCriteria(question.outputCriteria)
+    const shouldSyncExpected = shouldAutoUpdateExpectedOutput(question, previousSummary)
+    const criteria = [...(question.outputCriteria || [])]
+    const updatedRule = {
+      ...criteria[criteriaIndex],
+      [field]: field === 'snippet' ? value : Number(value)
+    }
+    criteria[criteriaIndex] = updatedRule
+    question.outputCriteria = criteria
+    const nextSummary = formatOutputCriteria(criteria)
+    if (shouldSyncExpected) {
+      question.expectedOutput = nextSummary
+    }
+    newQuestions[qIndex] = question
+    setNewLesson({
+      ...newLesson,
+      quiz: {
+        ...newLesson.quiz,
+        questions: newQuestions
+      }
+    })
+  }
+
+  const removeOutputCriteriaRow = (qIndex: number, criteriaIndex: number) => {
+    const newQuestions = [...newLesson.quiz.questions]
+    const question = ensureCodeQuestionStructure({ ...newQuestions[qIndex] })
+    const previousSummary = formatOutputCriteria(question.outputCriteria)
+    const shouldSyncExpected = shouldAutoUpdateExpectedOutput(question, previousSummary)
+    const criteria = [...(question.outputCriteria || [])]
+    criteria.splice(criteriaIndex, 1)
+    const nextCriteria = criteria.length
+      ? criteria
+      : [{ id: generateCriteriaId(), snippet: '', points: 1, penalty: 0 }]
+    question.outputCriteria = nextCriteria
+    const nextSummary = formatOutputCriteria(nextCriteria)
+    if (shouldSyncExpected) {
+      question.expectedOutput = nextSummary
+    }
+    newQuestions[qIndex] = question
+    setNewLesson({
+      ...newLesson,
+      quiz: {
+        ...newLesson.quiz,
+        questions: newQuestions
+      }
+    })
+  }
+
   // Helper functions for editing lesson
   const addEditQuizQuestion = () => {
     if (!editingLessonData) return
@@ -1284,32 +1633,29 @@ export default function AdminPage() {
   const updateEditQuizQuestion = (index: number, field: string, value: any) => {
     if (!editingLessonData) return
     const newQuestions = [...editingLessonData.quiz.questions]
+    const currentQuestion = newQuestions[index] || {}
     if (field === 'type' && value === 'code') {
-      newQuestions[index] = {
-        type: 'code',
-        question: newQuestions[index].question || '',
-        codeType: 'html',
-        starterCode: {
-          html: '',
-          css: '',
-          javascript: ''
-        },
-        expectedOutput: '',
-        explanation: ''
-      }
+      newQuestions[index] = ensureCodeQuestionStructure({
+        ...currentQuestion,
+        type: 'code'
+      })
     } else if (field === 'type' && value === 'multiple-choice') {
       newQuestions[index] = {
         type: 'multiple-choice',
-        question: newQuestions[index].question || '',
+        question: currentQuestion.question || '',
         options: ['', '', '', ''],
         correctAnswer: 0,
         explanation: ''
       }
     } else {
-      newQuestions[index] = {
-        ...newQuestions[index],
+      const updatedQuestion = {
+        ...currentQuestion,
         [field]: value
       }
+      newQuestions[index] =
+        updatedQuestion.type === 'code'
+          ? ensureCodeQuestionStructure(updatedQuestion)
+          : updatedQuestion
     }
     setEditingLessonData({
       ...editingLessonData,
@@ -1354,6 +1700,80 @@ export default function AdminPage() {
     })
   }
 
+  const updateEditingCodeExercise = (field: 'language' | 'starterCode' | 'description', value: string) => {
+    if (!editingLessonData) return
+    
+    // Get current codeExercise, preserving existing values
+    const currentExercise = editingLessonData.codeExercise || {
+      language: 'html',
+      starterCode: '',
+      description: '',
+      outputCriteria: []
+    }
+    
+    // Normalize to ensure structure, but preserve current values
+    const normalized = normalizeCodeExercise(currentExercise)
+    
+    setEditingLessonData({
+      ...editingLessonData,
+      codeExercise: {
+        ...normalized,
+        [field]: value
+      }
+    })
+  }
+
+  const addCodeExerciseRule = () => {
+    if (!editingLessonData) return
+    const currentExercise = normalizeCodeExercise(editingLessonData.codeExercise)
+    const nextRules = [
+      ...currentExercise.outputCriteria,
+      { id: generateCriteriaId(), snippet: '', points: 1, penalty: 0 }
+    ]
+    setEditingLessonData({
+      ...editingLessonData,
+      codeExercise: {
+        ...currentExercise,
+        outputCriteria: nextRules
+      }
+    })
+  }
+
+  const updateCodeExerciseRule = (
+    index: number,
+    field: 'snippet' | 'points' | 'penalty',
+    value: string
+  ) => {
+    if (!editingLessonData) return
+    const currentExercise = normalizeCodeExercise(editingLessonData.codeExercise)
+    const rules = [...currentExercise.outputCriteria]
+    rules[index] = {
+      ...rules[index],
+      [field]: field === 'snippet' ? value : Number(value)
+    }
+    setEditingLessonData({
+      ...editingLessonData,
+      codeExercise: {
+        ...currentExercise,
+        outputCriteria: rules
+      }
+    })
+  }
+
+  const removeCodeExerciseRule = (index: number) => {
+    if (!editingLessonData) return
+    const currentExercise = normalizeCodeExercise(editingLessonData.codeExercise)
+    const rules = [...currentExercise.outputCriteria]
+    rules.splice(index, 1)
+    setEditingLessonData({
+      ...editingLessonData,
+      codeExercise: {
+        ...currentExercise,
+        outputCriteria: rules.length ? rules : [{ id: generateCriteriaId(), snippet: '', points: 1, penalty: 0 }]
+      }
+    })
+  }
+
   const addEditQuizQuestionOption = (qIndex: number) => {
     if (!editingLessonData) return
     const newQuestions = [...editingLessonData.quiz.questions]
@@ -1375,6 +1795,88 @@ export default function AdminPage() {
     const newOptions = [...(newQuestions[qIndex].options || [])]
     newOptions.splice(optIndex, 1)
     newQuestions[qIndex].options = newOptions
+    setEditingLessonData({
+      ...editingLessonData,
+      quiz: {
+        ...editingLessonData.quiz,
+        questions: newQuestions
+      }
+    })
+  }
+
+  const addEditOutputCriteriaRow = (qIndex: number) => {
+    if (!editingLessonData) return
+    const newQuestions = [...editingLessonData.quiz.questions]
+    const question = ensureCodeQuestionStructure({ ...newQuestions[qIndex] })
+    const previousSummary = formatOutputCriteria(question.outputCriteria)
+    const shouldSyncExpected = shouldAutoUpdateExpectedOutput(question, previousSummary)
+    const updatedCriteria = [
+      ...(question.outputCriteria || []),
+      { id: generateCriteriaId(), snippet: '', points: 1, penalty: 0 }
+    ]
+    question.outputCriteria = updatedCriteria
+    const nextSummary = formatOutputCriteria(updatedCriteria)
+    if (shouldSyncExpected) {
+      question.expectedOutput = nextSummary
+    }
+    newQuestions[qIndex] = question
+    setEditingLessonData({
+      ...editingLessonData,
+      quiz: {
+        ...editingLessonData.quiz,
+        questions: newQuestions
+      }
+    })
+  }
+
+  const updateEditOutputCriteriaRow = (
+    qIndex: number,
+    criteriaIndex: number,
+    field: 'snippet' | 'points' | 'penalty',
+    value: string
+  ) => {
+    if (!editingLessonData) return
+    const newQuestions = [...editingLessonData.quiz.questions]
+    const question = ensureCodeQuestionStructure({ ...newQuestions[qIndex] })
+    const previousSummary = formatOutputCriteria(question.outputCriteria)
+    const shouldSyncExpected = shouldAutoUpdateExpectedOutput(question, previousSummary)
+    const criteria = [...(question.outputCriteria || [])]
+    criteria[criteriaIndex] = {
+      ...criteria[criteriaIndex],
+      [field]: field === 'snippet' ? value : Number(value)
+    }
+    question.outputCriteria = criteria
+    const nextSummary = formatOutputCriteria(criteria)
+    if (shouldSyncExpected) {
+      question.expectedOutput = nextSummary
+    }
+    newQuestions[qIndex] = question
+    setEditingLessonData({
+      ...editingLessonData,
+      quiz: {
+        ...editingLessonData.quiz,
+        questions: newQuestions
+      }
+    })
+  }
+
+  const removeEditOutputCriteriaRow = (qIndex: number, criteriaIndex: number) => {
+    if (!editingLessonData) return
+    const newQuestions = [...editingLessonData.quiz.questions]
+    const question = ensureCodeQuestionStructure({ ...newQuestions[qIndex] })
+    const previousSummary = formatOutputCriteria(question.outputCriteria)
+    const shouldSyncExpected = shouldAutoUpdateExpectedOutput(question, previousSummary)
+    const criteria = [...(question.outputCriteria || [])]
+    criteria.splice(criteriaIndex, 1)
+    const nextCriteria = criteria.length
+      ? criteria
+      : [{ id: generateCriteriaId(), snippet: '', points: 1, penalty: 0 }]
+    question.outputCriteria = nextCriteria
+    const nextSummary = formatOutputCriteria(nextCriteria)
+    if (shouldSyncExpected) {
+      question.expectedOutput = nextSummary
+    }
+    newQuestions[qIndex] = question
     setEditingLessonData({
       ...editingLessonData,
       quiz: {
@@ -3062,6 +3564,46 @@ export default function AdminPage() {
                         )}
                       </div>
                     </div>
+                    {editingUser === u._id && (
+                      <div className="mt-3 p-3 bg-muted rounded-lg space-y-2">
+                        <div>
+                          <label className="text-xs font-medium mb-1 block">New Password</label>
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            <Input
+                              type="password"
+                              placeholder="Enter new password"
+                              value={userPasswordInputs[u._id] || ''}
+                              onChange={(e) =>
+                                setUserPasswordInputs((prev) => ({
+                                  ...prev,
+                                  [u._id]: e.target.value
+                                }))
+                              }
+                            />
+                            <Button
+                              size="sm"
+                              onClick={() => handleUpdateUserPassword(u._id)}
+                              disabled={passwordUpdateLoading === u._id}
+                            >
+                              {passwordUpdateLoading === u._id ? 'Updating...' : 'Update Password'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setEditingUser(null)
+                                setUserPasswordInputs((prev) => ({ ...prev, [u._id]: '' }))
+                              }}
+                            >
+                              Close
+                            </Button>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground mt-1">
+                            Password must be at least 6 characters.
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   )
                 })}
@@ -3120,8 +3662,11 @@ export default function AdminPage() {
                 </div>
               )}
               <div className="space-y-2">
-                {languages.map((lang) => (
-                  <div key={lang._id} className="p-4 border rounded-lg">
+                {sortedLanguages.map((lang) => (
+                  <div
+                    key={lang._id}
+                    className="p-4 border rounded-xl bg-white/70 dark:bg-slate-900/40 shadow-sm hover:shadow-lg hover:border-primary/40 transition-all duration-200"
+                  >
                     {editingLanguage === lang._id && editingLanguageData ? (
                       <div className="space-y-3">
                         <Input
@@ -3213,7 +3758,7 @@ export default function AdminPage() {
                     onChange={(e) => setNewLevel({ ...newLevel, languageId: e.target.value })}
                   >
                     <option value="">Select Language</option>
-                    {languages.map((lang) => (
+                    {sortedLanguages.map((lang) => (
                       <option key={lang._id} value={lang._id}>
                         {lang.name}
                       </option>
@@ -3248,8 +3793,8 @@ export default function AdminPage() {
                 </div>
               )}
               <div className="space-y-2">
-                {levels.map((level) => (
-                  <div key={level._id} className="p-4 border rounded-lg">
+                {sortedLevels.map((level) => (
+                  <div key={level._id} className="p-4 border rounded-xl bg-white/70 dark:bg-slate-900/40 shadow-sm hover:shadow-lg hover:border-primary/40 transition-all duration-200">
                     {editingLevel === level._id && editingLevelData ? (
                       <div className="space-y-3">
                         <select
@@ -3258,7 +3803,7 @@ export default function AdminPage() {
                           onChange={(e) => setEditingLevelData({ ...editingLevelData, languageId: e.target.value })}
                         >
                           <option value="">Select Language</option>
-                          {languages.map((lang) => (
+                          {sortedLanguages.map((lang) => (
                             <option key={lang._id} value={lang._id}>
                               {lang.name}
                             </option>
@@ -3350,27 +3895,54 @@ export default function AdminPage() {
                   <CardContent className="space-y-4">
                     <div className="grid md:grid-cols-2 gap-4">
                       <div>
-                        <label className="text-sm font-medium mb-2 block">Level *</label>
+                        <label htmlFor="new-lesson-level" className="text-sm font-medium mb-2 block">Level *</label>
                         <select
-                          className="w-full px-3 py-2 border rounded-md"
-                          value={newLesson.levelId}
-                          onChange={(e) => setNewLesson({ ...newLesson, levelId: e.target.value })}
+                          id="new-lesson-level"
+                          className="w-full px-3 py-2 border rounded-md bg-white cursor-pointer"
+                          value={newLesson.levelId ? String(newLesson.levelId) : ''}
+                          onChange={(e) => {
+                            const newLevelId = e.target.value;
+                            setNewLesson(prev => ({
+                              ...prev,
+                              levelId: newLevelId
+                            }));
+                          }}
                         >
                           <option value="">Select Level</option>
-                          {levels.map((level) => (
-                            <option key={level._id} value={level._id}>
+                          {sortedLevels.map((level) => (
+                            <option key={level._id} value={String(level._id)}>
                               {level.title} (Level {level.levelNumber})
                             </option>
                           ))}
                         </select>
                       </div>
                       <div>
-                        <label className="text-sm font-medium mb-2 block">Lesson Number *</label>
-                        <Input
+                        <label htmlFor="new-lesson-number" className="text-sm font-medium mb-2 block">Lesson Number *</label>
+                        <input
+                          id="new-lesson-number"
                           type="number"
+                          min="1"
+                          step="1"
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                           placeholder="Lesson Number"
-                          value={newLesson.lessonNumber}
-                          onChange={(e) => setNewLesson({ ...newLesson, lessonNumber: parseInt(e.target.value) || 1 })}
+                          value={newLesson.lessonNumber || ''}
+                          onChange={(e) => {
+                            const inputValue = e.target.value;
+                            const numValue = inputValue === '' ? 1 : (parseInt(inputValue) || 1);
+                            setNewLesson(prev => ({
+                              ...prev,
+                              lessonNumber: numValue
+                            }));
+                          }}
+                          onBlur={(e) => {
+                            const inputValue = e.target.value;
+                            if (inputValue === '' || parseInt(inputValue) < 1) {
+                              setNewLesson(prev => ({
+                                ...prev,
+                                lessonNumber: 1
+                              }));
+                            }
+                          }}
                         />
                       </div>
                     </div>
@@ -3403,6 +3975,214 @@ export default function AdminPage() {
                       />
                     </div>
                     
+                    {/* Code Exercise Section */}
+                    <div className="border-t pt-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <label className="text-sm font-medium">Code Exercise</label>
+                          <p className="text-xs text-muted-foreground">Create a coding exercise for this lesson</p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleNewLessonSection('codeExercise')}
+                        >
+                          {newLessonSectionVisibility.codeExercise ? (
+                            <ChevronUp className="h-4 w-4 mr-1" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 mr-1" />
+                          )}
+                          {newLessonSectionVisibility.codeExercise ? 'Hide' : 'Show'}
+                        </Button>
+                      </div>
+                      {newLessonSectionVisibility.codeExercise && (
+                        <div className="space-y-4">
+                          <div className="grid md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-xs font-medium mb-1 block">Language *</label>
+                              <select
+                                className="w-full px-3 py-2 border rounded-md"
+                                value={newLesson.codeExercise?.language || 'html'}
+                                onChange={(e) => setNewLesson({
+                                  ...newLesson,
+                                  codeExercise: {
+                                    ...newLesson.codeExercise,
+                                    language: e.target.value
+                                  }
+                                })}
+                              >
+                                <option value="html">HTML</option>
+                                <option value="css">CSS</option>
+                                <option value="javascript">JavaScript</option>
+                                <option value="python">Python</option>
+                                <option value="html-css-js">HTML + CSS + JS</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-xs font-medium mb-1 block">Description</label>
+                              <textarea
+                                className="w-full p-2 border rounded text-sm"
+                                rows={3}
+                                placeholder="BÀI TẬP: Tên bài tập&#10;&#10;Yêu cầu:&#10;1. Yêu cầu 1&#10;2. Yêu cầu 2&#10;..."
+                                value={newLesson.codeExercise?.description || ''}
+                                onChange={(e) => {
+                                  setNewLesson({
+                                    ...newLesson,
+                                    codeExercise: {
+                                      ...newLesson.codeExercise,
+                                      description: e.target.value
+                                    }
+                                  })
+                                }}
+                              />
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Nhập mô tả và yêu cầu bài tập. Format: BÀI TẬP: ... Yêu cầu: 1. ... 2. ...
+                              </p>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium mb-1 block">Starter Code *</label>
+                            <textarea
+                              className="w-full p-2 border rounded font-mono text-xs"
+                              rows={newLesson.codeExercise?.language === 'html-css-js' ? 14 : 10}
+                              placeholder="Paste the starter code that students will improve"
+                              value={newLesson.codeExercise?.starterCode || ''}
+                              onChange={(e) => setNewLesson({
+                                ...newLesson,
+                                codeExercise: {
+                                  ...newLesson.codeExercise,
+                                  starterCode: e.target.value
+                                }
+                              })}
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Include instructions as comments so learners see what to do when the exercise loads.
+                            </p>
+                          </div>
+                          <div className="border-t pt-4 space-y-3">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div>
+                                <label className="text-xs font-medium block">Output rules & scoring</label>
+                                <p className="text-[11px] text-muted-foreground">
+                                  Định nghĩa mỗi phần điểm mong muốn (ví dụ: thẻ h1, link với href, v.v.)
+                                </p>
+                              </div>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => {
+                                  const currentRules = newLesson.codeExercise?.outputCriteria || []
+                                  setNewLesson({
+                                    ...newLesson,
+                                    codeExercise: {
+                                      ...newLesson.codeExercise,
+                                      outputCriteria: [
+                                        ...currentRules,
+                                        { id: generateCriteriaId(), snippet: '', points: 1, penalty: 0 }
+                                      ]
+                                    }
+                                  })
+                                }}
+                              >
+                                <Plus className="h-4 w-4 mr-1" />
+                                Add Rule
+                              </Button>
+                            </div>
+                            {(newLesson.codeExercise?.outputCriteria || []).map((rule, index) => (
+                              <div key={rule.id || `new-code-ex-rule-${index}`} className="grid gap-2 md:grid-cols-[2fr_auto_auto_auto] items-start">
+                                <div className="md:col-span-1">
+                                  <Input
+                                    placeholder='<h1>Welcome to Website</h1>'
+                                    value={rule.snippet}
+                                    onChange={(e) => {
+                                      const newRules = [...(newLesson.codeExercise?.outputCriteria || [])]
+                                      newRules[index] = { ...newRules[index], snippet: e.target.value }
+                                      setNewLesson({
+                                        ...newLesson,
+                                        codeExercise: {
+                                          ...newLesson.codeExercise,
+                                          outputCriteria: newRules
+                                        }
+                                      })
+                                    }}
+                                  />
+                                  <p className="text-[11px] text-muted-foreground mt-1">Nội dung cần xuất hiện</p>
+                                </div>
+                                <div>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.25"
+                                    placeholder="Điểm"
+                                    value={rule.points}
+                                    onChange={(e) => {
+                                      const newRules = [...(newLesson.codeExercise?.outputCriteria || [])]
+                                      newRules[index] = { ...newRules[index], points: Number(e.target.value) || 0 }
+                                      setNewLesson({
+                                        ...newLesson,
+                                        codeExercise: {
+                                          ...newLesson.codeExercise,
+                                          outputCriteria: newRules
+                                        }
+                                      })
+                                    }}
+                                  />
+                                  <p className="text-[11px] text-muted-foreground mt-1">Điểm thưởng</p>
+                                </div>
+                                <div>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.25"
+                                    placeholder="Trừ điểm"
+                                    value={rule.penalty ?? ''}
+                                    onChange={(e) => {
+                                      const newRules = [...(newLesson.codeExercise?.outputCriteria || [])]
+                                      newRules[index] = { ...newRules[index], penalty: Number(e.target.value) || 0 }
+                                      setNewLesson({
+                                        ...newLesson,
+                                        codeExercise: {
+                                          ...newLesson.codeExercise,
+                                          outputCriteria: newRules
+                                        }
+                                      })
+                                    }}
+                                  />
+                                  <p className="text-[11px] text-muted-foreground mt-1">Trừ nếu thiếu</p>
+                                </div>
+                                <div className="flex justify-end">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    onClick={() => {
+                                      const newRules = [...(newLesson.codeExercise?.outputCriteria || [])]
+                                      newRules.splice(index, 1)
+                                      setNewLesson({
+                                        ...newLesson,
+                                        codeExercise: {
+                                          ...newLesson.codeExercise,
+                                          outputCriteria: newRules.length > 0 ? newRules : [{ id: generateCriteriaId(), snippet: '', points: 2, penalty: 0 }]
+                                        }
+                                      })
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                            <div className="rounded-md border bg-background/70 p-3 text-xs font-mono whitespace-pre-wrap">
+                              {formatOutputCriteria(newLesson.codeExercise?.outputCriteria || []) ||
+                                'Output summary sẽ xuất hiện tại đây dựa trên các rule đã cấu hình.'}
+                            </div>
+                            <p className="text-[11px] text-muted-foreground">
+                              Ví dụ: &lt;h1&gt;Welcome to Website&lt;/h1&gt; — 2 điểm. &lt;a&gt; ... &lt;/a&gt; — 2 điểm (thiếu href="example.com" trừ 1 điểm).
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
                     {/* Quiz Section */}
                     <div className="border-t pt-4">
                       <div className="flex items-center justify-between mb-4">
@@ -3410,7 +4190,19 @@ export default function AdminPage() {
                           <label className="text-sm font-medium">Quiz Questions</label>
                           <p className="text-xs text-muted-foreground">Add multiple-choice or code questions</p>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-wrap justify-end">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleNewLessonSection('quiz')}
+                          >
+                            {newLessonSectionVisibility.quiz ? (
+                              <ChevronUp className="h-4 w-4 mr-1" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4 mr-1" />
+                            )}
+                            {newLessonSectionVisibility.quiz ? 'Hide' : 'Show'}
+                          </Button>
                           <Input
                             type="number"
                             min="0"
@@ -3429,8 +4221,13 @@ export default function AdminPage() {
                           </Button>
                         </div>
                       </div>
+                      {newLessonSectionVisibility.quiz && (
                       <div className="space-y-4">
-                        {newLesson.quiz.questions.map((q, qIndex) => (
+                        {newLesson.quiz.questions.map((q, qIndex) => {
+                          const requirementPreview =
+                            q.type === 'code' ? getCodeQuestionRequirementPreview(q as Question) : ''
+                          const readOnlyRules = Array.isArray(q.outputCriteria) ? q.outputCriteria : []
+                          return (
                           <Card key={qIndex} className="p-4 border-2">
                             <div className="flex justify-between items-center mb-3">
                               <span className="font-medium">Question {qIndex + 1}</span>
@@ -3462,11 +4259,16 @@ export default function AdminPage() {
                             </div>
                             
                             <div className="space-y-3">
-                              <Input
-                                placeholder="Question text"
-                                value={q.question || ''}
-                                onChange={(e) => updateQuizQuestion(qIndex, 'question', e.target.value)}
-                              />
+                              <div>
+                                <label className="text-xs font-medium mb-1 block">
+                                  {q.type === 'code' ? 'Challenge Title *' : 'Question Text *'}
+                                </label>
+                                <Input
+                                  placeholder={q.type === 'code' ? 'Ví dụ: Build a welcome hero section' : 'Question text'}
+                                  value={q.question || ''}
+                                  onChange={(e) => updateQuizQuestion(qIndex, 'question', e.target.value)}
+                                />
+                              </div>
                               
                               {q.type === 'multiple-choice' ? (
                                 <>
@@ -3517,29 +4319,105 @@ export default function AdminPage() {
                                   />
                                 </>
                               ) : (
-                                <>
-                                  <div>
-                                    <label className="text-xs font-medium mb-1 block">Code Type *</label>
-                                    <select
-                                      className="w-full px-3 py-2 border rounded-md"
-                                      value={q.codeType || 'html'}
-                                      onChange={(e) => updateQuizQuestion(qIndex, 'codeType', e.target.value)}
-                                    >
-                                      <option value="html">HTML</option>
-                                      <option value="css">CSS</option>
-                                      <option value="javascript">JavaScript</option>
-                                      <option value="html-css-js">HTML + CSS + JS</option>
-                                    </select>
+                                <div className="space-y-4 rounded-lg border bg-muted/20 p-4">
+                                  <div className="space-y-3 rounded-xl border bg-background/80 p-4">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2 text-sm font-semibold">
+                                        <Code2 className="h-4 w-4 text-primary" />
+                                        Yêu cầu bài tập
+                                      </div>
+                                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                                        {(q.codeType || 'html').toUpperCase()}
+                                      </span>
+                                    </div>
+                                    <div className="rounded-lg border bg-muted/30 font-mono text-xs whitespace-pre-wrap max-h-48 overflow-auto p-3">
+                                      {requirementPreview ||
+                                        'Chưa có hướng dẫn trong starter code. Vui lòng thêm mô tả vào Starter Code hoặc Description.'}
+                                    </div>
+                                    <div className="space-y-2 border-t pt-3">
+                                      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                        <ListChecks className="h-4 w-4" />
+                                        Output rules & scoring
+                                      </div>
+                                      <div className="space-y-2">
+                                        {readOnlyRules.length ? (
+                                          readOnlyRules.map((rule, ruleIndex) => (
+                                            <div
+                                              key={rule.id || `create-preview-rule-${qIndex}-${ruleIndex}`}
+                                              className="flex items-center justify-between gap-3 rounded-lg border bg-background/70 p-2"
+                                            >
+                                              <div className="flex-1 text-xs font-mono whitespace-pre-wrap pr-4">
+                                                {rule.snippet?.trim() || `Rule ${ruleIndex + 1}`}
+                                              </div>
+                                              <div className="text-right text-xs min-w-[80px]">
+                                                <p className="font-semibold text-emerald-600">
+                                                  {Number(rule.points || 0).toFixed(2)} pts
+                                                </p>
+                                                {rule.penalty ? (
+                                                  <p className="text-red-500">
+                                                    - {Number(rule.penalty || 0).toFixed(2)} pts
+                                                  </p>
+                                                ) : null}
+                                              </div>
+                                            </div>
+                                          ))
+                                        ) : (
+                                          <p className="text-xs text-muted-foreground">
+                                            Chưa có rule nào được cấu hình.
+                                          </p>
+                                        )}
+                                      </div>
+                                      <p className="text-xs font-semibold text-emerald-600 text-right">
+                                        Tổng điểm: {calculateCriteriaPoints(q.outputCriteria).toFixed(2)} pts
+                                      </p>
+                                    </div>
                                   </div>
-                                  
+                                  <div className="grid md:grid-cols-2 gap-4">
+                                    <div>
+                                      <label className="text-xs font-medium mb-1 block">Language *</label>
+                                      <select
+                                        className="w-full px-3 py-2 border rounded-md"
+                                        value={q.codeType || 'html'}
+                                        onChange={(e) => updateQuizQuestion(qIndex, 'codeType', e.target.value)}
+                                      >
+                                        <option value="html">HTML</option>
+                                        <option value="css">CSS</option>
+                                        <option value="javascript">JavaScript</option>
+                                        <option value="html-css-js">HTML + CSS + JS</option>
+                                      </select>
+                                    </div>
+                                    <div>
+                                      <label className="text-xs font-medium mb-1 block">Description / Requirements *</label>
+                                      <textarea
+                                        className="w-full p-2 border rounded text-sm"
+                                        rows={q.explanation ? 4 : 3}
+                                        placeholder="Ví dụ: tạo tiêu đề h1 và link với thuộc tính href..."
+                                        value={q.explanation || ''}
+                                        onChange={(e) => updateQuizQuestion(qIndex, 'explanation', e.target.value)}
+                                      />
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <label className="text-xs font-medium mb-1 block">Exercise Requirements (auto-grading) *</label>
+                                    <textarea
+                                      className="w-full p-2 border rounded text-sm"
+                                      rows={q.expectedOutput ? 3 : 2}
+                                      placeholder="Liệt kê yêu cầu cụ thể, ví dụ: &lt;h1&gt; tiêu đề, nút có href..."
+                                      value={q.expectedOutput || ''}
+                                      onChange={(e) => updateQuizQuestion(qIndex, 'expectedOutput', e.target.value)}
+                                    />
+                                    <p className="text-[11px] text-muted-foreground mt-1">
+                                      Văn bản này sẽ hiển thị cho học viên và được dùng cho auto-grading.
+                                    </p>
+                                  </div>
+
                                   {q.codeType === 'html-css-js' ? (
                                     <div className="space-y-2">
                                       <div>
                                         <label className="text-xs font-medium mb-1 block">HTML Starter Code</label>
                                         <textarea
-                                          className="w-full p-2 border rounded-lg font-mono text-sm"
-                                          rows={4}
-                                          placeholder="HTML starter code"
+                                          className="w-full p-2 border rounded font-mono text-xs"
+                                          rows={3}
                                           value={q.starterCode?.html || ''}
                                           onChange={(e) => updateStarterCode(qIndex, 'html', e.target.value)}
                                         />
@@ -3547,9 +4425,8 @@ export default function AdminPage() {
                                       <div>
                                         <label className="text-xs font-medium mb-1 block">CSS Starter Code</label>
                                         <textarea
-                                          className="w-full p-2 border rounded-lg font-mono text-sm"
-                                          rows={4}
-                                          placeholder="CSS starter code"
+                                          className="w-full p-2 border rounded font-mono text-xs"
+                                          rows={3}
                                           value={q.starterCode?.css || ''}
                                           onChange={(e) => updateStarterCode(qIndex, 'css', e.target.value)}
                                         />
@@ -3557,9 +4434,8 @@ export default function AdminPage() {
                                       <div>
                                         <label className="text-xs font-medium mb-1 block">JavaScript Starter Code</label>
                                         <textarea
-                                          className="w-full p-2 border rounded-lg font-mono text-sm"
-                                          rows={4}
-                                          placeholder="JavaScript starter code"
+                                          className="w-full p-2 border rounded font-mono text-xs"
+                                          rows={3}
                                           value={q.starterCode?.javascript || ''}
                                           onChange={(e) => updateStarterCode(qIndex, 'javascript', e.target.value)}
                                         />
@@ -3567,47 +4443,110 @@ export default function AdminPage() {
                                     </div>
                                   ) : (
                                     <div>
-                                      <label className="text-xs font-medium mb-1 block">Starter Code</label>
+                                      <label className="text-xs font-medium mb-1 block">
+                                        {(q.codeType || 'html').toUpperCase()} Starter Code
+                                      </label>
                                       <textarea
-                                        className="w-full p-2 border rounded-lg font-mono text-sm"
-                                        rows={6}
-                                        placeholder={`${q.codeType?.toUpperCase()} starter code`}
+                                        className="w-full p-2 border rounded font-mono text-xs"
+                                        rows={4}
                                         value={q.starterCode?.[q.codeType as 'html' | 'css' | 'javascript'] || ''}
                                         onChange={(e) => updateStarterCode(qIndex, q.codeType as 'html' | 'css' | 'javascript', e.target.value)}
                                       />
                                     </div>
                                   )}
-                                  
-                                  <div>
-                                    <label className="text-xs font-medium mb-1 block">Expected Output *</label>
-                                    <textarea
-                                      className="w-full p-2 border rounded-lg font-mono text-sm"
-                                      rows={4}
-                                      placeholder="Expected output or result (used for auto-grading)"
-                                      value={q.expectedOutput || ''}
-                                      onChange={(e) => updateQuizQuestion(qIndex, 'expectedOutput', e.target.value)}
-                                    />
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                      Describe what the code should produce or output
+
+                                  <div className="space-y-3">
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                      <div>
+                                        <label className="text-xs font-medium block">Output rules & scoring</label>
+                                        <p className="text-[11px] text-muted-foreground">
+                                          Định nghĩa mỗi thẻ/kết quả mong muốn cùng số điểm tương ứng.
+                                        </p>
+                                      </div>
+                                      <Button variant="outline" size="sm" onClick={() => addOutputCriteriaRow(qIndex)}>
+                                        <Plus className="h-4 w-4 mr-1" />
+                                        Add Rule
+                                      </Button>
+                                    </div>
+                                    {(q.outputCriteria || []).map((rule, ruleIndex) => (
+                                      <div
+                                        key={rule.id || `${qIndex}-rule-${ruleIndex}`}
+                                        className="grid gap-2 md:grid-cols-[2fr_auto_auto_auto] items-start"
+                                      >
+                                        <div className="md:col-span-1">
+                                          <Input
+                                            placeholder='<h1>Welcome to Website</h1>'
+                                            value={rule.snippet}
+                                            onChange={(e) =>
+                                              updateOutputCriteriaRow(qIndex, ruleIndex, 'snippet', e.target.value)
+                                            }
+                                          />
+                                          <p className="text-[11px] text-muted-foreground mt-1">
+                                            Nội dung cần xuất hiện (thẻ, attribute, text...)
+                                          </p>
+                                        </div>
+                                        <div>
+                                          <Input
+                                            type="number"
+                                            min="0"
+                                            step="0.25"
+                                            placeholder="Điểm"
+                                            value={rule.points}
+                                            onChange={(e) =>
+                                              updateOutputCriteriaRow(qIndex, ruleIndex, 'points', e.target.value)
+                                            }
+                                          />
+                                          <p className="text-[11px] text-muted-foreground mt-1">Điểm thưởng</p>
+                                        </div>
+                                        <div>
+                                          <Input
+                                            type="number"
+                                            min="0"
+                                            step="0.25"
+                                            placeholder="Trừ điểm (optional)"
+                                            value={rule.penalty ?? ''}
+                                            onChange={(e) =>
+                                              updateOutputCriteriaRow(qIndex, ruleIndex, 'penalty', e.target.value)
+                                            }
+                                          />
+                                          <p className="text-[11px] text-muted-foreground mt-1">Trừ nếu thiếu</p>
+                                        </div>
+                                        <div className="flex justify-end">
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => removeOutputCriteriaRow(qIndex, ruleIndex)}
+                                          >
+                                            <Trash2 className="h-4 w-4" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                    <div className="rounded-md border bg-background/70 p-3 text-xs font-mono whitespace-pre-wrap">
+                                      {formatOutputCriteria(q.outputCriteria) ||
+                                        'Output summary sẽ được tạo tự động dựa trên các rule bên trên.'}
+                                    </div>
+                                    <p className="text-xs font-semibold text-emerald-600">
+                                      Tổng điểm đã cấu hình: {calculateCriteriaPoints(q.outputCriteria).toFixed(2)} pts / 10 pts
+                                    </p>
+                                    <p className="text-[11px] text-muted-foreground">
+                                      Ví dụ: &lt;h1&gt;Welcome to Website&lt;/h1&gt; — 2 điểm. &lt;a href="example.com"&gt; — 2 điểm (thiếu
+                                      href trừ 1 điểm).
                                     </p>
                                   </div>
-                                  
-                                  <Input
-                                    placeholder="Explanation (optional)"
-                                    value={q.explanation || ''}
-                                    onChange={(e) => updateQuizQuestion(qIndex, 'explanation', e.target.value)}
-                                  />
-                                </>
+                                </div>
                               )}
                             </div>
                           </Card>
-                        ))}
+                          )
+                        })}
                         {newLesson.quiz.questions.length === 0 && (
                           <p className="text-center text-muted-foreground py-4">
                             No questions yet. Click "Add Question" to get started.
                           </p>
                         )}
                       </div>
+                      )}
                     </div>
                     
                     <div className="flex gap-2">
@@ -3623,6 +4562,12 @@ export default function AdminPage() {
                           title: '',
                           content: '',
                           codeExample: '',
+                          codeExercise: {
+                            language: 'html',
+                            starterCode: '',
+                            description: '',
+                            outputCriteria: [{ id: generateCriteriaId(), snippet: '', points: 2, penalty: 0 }]
+                          },
                           quiz: {
                             questions: [],
                             passingScore: 7
@@ -3638,37 +4583,71 @@ export default function AdminPage() {
               )}
               
               <div className="space-y-2">
-                {lessons.map((lesson) => (
-                  <div key={lesson._id} className="p-4 border rounded-lg">
+                {sortedLessons.map((lesson) => (
+                  <div key={lesson._id} className="p-4 border rounded-xl bg-white/70 dark:bg-slate-900/40 shadow-sm hover:shadow-lg hover:border-primary/40 transition-all duration-200">
                     {editingLesson === lesson._id && editingLessonData ? (
                       <Card className="border-2">
                         <CardHeader>
                           <CardTitle>Edit Lesson</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                          <div className="grid md:grid-cols-2 gap-4">
-                            <div>
-                              <label className="text-sm font-medium mb-2 block">Level *</label>
+                          <div className="grid md:grid-cols-2 gap-4" style={{ position: 'relative', zIndex: 1 }}>
+                            <div style={{ position: 'relative', zIndex: 2 }}>
+                              <label htmlFor={`level-select-${editingLesson}`} className="text-sm font-medium mb-2 block">Level *</label>
                               <select
-                                className="w-full px-3 py-2 border rounded-md"
-                                value={editingLessonData.levelId}
-                                onChange={(e) => setEditingLessonData({ ...editingLessonData, levelId: e.target.value })}
+                                id={`level-select-${editingLesson}`}
+                                className="w-full px-3 py-2 border rounded-md bg-white cursor-pointer"
+                                value={editingLessonData?.levelId ? String(editingLessonData.levelId) : ''}
+                                onChange={(e) => {
+                                  const newLevelId = e.target.value;
+                                  setEditingLessonData(prev => prev ? {
+                                    ...prev,
+                                    levelId: newLevelId
+                                  } : null);
+                                }}
+                                style={{ pointerEvents: 'auto', position: 'relative', zIndex: 10 }}
                               >
                                 <option value="">Select Level</option>
-                                {levels.map((level) => (
-                                  <option key={level._id} value={level._id}>
+                                {sortedLevels.map((level) => (
+                                  <option key={level._id} value={String(level._id)}>
                                     {level.title} (Level {level.levelNumber})
                                   </option>
                                 ))}
                               </select>
                             </div>
-                            <div>
-                              <label className="text-sm font-medium mb-2 block">Lesson Number *</label>
-                              <Input
+                            <div style={{ position: 'relative', zIndex: 2 }}>
+                              <label htmlFor={`lesson-number-${editingLesson}`} className="text-sm font-medium mb-2 block">Lesson Number *</label>
+                              <input
+                                id={`lesson-number-${editingLesson}`}
                                 type="number"
+                                min="1"
+                                step="1"
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                 placeholder="Lesson Number"
-                                value={editingLessonData.lessonNumber}
-                                onChange={(e) => setEditingLessonData({ ...editingLessonData, lessonNumber: parseInt(e.target.value) || 1 })}
+                                value={editingLessonData?.lessonNumber || ''}
+                                onChange={(e) => {
+                                  const inputValue = e.target.value;
+                                  const numValue = inputValue === '' ? 1 : (parseInt(inputValue) || 1);
+                                  setEditingLessonData(prev => {
+                                    if (!prev) return null;
+                                    return {
+                                      ...prev,
+                                      lessonNumber: numValue
+                                    };
+                                  });
+                                }}
+                                onBlur={(e) => {
+                                  const inputValue = e.target.value;
+                                  if (inputValue === '' || parseInt(inputValue) < 1) {
+                                    setEditingLessonData(prev => {
+                                      if (!prev) return null;
+                                      return {
+                                        ...prev,
+                                        lessonNumber: 1
+                                      };
+                                    });
+                                  }
+                                }}
                               />
                             </div>
                           </div>
@@ -3676,7 +4655,11 @@ export default function AdminPage() {
                             <label className="text-sm font-medium mb-2 block">Title *</label>
                             <Input
                               placeholder="Lesson Title"
-                              value={editingLessonData.title}
+                              value={typeof editingLessonData.title === 'string' 
+                                ? editingLessonData.title 
+                                : (typeof editingLessonData.title === 'object' && editingLessonData.title !== null
+                                  ? (editingLessonData.title.en || editingLessonData.title.vi || '')
+                                  : '')}
                               onChange={(e) => setEditingLessonData({ ...editingLessonData, title: e.target.value })}
                             />
                           </div>
@@ -3686,7 +4669,11 @@ export default function AdminPage() {
                               className="w-full p-2 border rounded-lg"
                               rows={6}
                               placeholder="Lesson content (markdown supported)"
-                              value={editingLessonData.content}
+                              value={typeof editingLessonData.content === 'string' 
+                                ? editingLessonData.content 
+                                : (typeof editingLessonData.content === 'object' && editingLessonData.content !== null
+                                  ? (editingLessonData.content.en || editingLessonData.content.vi || '')
+                                  : '')}
                               onChange={(e) => setEditingLessonData({ ...editingLessonData, content: e.target.value })}
                             />
                           </div>
@@ -3700,189 +4687,40 @@ export default function AdminPage() {
                               onChange={(e) => setEditingLessonData({ ...editingLessonData, codeExample: e.target.value })}
                             />
                           </div>
-                          
-                          {/* Quiz Section */}
+
                           <div className="border-t pt-4">
-                            <div className="flex items-center justify-between mb-4">
+                            <div className="flex flex-wrap items-center justify-between gap-4">
                               <div>
-                                <label className="text-sm font-medium">Quiz Questions</label>
-                                <p className="text-xs text-muted-foreground">Add multiple-choice or code questions</p>
+                                <p className="text-sm font-medium">Code Exercise</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {editingLessonData.codeExercise?.starterCode
+                                    ? `Language: ${(editingLessonData.codeExercise.language || 'html').toUpperCase()} • ${editingLessonData.codeExercise.outputCriteria?.length || 0} scoring rule(s)`
+                                    : 'No code exercise configured yet'}
+                                </p>
+                              </div>
+                              <Button variant="outline" onClick={() => setShowCodeExerciseModal(true)}>
+                                Edit Code Exercise
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          <div className="border-t pt-4">
+                            <div className="flex flex-wrap items-center justify-between gap-4">
+                              <div>
+                                <p className="text-sm font-medium">Quiz Questions</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {editingLessonData.quiz.questions.length} question(s) • Passing score {editingLessonData.quiz.passingScore}/10
+                                </p>
                               </div>
                               <div className="flex gap-2">
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  max="10"
-                                  className="w-24"
-                                  placeholder="Passing Score"
-                                  value={editingLessonData.quiz.passingScore}
-                                  onChange={(e) => setEditingLessonData({
-                                    ...editingLessonData,
-                                    quiz: { ...editingLessonData.quiz, passingScore: parseFloat(e.target.value) || 7 }
-                                  })}
-                                />
-                                <Button size="sm" variant="outline" onClick={addEditQuizQuestion}>
+                                <Button variant="outline" onClick={() => setShowQuizModal(true)}>
+                                  Edit Quiz
+                                </Button>
+                                <Button size="sm" onClick={addEditQuizQuestion}>
                                   <Plus className="h-4 w-4 mr-2" />
-                                  Add Question
+                                  Quick Add
                                 </Button>
                               </div>
-                            </div>
-                            <div className="space-y-4">
-                              {editingLessonData.quiz.questions.map((q, qIndex) => (
-                                <Card key={qIndex} className="p-4 border-2">
-                                  <div className="flex justify-between items-center mb-3">
-                                    <span className="font-medium">Question {qIndex + 1}</span>
-                                    <div className="flex gap-2">
-                                      <select
-                                        className="text-sm px-2 py-1 border rounded"
-                                        value={q.type || 'multiple-choice'}
-                                        onChange={(e) => updateEditQuizQuestion(qIndex, 'type', e.target.value)}
-                                      >
-                                        <option value="multiple-choice">Multiple Choice</option>
-                                        <option value="code">Code Question</option>
-                                      </select>
-                                      <Button
-                                        size="sm"
-                                        variant="destructive"
-                                        onClick={() => removeEditQuizQuestion(qIndex)}
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                      </Button>
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="space-y-3">
-                                    <Input
-                                      placeholder="Question text"
-                                      value={q.question || ''}
-                                      onChange={(e) => updateEditQuizQuestion(qIndex, 'question', e.target.value)}
-                                    />
-                                    
-                                    {q.type === 'multiple-choice' ? (
-                                      <>
-                                        <div className="space-y-2">
-                                          <label className="text-xs font-medium">Options (select correct answer)</label>
-                                          {q.options?.map((opt: string, optIndex: number) => (
-                                            <div key={optIndex} className="flex items-center gap-2">
-                                              <input
-                                                type="radio"
-                                                name={`edit-correct-${qIndex}`}
-                                                checked={q.correctAnswer === optIndex}
-                                                onChange={() => updateEditQuizQuestion(qIndex, 'correctAnswer', optIndex)}
-                                                className="w-4 h-4"
-                                              />
-                                              <Input
-                                                placeholder={`Option ${optIndex + 1}`}
-                                                value={opt}
-                                                onChange={(e) => updateEditQuizQuestionOption(qIndex, optIndex, e.target.value)}
-                                              />
-                                              {q.options && q.options.length > 2 && (
-                                                <Button
-                                                  size="sm"
-                                                  variant="ghost"
-                                                  onClick={() => removeEditQuizQuestionOption(qIndex, optIndex)}
-                                                >
-                                                  <X className="h-4 w-4" />
-                                                </Button>
-                                              )}
-                                            </div>
-                                          ))}
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => addEditQuizQuestionOption(qIndex)}
-                                          >
-                                            <Plus className="h-4 w-4 mr-2" />
-                                            Add Option
-                                          </Button>
-                                        </div>
-                                        <Input
-                                          placeholder="Explanation (optional)"
-                                          value={q.explanation || ''}
-                                          onChange={(e) => updateEditQuizQuestion(qIndex, 'explanation', e.target.value)}
-                                        />
-                                      </>
-                                    ) : (
-                                      <>
-                                        <div>
-                                          <label className="text-xs font-medium mb-1 block">Code Type *</label>
-                                          <select
-                                            className="w-full px-2 py-1 border rounded text-sm"
-                                            value={q.codeType || 'html'}
-                                            onChange={(e) => updateEditQuizQuestion(qIndex, 'codeType', e.target.value)}
-                                          >
-                                            <option value="html">HTML</option>
-                                            <option value="css">CSS</option>
-                                            <option value="javascript">JavaScript</option>
-                                            <option value="html-css-js">HTML + CSS + JS</option>
-                                          </select>
-                                        </div>
-                                        {q.codeType === 'html-css-js' ? (
-                                          <div className="space-y-2">
-                                            <div>
-                                              <label className="text-xs font-medium mb-1 block">HTML Starter Code</label>
-                                              <textarea
-                                                className="w-full p-2 border rounded font-mono text-xs"
-                                                rows={3}
-                                                value={q.starterCode?.html || ''}
-                                                onChange={(e) => updateEditStarterCode(qIndex, 'html', e.target.value)}
-                                              />
-                                            </div>
-                                            <div>
-                                              <label className="text-xs font-medium mb-1 block">CSS Starter Code</label>
-                                              <textarea
-                                                className="w-full p-2 border rounded font-mono text-xs"
-                                                rows={3}
-                                                value={q.starterCode?.css || ''}
-                                                onChange={(e) => updateEditStarterCode(qIndex, 'css', e.target.value)}
-                                              />
-                                            </div>
-                                            <div>
-                                              <label className="text-xs font-medium mb-1 block">JavaScript Starter Code</label>
-                                              <textarea
-                                                className="w-full p-2 border rounded font-mono text-xs"
-                                                rows={3}
-                                                value={q.starterCode?.javascript || ''}
-                                                onChange={(e) => updateEditStarterCode(qIndex, 'javascript', e.target.value)}
-                                              />
-                                            </div>
-                                          </div>
-                                        ) : (
-                                          <div>
-                                            <label className="text-xs font-medium mb-1 block">
-                                              {q.codeType?.toUpperCase()} Starter Code
-                                            </label>
-                                            <textarea
-                                              className="w-full p-2 border rounded font-mono text-xs"
-                                              rows={4}
-                                              value={q.starterCode?.[q.codeType as 'html' | 'css' | 'javascript'] || ''}
-                                              onChange={(e) => updateEditStarterCode(qIndex, q.codeType as 'html' | 'css' | 'javascript', e.target.value)}
-                                            />
-                                          </div>
-                                        )}
-                                        <div>
-                                          <label className="text-xs font-medium mb-1 block">Expected Output *</label>
-                                          <textarea
-                                            className="w-full p-2 border rounded text-xs"
-                                            rows={2}
-                                            placeholder="Expected output or result (used for auto-grading)"
-                                            value={q.expectedOutput || ''}
-                                            onChange={(e) => updateEditQuizQuestion(qIndex, 'expectedOutput', e.target.value)}
-                                          />
-                                          <p className="text-xs text-muted-foreground mt-1">
-                                            Describe what the code should produce or output
-                                          </p>
-                                        </div>
-                                        <Input
-                                          placeholder="Explanation (optional)"
-                                          value={q.explanation || ''}
-                                          onChange={(e) => updateEditQuizQuestion(qIndex, 'explanation', e.target.value)}
-                                        />
-                                      </>
-                                    )}
-                                  </div>
-                                </Card>
-                              ))}
                             </div>
                           </div>
                           
@@ -4186,7 +5024,8 @@ export default function AdminPage() {
                               )}
                             </div>
                           </Card>
-                        ))}
+                        )
+                      )}
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -4459,422 +5298,514 @@ export default function AdminPage() {
         </TabsContent>
 
         {/* Progress Tab */}
-        <TabsContent value="progress" className="space-y-6">
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
+        <ProgressTabSection
+          userProgressTabSearch={userProgressTabSearch}
+          onSearchChange={setUserProgressTabSearch}
+          userProgressTabSort={userProgressTabSort}
+          onSortChange={(value) => setUserProgressTabSort(value)}
+          userProgressTabSortOrder={userProgressTabSortOrder}
+          onSortOrderChange={(value) => setUserProgressTabSortOrder(value)}
+          getFilteredAndSortedUserProgressTab={getFilteredAndSortedUserProgressTab}
+          selectedUser={selectedUser}
+          fetchUserProgress={fetchUserProgress}
+          getUserInfoForSearch={getUserInfoForSearch}
+          userProgress={userProgress}
+          getCurrentLanguageAndLevel={getCurrentLanguageAndLevel}
+          selectedLanguageId={selectedLanguageId}
+          onSelectLanguage={(languageId) => {
+            setSelectedLanguageId(languageId)
+            setSelectedLevelId('')
+          }}
+          selectedLevelId={selectedLevelId}
+          onSelectLevel={setSelectedLevelId}
+          languages={languages}
+          getAvailableLevels={getAvailableLevels}
+          handleUnlockLevel={handleUnlockLevel}
+          handleLockLevel={handleLockLevel}
+        />
+      </Tabs>
+
+      {editingLesson && editingLessonData && showCodeExerciseModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-4xl rounded-xl bg-background shadow-2xl border">
+            <div className="flex items-center justify-between border-b px-6 py-4">
+              <div>
+                <h3 className="text-lg font-semibold">Edit Code Exercise</h3>
+                <p className="text-sm text-muted-foreground">Configure starter code learners will use</p>
+              </div>
+              <Button size="icon" variant="ghost" onClick={() => setShowCodeExerciseModal(false)}>
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            <div className="px-6 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
+              <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <CardTitle>Select User</CardTitle>
-                  <CardDescription>Choose a user to view their progress</CardDescription>
+                  <label className="text-xs font-medium mb-1 block">Language *</label>
+                  <select
+                    className="w-full px-3 py-2 border rounded-md"
+                    value={editingLessonData.codeExercise?.language || 'html'}
+                    onChange={(e) => updateEditingCodeExercise('language', e.target.value)}
+                  >
+                    <option value="html">HTML</option>
+                    <option value="css">CSS</option>
+                    <option value="javascript">JavaScript</option>
+                    <option value="python">Python</option>
+                    <option value="html-css-js">HTML + CSS + JS</option>
+                  </select>
                 </div>
-              </CardHeader>
-              <CardContent>
-                {/* Search Input */}
-                <div className="mb-4">
-                  <Input
-                    placeholder="Tìm kiếm theo tên, email, language, hoặc tiến độ học..."
-                    value={userProgressTabSearch}
-                    onChange={(e) => setUserProgressTabSearch(e.target.value)}
-                    className="w-full"
-                  />
-                  {userProgressTabSearch && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Tìm thấy {getFilteredAndSortedUserProgressTab().length} kết quả
+                                <div>
+                                  <label className="text-xs font-medium mb-1 block">Description</label>
+                                  <textarea
+                                    className="w-full p-2 border rounded text-sm"
+                                    rows={3}
+                                    placeholder="BÀI TẬP: Tên bài tập&#10;&#10;Yêu cầu:&#10;1. Yêu cầu 1&#10;2. Yêu cầu 2&#10;..."
+                                    value={(() => {
+                                      const desc = editingLessonData.codeExercise?.description
+                                      if (typeof desc === 'string') return desc
+                                      if (typeof desc === 'object' && desc !== null) return desc.en || desc.vi || ''
+                                      return ''
+                                    })()}
+                                    onChange={(e) => updateEditingCodeExercise('description', e.target.value)}
+                                  />
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    Nhập mô tả và yêu cầu bài tập. Format: BÀI TẬP: ... Yêu cầu: 1. ... 2. ...
+                                  </p>
+                                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1 block">Starter Code *</label>
+                <textarea
+                  className="w-full p-2 border rounded font-mono text-xs"
+                  rows={editingLessonData.codeExercise?.language === 'html-css-js' ? 14 : 10}
+                  placeholder="Paste the starter code that students will improve"
+                  value={editingLessonData.codeExercise?.starterCode || ''}
+                  onChange={(e) => updateEditingCodeExercise('starterCode', e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Include instructions as comments so learners see what to do when the exercise loads.
+                </p>
+              </div>
+              <div className="border-t pt-4 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <label className="text-xs font-medium block">Output rules & scoring</label>
+                    <p className="text-[11px] text-muted-foreground">
+                      Định nghĩa mỗi phần điểm mong muốn (ví dụ: thẻ h1, link với href, v.v.)
                     </p>
-                  )}
-                </div>
-
-                {/* Sort Controls */}
-                <div className="mb-4 p-3 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg border border-primary/20">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 text-primary">
-                      <Filter className="h-4 w-4" />
-                      <span className="text-sm font-semibold">Sắp xếp:</span>
-                    </div>
-                    <div className="flex items-center gap-2 flex-1">
-                      <select
-                        className="flex-1 px-3 py-2 border border-primary/30 rounded-md bg-background text-sm font-medium hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                        value={userProgressTabSort}
-                        onChange={(e) => setUserProgressTabSort(e.target.value as any)}
-                      >
-                        <option value="name">Tên</option>
-                        <option value="email">Email</option>
-                      </select>
-                      <select
-                        className="px-3 py-2 border border-primary/30 rounded-md bg-background text-sm font-medium hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20 min-w-[80px]"
-                        value={userProgressTabSortOrder}
-                        onChange={(e) => setUserProgressTabSortOrder(e.target.value as 'asc' | 'desc')}
-                      >
-                        <option value="asc">↑ Tăng dần</option>
-                        <option value="desc">↓ Giảm dần</option>
-                      </select>
-                    </div>
                   </div>
+                  <Button variant="outline" size="sm" onClick={addCodeExerciseRule}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Rule
+                  </Button>
                 </div>
-                <div className="space-y-2">
-                  {getFilteredAndSortedUserProgressTab().map((u) => {
-                    const userInfo = getUserInfoForSearch(u._id)
-                    return (
-                    <button
-                      key={u._id}
-                      onClick={() => fetchUserProgress(u._id)}
-                      className={`w-full text-left p-3 rounded-lg border transition-all duration-200 ${
-                        selectedUser === u._id
-                          ? 'border-primary bg-primary/10 shadow-md shadow-primary/20'
-                          : 'border-border hover:bg-gradient-to-br hover:from-primary/10 hover:to-primary/5 hover:border-primary/40 hover:shadow-md hover:shadow-primary/10 hover:scale-[1.02] group'
-                      }`}
-                    >
-                      <p className={`font-semibold transition-all duration-200 ${selectedUser !== u._id ? 'group-hover:text-primary group-hover:font-bold' : ''}`}>{u.name}</p>
-                      <p className={`text-sm text-muted-foreground transition-all duration-200 ${selectedUser !== u._id ? 'group-hover:text-foreground group-hover:font-medium' : ''}`}>{u.email}</p>
-                      {(userInfo.language || userInfo.completedLessons > 0 || userInfo.score > 0) && (
-                        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                          {userInfo.language && (
-                            <span>Language: <span className="font-medium">{userInfo.language}</span></span>
-                          )}
-                          {userInfo.completedLessons > 0 && (
-                            <span>Đã làm: <span className="font-medium">{userInfo.completedLessons} bài</span></span>
-                          )}
-                          {userInfo.score > 0 && (
-                            <span>Điểm: <span className="font-medium">{userInfo.score.toFixed(1)}</span></span>
-                          )}
-                        </div>
-                      )}
-                    </button>
-                    )
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
-            {userProgress && (
-              <div className="space-y-6">
-                {/* Current Language and Level Info */}
-                {(() => {
-                  const currentInfo = getCurrentLanguageAndLevel()
-                  return currentInfo ? (
-                    <Card className="border-primary/30 bg-primary/5">
-                      <CardHeader>
-                        <CardTitle className="text-lg">Current Learning Status</CardTitle>
-                        <CardDescription>User's current language and level</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-2">
-                            <span className="text-2xl">{currentInfo.language.icon}</span>
-                            <div>
-                              <p className="font-semibold">Language</p>
-                              <p className="text-sm text-muted-foreground">{currentInfo.language.name}</p>
-                            </div>
-                          </div>
-                          <div className="h-12 w-px bg-border"></div>
-                          <div>
-                            <p className="font-semibold">Current Level</p>
-                            <p className="text-sm text-muted-foreground">
-                              Level {currentInfo.level.number}: {currentInfo.level.title}
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ) : null
-                })()}
-
-                {/* Unlock Level Section */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Unlock Level</CardTitle>
-                    <CardDescription>Manually unlock a level for this user</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-sm font-medium mb-2 block">Select Language</label>
-                        <select
-                          className="w-full p-2 border rounded-lg"
-                          value={selectedLanguageId}
-                          onChange={(e) => {
-                            setSelectedLanguageId(e.target.value)
-                            setSelectedLevelId('') // Reset level when language changes
-                          }}
-                        >
-                          <option value="">-- Select Language --</option>
-                          {languages.map((lang) => (
-                            <option key={lang._id} value={lang._id}>
-                              {lang.icon} {lang.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {selectedLanguageId && (
-                        <div>
-                          <label className="text-sm font-medium mb-2 block">Select Level</label>
-                          <select
-                            className="w-full p-2 border rounded-lg"
-                            value={selectedLevelId}
-                            onChange={(e) => setSelectedLevelId(e.target.value)}
-                          >
-                            <option value="">-- Select Level --</option>
-                            {getAvailableLevels().map((level) => (
-                              <option key={level._id} value={level._id}>
-                                Level {level.levelNumber}: {level.title}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-
-                      <Button
-                        onClick={() => handleUnlockLevel()}
-                        disabled={!selectedLevelId}
-                        className="w-full"
-                      >
-                        <Unlock className="h-4 w-4 mr-2" />
-                        Unlock Selected Level
+                {editingLessonData.codeExercise.outputCriteria.map((rule, index) => (
+                  <div key={rule.id || `code-ex-rule-${index}`} className="grid gap-2 md:grid-cols-[2fr_auto_auto_auto] items-start">
+                    <div className="md:col-span-1">
+                      <Input
+                        placeholder='<h1>Welcome to Website</h1>'
+                        value={rule.snippet}
+                        onChange={(e) => updateCodeExerciseRule(index, 'snippet', e.target.value)}
+                      />
+                      <p className="text-[11px] text-muted-foreground mt-1">Nội dung cần xuất hiện</p>
+                    </div>
+                    <div>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.25"
+                        placeholder="Điểm"
+                        value={rule.points}
+                        onChange={(e) => updateCodeExerciseRule(index, 'points', e.target.value)}
+                      />
+                      <p className="text-[11px] text-muted-foreground mt-1">Điểm thưởng</p>
+                    </div>
+                    <div>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.25"
+                        placeholder="Trừ điểm"
+                        value={rule.penalty ?? ''}
+                        onChange={(e) => updateCodeExerciseRule(index, 'penalty', e.target.value)}
+                      />
+                      <p className="text-[11px] text-muted-foreground mt-1">Trừ nếu thiếu</p>
+                    </div>
+                    <div className="flex justify-end">
+                      <Button variant="ghost" size="icon" onClick={() => removeCodeExerciseRule(index)}>
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                ))}
+                <div className="rounded-md border bg-background/70 p-3 text-xs font-mono whitespace-pre-wrap">
+                  {formatOutputCriteria(editingLessonData.codeExercise.outputCriteria) ||
+                    'Output summary sẽ xuất hiện tại đây dựa trên các rule đã cấu hình.'}
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Ví dụ: &lt;h1&gt;Welcome to Website&lt;/h1&gt; — 2 điểm. &lt;a&gt; ... &lt;/a&gt; — 2 điểm (thiếu href="example.com" trừ 1 điểm).
+                </p>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="ghost" onClick={() => setShowCodeExerciseModal(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => {
+                  setShowCodeExerciseModal(false)
+                  // Data is already saved in editingLessonData state
+                  // User needs to click "Save Changes" button outside modal to persist
+                }}>
+                  Done
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
-                {/* User Progress List - Levels */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Level Progress</CardTitle>
-                    <CardDescription>
-                      {userProgress.userId.name} ({userProgress.userId.email})
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {userProgress.levelScores.length > 0 ? (
-                        userProgress.levelScores.map((levelScore, index) => (
-                          <div key={index} className="p-4 border rounded-lg">
-                            <div className="flex items-center justify-between mb-2">
-                              <div>
-                                <div className="flex items-center gap-2 mb-1">
-                                  {levelScore.levelId.languageId && (
-                                    <>
-                                      <span className="text-lg">
-                                        {levelScore.levelId.languageId.icon}
-                                      </span>
-                                      <span className="text-sm text-muted-foreground">
-                                        {levelScore.levelId.languageId.name}
-                                      </span>
-                                    </>
-                                  )}
-                                </div>
-                                <p className="font-semibold">
-                                  Level {levelScore.levelId.levelNumber}: {levelScore.levelId.title}
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  Score: {levelScore.averageScore.toFixed(1)}/10
-                                </p>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {levelScore.isUnlocked ? (
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-green-500 text-sm flex items-center gap-1">
-                                      <CheckCircle2 className="h-4 w-4" />
-                                      Unlocked
-                                    </span>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => handleLockLevel(levelScore.levelId._id)}
-                                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
-                                    >
-                                      <Lock className="h-4 w-4 mr-2" />
-                                      Lock
-                                    </Button>
-                                  </div>
-                                ) : (
+      {editingLesson && editingLessonData && showQuizModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-6xl rounded-xl bg-background shadow-2xl border">
+            <div className="flex items-center justify-between border-b px-6 py-4">
+              <div>
+                <h3 className="text-lg font-semibold">Edit Quiz</h3>
+                <p className="text-sm text-muted-foreground">Manage multiple-choice and code questions</p>
+              </div>
+              <Button size="icon" variant="ghost" onClick={() => setShowQuizModal(false)}>
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            <div className="px-6 py-4 space-y-4 max-h-[80vh] overflow-y-auto">
+              <div className="flex flex-wrap gap-4 items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium">Passing Score (0-10)</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="10"
+                    className="w-24"
+                    value={editingLessonData.quiz.passingScore}
+                    onChange={(e) => setEditingLessonData({
+                      ...editingLessonData,
+                      quiz: { ...editingLessonData.quiz, passingScore: parseFloat(e.target.value) || 7 }
+                    })}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => addEditQuizQuestion()}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Question
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowQuizModal(false)}>
+                    Done
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-4">
+                {editingLessonData.quiz.questions.map((q, qIndex) => {
+                  const requirementPreview =
+                    q.type === 'code' ? getCodeQuestionRequirementPreview(q as Question) : ''
+                  const readOnlyRules = Array.isArray(q.outputCriteria) ? q.outputCriteria : []
+                  return (
+                  <Card key={`edit-quiz-${qIndex}`} className="p-4 border-2">
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="font-medium">Question {qIndex + 1}</span>
+                      <div className="flex gap-2">
+                        <select
+                          className="text-sm px-2 py-1 border rounded"
+                          value={q.type || 'multiple-choice'}
+                          onChange={(e) => updateEditQuizQuestion(qIndex, 'type', e.target.value)}
+                        >
+                          <option value="multiple-choice">Multiple Choice</option>
+                          <option value="code">Code Question</option>
+                        </select>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => removeEditQuizQuestion(qIndex)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs font-medium mb-1 block">
+                          {q.type === 'code' ? 'Challenge Title *' : 'Question Text *'}
+                        </label>
+                        <Input
+                          placeholder={q.type === 'code' ? 'Ví dụ: Build a welcome hero section' : 'Question text'}
+                          value={q.question || ''}
+                          onChange={(e) => updateEditQuizQuestion(qIndex, 'question', e.target.value)}
+                        />
+                      </div>
+                      {q.type === 'multiple-choice' ? (
+                        <>
+                          <div className="space-y-2">
+                            <label className="text-xs font-medium">Options (select correct answer)</label>
+                            {q.options?.map((opt: string, optIndex: number) => (
+                              <div key={optIndex} className="flex items-center gap-2">
+                                <input
+                                  type="radio"
+                                  name={`edit-correct-${qIndex}`}
+                                  checked={q.correctAnswer === optIndex}
+                                  onChange={() => updateEditQuizQuestion(qIndex, 'correctAnswer', optIndex)}
+                                  className="w-4 h-4"
+                                />
+                                <Input
+                                  placeholder={`Option ${optIndex + 1}`}
+                                  value={opt}
+                                  onChange={(e) => updateEditQuizQuestionOption(qIndex, optIndex, e.target.value)}
+                                />
+                                {q.options && q.options.length > 2 && (
                                   <Button
                                     size="sm"
-                                    variant="outline"
-                                    onClick={() => handleUnlockLevel(levelScore.levelId._id)}
+                                    variant="ghost"
+                                    onClick={() => removeEditQuizQuestionOption(qIndex, optIndex)}
                                   >
-                                    <Unlock className="h-4 w-4 mr-2" />
-                                    Unlock
+                                    <X className="h-4 w-4" />
                                   </Button>
                                 )}
                               </div>
+                            ))}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => addEditQuizQuestionOption(qIndex)}
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add Option
+                            </Button>
+                          </div>
+                          <Input
+                            placeholder="Explanation (optional)"
+                            value={q.explanation || ''}
+                            onChange={(e) => updateEditQuizQuestion(qIndex, 'explanation', e.target.value)}
+                          />
+                        </>
+                      ) : (
+                        <div className="space-y-4 rounded-lg border bg-muted/20 p-4">
+                          <div className="space-y-3 rounded-xl border bg-background/80 p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 text-sm font-semibold">
+                                <Code2 className="h-4 w-4 text-primary" />
+                                Yêu cầu bài tập
                             </div>
-                            {levelScore.adminApproved && (
-                              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-2">
-                                <Shield className="h-3 w-3" />
-                                Admin approved
-                              </p>
-                            )}
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                                {(q.codeType || 'html').toUpperCase()}
+                              </span>
+                            </div>
+                            <div className="rounded-lg border bg-muted/30 font-mono text-xs whitespace-pre-wrap max-h-48 overflow-auto p-3">
+                              {requirementPreview ||
+                                'Chưa có hướng dẫn trong starter code. Vui lòng thêm mô tả vào Starter Code hoặc Description.'}
+                          </div>
+                            <div className="space-y-2 border-t pt-3">
+                              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                <ListChecks className="h-4 w-4" />
+                                Output rules & scoring
+                              </div>
+                              <div className="space-y-2">
+                                {readOnlyRules.length ? (
+                                  readOnlyRules.map((rule, ruleIndex) => (
+                                    <div
+                                      key={rule.id || `preview-rule-${qIndex}-${ruleIndex}`}
+                                      className="flex items-center justify-between gap-3 rounded-lg border bg-background/70 p-2"
+                                    >
+                                      <div className="flex-1 text-xs font-mono whitespace-pre-wrap pr-4">
+                                        {rule.snippet?.trim() || `Rule ${ruleIndex + 1}`}
+                                </div>
+                                      <div className="text-right text-xs min-w-[80px]">
+                                        <p className="font-semibold text-emerald-600">
+                                          {Number(rule.points || 0).toFixed(2)} pts
+                                        </p>
+                                        {rule.penalty ? (
+                                          <p className="text-red-500">
+                                            - {Number(rule.penalty || 0).toFixed(2)} pts
+                                          </p>
+                                        ) : null}
+                          </div>
                           </div>
                         ))
                       ) : (
-                        <p className="text-muted-foreground text-center py-4">
-                          No level progress data available
+                                  <p className="text-xs text-muted-foreground">
+                                    Chưa có rule nào được cấu hình.
                         </p>
                       )}
                     </div>
-                  </CardContent>
-                </Card>
-
-                {/* User Progress List - Lessons */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Completed Lessons</CardTitle>
-                    <CardDescription>
-                      Danh sách các bài học đã hoàn thành
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {userProgress.lessonScores && userProgress.lessonScores.length > 0 ? (
-                        userProgress.lessonScores
-                          .filter(ls => ls.totalScore > 0)
-                          .sort((a, b) => {
-                            if (a.completedAt && b.completedAt) {
-                              return new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
-                            }
-                            return (b.totalScore || 0) - (a.totalScore || 0)
-                          })
-                          .map((lessonScore, index) => (
-                            <div key={index} className="p-4 border rounded-lg transition-all duration-200 hover:bg-gradient-to-br hover:from-primary/10 hover:to-primary/5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 hover:scale-[1.01] group cursor-pointer">
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    {lessonScore.lessonId.levelId && (
-                                      <>
-                                        {lessonScore.lessonId.levelId.languageId && (
-                                          <span className="text-lg">
-                                            {lessonScore.lessonId.levelId.languageId.icon}
-                                          </span>
-                                        )}
-                                        <span className="text-xs px-2 py-1 bg-muted rounded">
-                                          Level {lessonScore.lessonId.levelId.levelNumber}
-                                        </span>
-                                        {lessonScore.lessonId.levelId.languageId && (
-                                          <span className="text-xs text-muted-foreground">
-                                            {lessonScore.lessonId.levelId.languageId.name}
-                                          </span>
-                                        )}
-                                      </>
-                                    )}
-                                  </div>
-                                  <p className="font-semibold text-lg mb-1 group-hover:text-primary group-hover:font-bold transition-all duration-200">
-                                    Lesson {lessonScore.lessonId.lessonNumber}: {lessonScore.lessonId.title}
-                                  </p>
-                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
-                                    <div>
-                                      <p className="text-xs text-muted-foreground">Quiz Score</p>
-                                      <p className="font-medium">
-                                        {lessonScore.quizScore !== null ? lessonScore.quizScore.toFixed(1) : 'N/A'}/10
+                              <p className="text-xs font-semibold text-emerald-600 text-right">
+                                Tổng điểm: {calculateCriteriaPoints(q.outputCriteria).toFixed(2)} pts
                                       </p>
                                     </div>
-                                    <div>
-                                      <p className="text-xs text-muted-foreground">Code Score</p>
-                                      <p className="font-medium">
-                                        {lessonScore.codeScore !== null ? lessonScore.codeScore.toFixed(1) : 'N/A'}/10
-                                      </p>
                                     </div>
-                                    <div>
-                                      <p className="text-xs text-muted-foreground">Total Score</p>
-                                      <p className="font-medium text-primary">
-                                        {lessonScore.totalScore.toFixed(1)}/20
-                                      </p>
-                                    </div>
-                                    <div>
-                                      <p className="text-xs text-muted-foreground">Attempts</p>
-                                      <p className="font-medium">
-                                        Quiz: {lessonScore.quizAttempts || 0} | Code: {lessonScore.codeAttempts || 0}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  {lessonScore.completedAt && (
-                                    <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                                      <Clock className="h-3 w-3" />
-                                      Completed: {new Date(lessonScore.completedAt).toLocaleString('vi-VN')}
-                                    </p>
-                                  )}
-                                </div>
-                                <div className="ml-4">
-                                  <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                    lessonScore.totalScore >= 18 
-                                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                                      : lessonScore.totalScore >= 14
-                                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-                                      : lessonScore.totalScore >= 10
-                                      ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                                      : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                                  }`}>
-                                    {lessonScore.totalScore >= 18 ? 'Excellent' 
-                                      : lessonScore.totalScore >= 14 ? 'Good'
-                                      : lessonScore.totalScore >= 10 ? 'Average'
-                                      : 'Needs Improvement'}
-                                  </div>
-                                </div>
+                          <div className="grid md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-xs font-medium mb-1 block">Language *</label>
+                              <select
+                                className="w-full px-3 py-2 border rounded text-sm"
+                                value={q.codeType || 'html'}
+                                onChange={(e) => updateEditQuizQuestion(qIndex, 'codeType', e.target.value)}
+                              >
+                                <option value="html">HTML</option>
+                                <option value="css">CSS</option>
+                                <option value="javascript">JavaScript</option>
+                                <option value="html-css-js">HTML + CSS + JS</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-xs font-medium mb-1 block">Description / Requirements *</label>
+                              <textarea
+                                className="w-full p-2 border rounded text-sm"
+                                rows={q.explanation ? 4 : 3}
+                                placeholder="Mô tả tiêu chí chấm điểm, yêu cầu chi tiết..."
+                                value={q.explanation || ''}
+                                onChange={(e) => updateEditQuizQuestion(qIndex, 'explanation', e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium mb-1 block">Exercise Requirements (auto-grading) *</label>
+                            <textarea
+                              className="w-full p-2 border rounded text-sm"
+                              rows={q.expectedOutput ? 3 : 2}
+                              placeholder="Liệt kê yêu cầu cụ thể để hệ thống chấm điểm"
+                              value={q.expectedOutput || ''}
+                              onChange={(e) => updateEditQuizQuestion(qIndex, 'expectedOutput', e.target.value)}
+                            />
+                            <p className="text-[11px] text-muted-foreground mt-1">
+                              Hiển thị cho học viên & được dùng khi đánh giá bài code.
+                            </p>
+                          </div>
+                          {q.codeType === 'html-css-js' ? (
+                            <div className="space-y-2">
+                              <div>
+                                <label className="text-xs font-medium mb-1 block">HTML Starter Code</label>
+                                <textarea
+                                  className="w-full p-2 border rounded font-mono text-xs"
+                                  rows={3}
+                                  value={q.starterCode?.html || ''}
+                                  onChange={(e) => updateEditStarterCode(qIndex, 'html', e.target.value)}
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs font-medium mb-1 block">CSS Starter Code</label>
+                                <textarea
+                                  className="w-full p-2 border rounded font-mono text-xs"
+                                  rows={3}
+                                  value={q.starterCode?.css || ''}
+                                  onChange={(e) => updateEditStarterCode(qIndex, 'css', e.target.value)}
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs font-medium mb-1 block">JavaScript Starter Code</label>
+                                <textarea
+                                  className="w-full p-2 border rounded font-mono text-xs"
+                                  rows={3}
+                                  value={q.starterCode?.javascript || ''}
+                                  onChange={(e) => updateEditStarterCode(qIndex, 'javascript', e.target.value)}
+                                />
                               </div>
                             </div>
-                          ))
-                      ) : (
-                        <p className="text-muted-foreground text-center py-4">
-                          Chưa có bài học nào được hoàn thành
-                        </p>
-                      )}
-                    </div>
-                    {userProgress.lessonScores && userProgress.lessonScores.length > 0 && (
-                      <div className="mt-4 p-3 bg-muted rounded-lg">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                          <div>
-                            <p className="text-muted-foreground">Total Lessons</p>
-                            <p className="font-semibold text-lg">{userProgress.lessonScores.filter(ls => ls.totalScore > 0).length}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Avg Quiz Score</p>
-                            <p className="font-semibold text-lg">
-                              {(() => {
-                                const quizScores = userProgress.lessonScores
-                                  .filter(ls => ls.quizScore !== null)
-                                  .map(ls => ls.quizScore!)
-                                return quizScores.length > 0 
-                                  ? (quizScores.reduce((a, b) => a + b, 0) / quizScores.length).toFixed(1)
-                                  : 'N/A'
-                              })()}
+                          ) : (
+                            <div>
+                              <label className="text-xs font-medium mb-1 block">
+                                {(q.codeType || 'html').toUpperCase()} Starter Code
+                              </label>
+                              <textarea
+                                className="w-full p-2 border rounded font-mono text-xs"
+                                rows={4}
+                                value={q.starterCode?.[q.codeType as 'html' | 'css' | 'javascript'] || ''}
+                                onChange={(e) => updateEditStarterCode(qIndex, q.codeType as 'html' | 'css' | 'javascript', e.target.value)}
+                              />
+                            </div>
+                          )}
+                          <div className="space-y-3">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div>
+                                <label className="text-xs font-medium block">Output rules & scoring</label>
+                                <p className="text-[11px] text-muted-foreground">
+                                  Mỗi rule tương ứng với 1 phần điểm của bài.
+                                </p>
+                              </div>
+                              <Button variant="outline" size="sm" onClick={() => addEditOutputCriteriaRow(qIndex)}>
+                                <Plus className="h-4 w-4 mr-1" />
+                                Add Rule
+                              </Button>
+                            </div>
+                            {(q.outputCriteria || []).map((rule, ruleIndex) => (
+                              <div
+                                key={rule.id || `${qIndex}-edit-rule-${ruleIndex}`}
+                                className="grid gap-2 md:grid-cols-[2fr_auto_auto_auto] items-start"
+                              >
+                                <div className="md:col-span-1">
+                                  <Input
+                                    placeholder='<a href="example.com">Visit</a>'
+                                    value={rule.snippet}
+                                    onChange={(e) =>
+                                      updateEditOutputCriteriaRow(qIndex, ruleIndex, 'snippet', e.target.value)
+                                    }
+                                  />
+                                  <p className="text-[11px] text-muted-foreground mt-1">
+                                    Nội dung bắt buộc xuất hiện
+                                  </p>
+                                </div>
+                                <div>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.25"
+                                    placeholder="Điểm"
+                                    value={rule.points}
+                                    onChange={(e) =>
+                                      updateEditOutputCriteriaRow(qIndex, ruleIndex, 'points', e.target.value)
+                                    }
+                                  />
+                                  <p className="text-[11px] text-muted-foreground mt-1">Điểm thưởng</p>
+                                </div>
+                                <div>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.25"
+                                    placeholder="Trừ điểm"
+                                    value={rule.penalty ?? ''}
+                                    onChange={(e) =>
+                                      updateEditOutputCriteriaRow(qIndex, ruleIndex, 'penalty', e.target.value)
+                                    }
+                                  />
+                                  <p className="text-[11px] text-muted-foreground mt-1">Trừ nếu thiếu</p>
+                                </div>
+                                <div className="flex justify-end">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => removeEditOutputCriteriaRow(qIndex, ruleIndex)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                            <div className="rounded-md border bg-background/70 p-3 text-xs font-mono whitespace-pre-wrap">
+                              {formatOutputCriteria(q.outputCriteria) ||
+                                'Output summary sẽ hiển thị tại đây dựa trên các rule đã cấu hình.'}
+                            </div>
+                            <p className="text-xs font-semibold text-emerald-600">
+                              Tổng điểm đã cấu hình: {calculateCriteriaPoints(q.outputCriteria).toFixed(2)} pts / 10 pts
                             </p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Avg Code Score</p>
-                            <p className="font-semibold text-lg">
-                              {(() => {
-                                const codeScores = userProgress.lessonScores
-                                  .filter(ls => ls.codeScore !== null)
-                                  .map(ls => ls.codeScore!)
-                                return codeScores.length > 0 
-                                  ? (codeScores.reduce((a, b) => a + b, 0) / codeScores.length).toFixed(1)
-                                  : 'N/A'
-                              })()}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Avg Total Score</p>
-                            <p className="font-semibold text-lg">
-                              {(() => {
-                                const totalScores = userProgress.lessonScores
-                                  .filter(ls => ls.totalScore > 0)
-                                  .map(ls => ls.totalScore)
-                                return totalScores.length > 0 
-                                  ? (totalScores.reduce((a, b) => a + b, 0) / totalScores.length).toFixed(1)
-                                  : 'N/A'
-                              })()}
+                            <p className="text-[11px] text-muted-foreground">
+                              Ví dụ: &lt;h1&gt;Welcome to Website&lt;/h1&gt; — 2 điểm. &lt;a href="example.com"&gt; — 2 điểm (thiếu href trừ 1 điểm).
                             </p>
                           </div>
                         </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                      )}
+                    </div>
+                  </Card>
+                  )
+                })}
               </div>
-            )}
+            </div>
           </div>
-        </TabsContent>
-      </Tabs>
+        </div>
+      )}
     </div>
   )
 }

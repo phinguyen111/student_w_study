@@ -35,7 +35,7 @@ router.get('/leaderboard', async (req, res) => {
         })
         .lean(),
       UserProgress.find()
-        .select('userId lessonScores completedLessonIds totalStudyTime currentStreak updatedAt')
+        .select('userId lessonScores completedLessonIds totalStudyTime currentStreak updatedAt timeStats')
         .populate('userId', 'name email createdAt')
         .lean(),
     ]);
@@ -121,6 +121,15 @@ router.get('/leaderboard', async (req, res) => {
             ? (stats.totalScore / stats.lessonCount) / 2
             : 0;
 
+        const studyTimeline = (progress.timeStats || [])
+          .filter((stat) => stat && stat.date)
+          .sort((a, b) => new Date(a.date) - new Date(b.date))
+          .slice(-7)
+          .map((stat) => ({
+            date: stat.date,
+            minutes: stat.minutes || 0,
+          }));
+
         learners.push({
           userId:
             progress.userId._id?.toString() || progress.userId?.toString(),
@@ -133,6 +142,7 @@ router.get('/leaderboard', async (req, res) => {
           currentStreak: progress.currentStreak || 0,
           totalStudyTime: progress.totalStudyTime || 0,
           lastUpdated: progress.updatedAt,
+          studyTimeline,
         });
         leaderboardMap.set(languageId, learners);
       });
@@ -687,20 +697,20 @@ router.post('/quiz-assignments/:id/submit', authenticate, async (req, res) => {
         }
       } else {
         // Multiple-choice question
-        const correctAnswer = question.correctAnswer;
-        
-        // Only count as correct if:
-        // 1. User provided an answer (not undefined, not null)
-        // 2. Correct answer is defined
-        // 3. They match exactly (using strict equality)
-        if (
-          userAnswer !== undefined && 
-          userAnswer !== null &&
-          correctAnswer !== undefined && 
-          correctAnswer !== null &&
-          Number(userAnswer) === Number(correctAnswer)
-        ) {
-          correctCount++;
+      const correctAnswer = question.correctAnswer;
+      
+      // Only count as correct if:
+      // 1. User provided an answer (not undefined, not null)
+      // 2. Correct answer is defined
+      // 3. They match exactly (using strict equality)
+      if (
+        userAnswer !== undefined && 
+        userAnswer !== null &&
+        correctAnswer !== undefined && 
+        correctAnswer !== null &&
+        Number(userAnswer) === Number(correctAnswer)
+      ) {
+        correctCount++;
         }
       }
     });
@@ -724,7 +734,7 @@ router.post('/quiz-assignments/:id/submit', authenticate, async (req, res) => {
         const question = assignment.questions[index];
         if (question.type === 'code') {
           return {
-            questionIndex: index,
+        questionIndex: index,
             codeAnswer: answer?.codeAnswer || answer?.code || '',
             codeType: answer?.codeType || question.codeType
           };

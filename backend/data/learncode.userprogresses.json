@@ -1,0 +1,1257 @@
+[{
+  "_id": {
+    "$oid": "6913c1ccaeee1a6df89e20b6"
+  },
+  "userId": {
+    "$oid": "6913c167b335753e8baf2613"
+  },
+  "completedLessonIds": [],
+  "currentStreak": 1,
+  "totalStudyTime": 6,
+  "lessonScores": [],
+  "levelScores": [],
+  "timeStats": [
+    {
+      "date": {
+        "$date": "2025-11-11T17:00:00.000Z"
+      },
+      "minutes": 6,
+      "_id": {
+        "$oid": "6913c1ccaeee1a6df89e20b8"
+      }
+    }
+  ],
+  "updatedAt": {
+    "$date": "2025-11-11T23:07:56.046Z"
+  },
+  "__v": 1,
+  "lastStudyDate": {
+    "$date": "2025-11-11T17:00:00.000Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6913c52c488d23c2b5e8341e"
+  },
+  "userId": {
+    "$oid": "6913c47b8246c88e1a41b964"
+  },
+  "completedLessonIds": [],
+  "currentStreak": 1,
+  "totalStudyTime": 2,
+  "lessonScores": [],
+  "levelScores": [],
+  "timeStats": [
+    {
+      "date": {
+        "$date": "2025-11-11T17:00:00.000Z"
+      },
+      "minutes": 2,
+      "_id": {
+        "$oid": "6913c52c488d23c2b5e83420"
+      }
+    }
+  ],
+  "updatedAt": {
+    "$date": "2025-11-11T23:22:20.117Z"
+  },
+  "__v": 1,
+  "lastStudyDate": {
+    "$date": "2025-11-11T17:00:00.000Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6913d0948898965eb53441d9"
+  },
+  "userId": {
+    "$oid": "6913d00d455a2efe2cb8b5af"
+  },
+  "completedLessonIds": [],
+  "currentStreak": 1,
+  "totalStudyTime": 1,
+  "lessonScores": [],
+  "levelScores": [],
+  "timeStats": [
+    {
+      "date": {
+        "$date": "2025-11-11T17:00:00.000Z"
+      },
+      "minutes": 1,
+      "_id": {
+        "$oid": "6913d0948898965eb53441db"
+      }
+    }
+  ],
+  "updatedAt": {
+    "$date": "2025-11-12T00:11:00.016Z"
+  },
+  "__v": 1,
+  "lastStudyDate": {
+    "$date": "2025-11-11T17:00:00.000Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6913d6cc299ac6bb9e0a4a5e"
+  },
+  "userId": {
+    "$oid": "6913d674afdd42d9e8db4f15"
+  },
+  "completedLessonIds": [],
+  "currentStreak": 2,
+  "totalStudyTime": 141,
+  "lessonScores": [],
+  "levelScores": [],
+  "timeStats": [
+    {
+      "date": {
+        "$date": "2025-11-11T17:00:00.000Z"
+      },
+      "minutes": 140,
+      "_id": {
+        "$oid": "6913d711299ac6bb9e0a4aca"
+      }
+    },
+    {
+      "date": {
+        "$date": "2025-11-12T17:00:00.000Z"
+      },
+      "minutes": 1,
+      "_id": {
+        "$oid": "6915b5419d4608492f89e03d"
+      }
+    }
+  ],
+  "updatedAt": {
+    "$date": "2025-11-12T00:37:32.135Z"
+  },
+  "__v": 2,
+  "lastStudyDate": {
+    "$date": "2025-11-12T17:00:00.000Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6915b60e9d4608492f89e0af"
+  },
+  "userId": {
+    "$oid": "6915b56aa1b5c4cce3ddba08"
+  },
+  "completedLessonIds": [],
+  "currentStreak": 2,
+  "totalStudyTime": 41,
+  "lessonScores": [],
+  "levelScores": [],
+  "timeStats": [
+    {
+      "date": {
+        "$date": "2025-11-12T17:00:00.000Z"
+      },
+      "minutes": 30,
+      "_id": {
+        "$oid": "6915b60e9d4608492f89e0b1"
+      }
+    },
+    {
+      "date": {
+        "$date": "2025-11-13T17:00:00.000Z"
+      },
+      "minutes": 11,
+      "_id": {
+        "$oid": "6916eb5e0b5eb41dbf5a6c92"
+      }
+    }
+  ],
+  "updatedAt": {
+    "$date": "2025-11-13T10:42:22.308Z"
+  },
+  "__v": 2,
+  "lastStudyDate": {
+    "$date": "2025-11-13T17:00:00.000Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6916f3e83b4ce28dd1e953cd"
+  },
+  "userId": {
+    "$oid": "6916f3ad429f3d87423ce2f1"
+  },
+  "completedLessonIds": [
+    {
+      "$oid": "6916f3ae429f3d87423ce2fa"
+    }
+  ],
+  "currentStreak": 2,
+  "totalStudyTime": 23,
+  "lessonScores": [
+    {
+      "lessonId": {
+        "$oid": "6916f3ae429f3d87423ce303"
+      },
+      "quizScore": null,
+      "codeScore": 7,
+      "totalScore": 7,
+      "quizAttempts": 0,
+      "codeAttempts": 2,
+      "_id": {
+        "$oid": "69176f7ef2511f2b57e51be2"
+      },
+      "completedAt": {
+        "$date": "2025-11-14T18:22:13.021Z"
+      }
+    },
+    {
+      "lessonId": {
+        "$oid": "6916f3ae429f3d87423ce2fa"
+      },
+      "quizScore": 5.7142857142857135,
+      "codeScore": 10,
+      "totalScore": 15.714285714285714,
+      "quizAttempts": 2,
+      "codeAttempts": 16,
+      "_id": {
+        "$oid": "69177321bdd6b7b4792c0c4b"
+      },
+      "completedAt": {
+        "$date": "2025-11-18T03:43:59.239Z"
+      }
+    }
+  ],
+  "levelScores": [
+    {
+      "levelId": {
+        "$oid": "6916f3ae429f3d87423ce2f7"
+      },
+      "averageScore": 5.678571428571429,
+      "isUnlocked": true,
+      "unlockedBy": "admin",
+      "unlockedAt": {
+        "$date": "2025-11-16T01:38:56.705Z"
+      },
+      "adminApproved": true,
+      "_id": {
+        "$oid": "69176f7ef2511f2b57e51c7b"
+      }
+    }
+  ],
+  "timeStats": [
+    {
+      "date": {
+        "$date": "2025-11-13T17:00:00.000Z"
+      },
+      "minutes": 1,
+      "_id": {
+        "$oid": "6916f74d3b4ce28dd1e95581"
+      }
+    },
+    {
+      "date": {
+        "$date": "2025-11-14T17:00:00.000Z"
+      },
+      "minutes": 11,
+      "_id": {
+        "$oid": "69176c2c336b41a1c7b721a6"
+      }
+    },
+    {
+      "date": {
+        "$date": "2025-11-15T00:00:00.000Z"
+      },
+      "minutes": 1,
+      "_id": {
+        "$oid": "69181a7acb0f7b2be97b9322"
+      }
+    },
+    {
+      "date": {
+        "$date": "2025-11-16T17:00:00.000Z"
+      },
+      "minutes": 1,
+      "_id": {
+        "$oid": "691a89038c82b6b28268816d"
+      }
+    },
+    {
+      "date": {
+        "$date": "2025-11-17T17:00:00.000Z"
+      },
+      "minutes": 9,
+      "_id": {
+        "$oid": "691be72564e1ad4d50e97465"
+      }
+    }
+  ],
+  "updatedAt": {
+    "$date": "2025-11-18T03:43:59.239Z"
+  },
+  "__v": 6,
+  "lastStudyDate": {
+    "$date": "2025-11-17T17:00:00.000Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69186ce0d10b65fd9897482b"
+  },
+  "userId": {
+    "$oid": "6916f3ad429f3d87423ce2f3"
+  },
+  "completedLessonIds": [],
+  "currentStreak": 1,
+  "totalStudyTime": 1,
+  "lessonScores": [],
+  "levelScores": [],
+  "timeStats": [
+    {
+      "date": {
+        "$date": "2025-11-14T17:00:00.000Z"
+      },
+      "minutes": 1,
+      "_id": {
+        "$oid": "69186d2dd10b65fd98974914"
+      }
+    }
+  ],
+  "updatedAt": {
+    "$date": "2025-11-15T12:06:56.176Z"
+  },
+  "__v": 1,
+  "lastStudyDate": {
+    "$date": "2025-11-14T17:00:00.000Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "691cb42cf8b9f4d0f0cdafe3"
+  },
+  "userId": {
+    "$oid": "691cb3474d28ecf983094385"
+  },
+  "completedLessonIds": [],
+  "currentStreak": 0,
+  "totalStudyTime": 0,
+  "lessonScores": [
+    {
+      "lessonId": {
+        "$oid": "691cb3494d28ecf9830943c0"
+      },
+      "quizScore": null,
+      "codeScore": 0,
+      "totalScore": 0,
+      "quizAttempts": 0,
+      "codeAttempts": 1,
+      "quizSessionId": null,
+      "quizTimeSpent": null,
+      "_id": {
+        "$oid": "691cb42cf8b9f4d0f0cdafe5"
+      },
+      "completedAt": {
+        "$date": "2025-11-18T18:00:12.367Z"
+      }
+    }
+  ],
+  "levelScores": [
+    {
+      "levelId": {
+        "$oid": "691cb3484d28ecf98309438d"
+      },
+      "averageScore": 0,
+      "isUnlocked": false,
+      "unlockedBy": null,
+      "unlockedAt": null,
+      "adminApproved": false,
+      "_id": {
+        "$oid": "691cb42df8b9f4d0f0cdb016"
+      }
+    }
+  ],
+  "timeStats": [],
+  "updatedAt": {
+    "$date": "2025-11-18T18:00:12.368Z"
+  },
+  "__v": 1
+},
+{
+  "_id": {
+    "$oid": "691cb4f61f89dcd523d7d535"
+  },
+  "userId": {
+    "$oid": "691cb46ed041a6fc58516b4f"
+  },
+  "completedLessonIds": [],
+  "currentStreak": 1,
+  "totalStudyTime": 2,
+  "lessonScores": [],
+  "levelScores": [],
+  "timeStats": [
+    {
+      "date": {
+        "$date": "2025-11-18T00:00:00.000Z"
+      },
+      "minutes": 2,
+      "_id": {
+        "$oid": "691cb4f71f89dcd523d7d537"
+      }
+    }
+  ],
+  "updatedAt": {
+    "$date": "2025-11-18T18:03:34.835Z"
+  },
+  "__v": 1,
+  "lastStudyDate": {
+    "$date": "2025-11-18T00:00:00.000Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "691cb62e1f89dcd523d7d5bc"
+  },
+  "userId": {
+    "$oid": "691cb5b3c20fa94f9300e466"
+  },
+  "completedLessonIds": [],
+  "currentStreak": 1,
+  "totalStudyTime": 2,
+  "lessonScores": [
+    {
+      "lessonId": {
+        "$oid": "691cb5b4c20fa94f9300e473"
+      },
+      "quizScore": null,
+      "codeScore": 1,
+      "totalScore": 1,
+      "quizAttempts": 0,
+      "codeAttempts": 3,
+      "quizSessionId": null,
+      "quizTimeSpent": null,
+      "_id": {
+        "$oid": "691cba387b0ab3315d81215f"
+      },
+      "completedAt": {
+        "$date": "2025-11-22T01:22:36.825Z"
+      }
+    },
+    {
+      "lessonId": {
+        "$oid": "691cb5b4c20fa94f9300e47c"
+      },
+      "quizScore": null,
+      "codeScore": 2,
+      "totalScore": 2,
+      "quizAttempts": 0,
+      "codeAttempts": 3,
+      "quizSessionId": null,
+      "quizTimeSpent": null,
+      "_id": {
+        "$oid": "691d38695f55a71492cd37ee"
+      },
+      "completedAt": {
+        "$date": "2025-11-19T03:37:15.124Z"
+      }
+    }
+  ],
+  "levelScores": [
+    {
+      "levelId": {
+        "$oid": "691cb5b4c20fa94f9300e46e"
+      },
+      "averageScore": 0.75,
+      "isUnlocked": true,
+      "unlockedBy": "admin",
+      "unlockedAt": {
+        "$date": "2025-11-18T18:29:01.399Z"
+      },
+      "adminApproved": true,
+      "_id": {
+        "$oid": "691cba397b0ab3315d812198"
+      }
+    },
+    {
+      "levelId": {
+        "$oid": "691cb5b4c20fa94f9300e470"
+      },
+      "averageScore": 0,
+      "isUnlocked": true,
+      "unlockedBy": "admin",
+      "unlockedAt": {
+        "$date": "2025-11-22T01:09:56.340Z"
+      },
+      "adminApproved": true,
+      "_id": {
+        "$oid": "691cbe7787a14ebb9a675925"
+      }
+    }
+  ],
+  "timeStats": [
+    {
+      "date": {
+        "$date": "2025-11-21T17:00:00.000Z"
+      },
+      "minutes": 2,
+      "_id": {
+        "$oid": "69210e0f4ed4442d7342ab1e"
+      }
+    }
+  ],
+  "updatedAt": {
+    "$date": "2025-11-22T01:22:36.825Z"
+  },
+  "__v": 3,
+  "lastStudyDate": {
+    "$date": "2025-11-21T17:00:00.000Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "691d349da98a82a4808813d2"
+  },
+  "userId": {
+    "$oid": "691cb5b3c20fa94f9300e46a"
+  },
+  "completedLessonIds": [],
+  "currentStreak": 1,
+  "totalStudyTime": 1,
+  "lessonScores": [],
+  "levelScores": [],
+  "timeStats": [
+    {
+      "date": {
+        "$date": "2025-11-19T00:00:00.000Z"
+      },
+      "minutes": 1,
+      "_id": {
+        "$oid": "691d349ea98a82a4808813d5"
+      }
+    }
+  ],
+  "updatedAt": {
+    "$date": "2025-11-19T03:08:13.930Z"
+  },
+  "__v": 1,
+  "lastStudyDate": {
+    "$date": "2025-11-19T00:00:00.000Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "692015bd191b7dad6adf84c0"
+  },
+  "userId": {
+    "$oid": "69201489191b7dad6adf8116"
+  },
+  "completedLessonIds": [],
+  "currentStreak": 1,
+  "totalStudyTime": 83,
+  "lessonScores": [
+    {
+      "lessonId": {
+        "$oid": "691cb5b4c20fa94f9300e473"
+      },
+      "quizScore": null,
+      "codeScore": 2,
+      "totalScore": 2,
+      "quizAttempts": 0,
+      "codeAttempts": 1,
+      "quizSessionId": null,
+      "quizTimeSpent": null,
+      "_id": {
+        "$oid": "692015bd191b7dad6adf84c2"
+      },
+      "completedAt": {
+        "$date": "2025-11-21T07:33:17.795Z"
+      }
+    }
+  ],
+  "levelScores": [
+    {
+      "levelId": {
+        "$oid": "691cb5b4c20fa94f9300e46e"
+      },
+      "averageScore": 1,
+      "isUnlocked": false,
+      "unlockedBy": null,
+      "unlockedAt": null,
+      "adminApproved": false,
+      "_id": {
+        "$oid": "692015be191b7dad6adf84fb"
+      }
+    }
+  ],
+  "timeStats": [
+    {
+      "date": {
+        "$date": "2025-11-20T17:00:00.000Z"
+      },
+      "minutes": 83,
+      "_id": {
+        "$oid": "692015fb191b7dad6adf8654"
+      }
+    }
+  ],
+  "updatedAt": {
+    "$date": "2025-11-21T07:33:17.795Z"
+  },
+  "__v": 2,
+  "lastStudyDate": {
+    "$date": "2025-11-20T17:00:00.000Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6921317eaea04f0abb197b7e"
+  },
+  "userId": {
+    "$oid": "6921302bab711fb3be541b7d"
+  },
+  "completedLessonIds": [],
+  "currentStreak": 0,
+  "totalStudyTime": 0,
+  "lessonScores": [
+    {
+      "lessonId": {
+        "$oid": "6921302cab711fb3be541b8a"
+      },
+      "quizScore": null,
+      "codeScore": 10,
+      "totalScore": 10,
+      "quizAttempts": 0,
+      "codeAttempts": 1,
+      "quizSessionId": null,
+      "quizTimeSpent": null,
+      "_id": {
+        "$oid": "6921317eaea04f0abb197b80"
+      },
+      "completedAt": {
+        "$date": "2025-11-22T03:43:58.759Z"
+      }
+    }
+  ],
+  "levelScores": [
+    {
+      "levelId": {
+        "$oid": "6921302bab711fb3be541b85"
+      },
+      "averageScore": 5,
+      "isUnlocked": true,
+      "unlockedBy": "admin",
+      "unlockedAt": {
+        "$date": "2025-11-22T03:44:20.898Z"
+      },
+      "adminApproved": true,
+      "_id": {
+        "$oid": "6921317faea04f0abb197bb9"
+      }
+    },
+    {
+      "levelId": {
+        "$oid": "6921302cab711fb3be541b87"
+      },
+      "averageScore": 0,
+      "isUnlocked": true,
+      "unlockedBy": "admin",
+      "unlockedAt": {
+        "$date": "2025-11-22T03:44:14.159Z"
+      },
+      "adminApproved": true,
+      "_id": {
+        "$oid": "6921318eaea04f0abb197d35"
+      }
+    }
+  ],
+  "timeStats": [],
+  "updatedAt": {
+    "$date": "2025-11-22T03:43:58.759Z"
+  },
+  "__v": 2
+},
+{
+  "_id": {
+    "$oid": "69230b6dbdf91a91c8218d6d"
+  },
+  "userId": {
+    "$oid": "69230a9276285ab37bb057fd"
+  },
+  "completedLessonIds": [],
+  "currentStreak": 0,
+  "totalStudyTime": 0,
+  "lessonScores": [],
+  "levelScores": [
+    {
+      "levelId": {
+        "$oid": "692148d025599da761d6010c"
+      },
+      "averageScore": 0,
+      "isUnlocked": true,
+      "unlockedBy": "admin",
+      "unlockedAt": {
+        "$date": "2025-11-27T13:44:12.739Z"
+      },
+      "adminApproved": true,
+      "_id": {
+        "$oid": "692855ac442fb7276c3c38b6"
+      }
+    }
+  ],
+  "timeStats": [],
+  "updatedAt": {
+    "$date": "2025-11-23T13:26:05.257Z"
+  },
+  "__v": 1
+},
+{
+  "_id": {
+    "$oid": "692312fa1112ae596ffb6e1e"
+  },
+  "userId": {
+    "$oid": "692311d6382305e214aeaae4"
+  },
+  "completedLessonIds": [
+    {
+      "$oid": "692148d125599da761d6010f"
+    }
+  ],
+  "currentStreak": 2,
+  "totalStudyTime": 10,
+  "lessonScores": [
+    {
+      "lessonId": {
+        "$oid": "692148d125599da761d6010f"
+      },
+      "quizScore": 10,
+      "codeScore": 10,
+      "totalScore": 20,
+      "quizAttempts": 1,
+      "codeAttempts": 1,
+      "quizSessionId": {
+        "$oid": "69248c15d57d13aeadc43098"
+      },
+      "quizTimeSpent": null,
+      "_id": {
+        "$oid": "69248c19d57d13aeadc430a9"
+      },
+      "completedAt": {
+        "$date": "2025-11-24T16:51:15.675Z"
+      }
+    },
+    {
+      "lessonId": {
+        "$oid": "692148d325599da761d60149"
+      },
+      "quizScore": null,
+      "codeScore": 1,
+      "totalScore": 1,
+      "quizAttempts": 0,
+      "codeAttempts": 2,
+      "quizSessionId": null,
+      "quizTimeSpent": null,
+      "_id": {
+        "$oid": "692491f55b67b9ce53c21a54"
+      },
+      "completedAt": {
+        "$date": "2025-11-24T17:18:44.298Z"
+      }
+    }
+  ],
+  "levelScores": [
+    {
+      "levelId": {
+        "$oid": "692148d025599da761d6010a"
+      },
+      "averageScore": 5.25,
+      "isUnlocked": true,
+      "unlockedBy": "auto",
+      "unlockedAt": {
+        "$date": "2025-11-24T16:51:16.522Z"
+      },
+      "adminApproved": false,
+      "_id": {
+        "$oid": "69248c1ad57d13aeadc430e2"
+      }
+    }
+  ],
+  "timeStats": [
+    {
+      "date": {
+        "$date": "2025-11-24T00:00:00.000Z"
+      },
+      "minutes": 2,
+      "_id": {
+        "$oid": "69248c04d57d13aeadc43086"
+      }
+    },
+    {
+      "date": {
+        "$date": "2025-11-25T00:00:00.000Z"
+      },
+      "minutes": 8,
+      "_id": {
+        "$oid": "69256c19b7218bbcce33accb"
+      }
+    }
+  ],
+  "updatedAt": {
+    "$date": "2025-11-24T17:18:44.298Z"
+  },
+  "__v": 3,
+  "lastStudyDate": {
+    "$date": "2025-11-25T00:00:00.000Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6923e4169832abc3cdca99d2"
+  },
+  "userId": {
+    "$oid": "6923051eb743722e1c94055f"
+  },
+  "completedLessonIds": [
+    {
+      "$oid": "692148d125599da761d6010f"
+    }
+  ],
+  "currentStreak": 1,
+  "totalStudyTime": 1,
+  "lessonScores": [
+    {
+      "lessonId": {
+        "$oid": "692148d125599da761d6010f"
+      },
+      "quizScore": 10,
+      "codeScore": 10,
+      "totalScore": 20,
+      "quizAttempts": 1,
+      "codeAttempts": 1,
+      "quizSessionId": {
+        "$oid": "6923e4289832abc3cdca9a10"
+      },
+      "quizTimeSpent": null,
+      "_id": {
+        "$oid": "6923e42d9832abc3cdca9a26"
+      },
+      "completedAt": {
+        "$date": "2025-11-24T04:54:46.791Z"
+      }
+    }
+  ],
+  "levelScores": [
+    {
+      "levelId": {
+        "$oid": "692148d025599da761d6010a"
+      },
+      "averageScore": 10,
+      "isUnlocked": true,
+      "unlockedBy": "auto",
+      "unlockedAt": {
+        "$date": "2025-11-24T04:54:47.653Z"
+      },
+      "adminApproved": false,
+      "_id": {
+        "$oid": "6923e42e9832abc3cdca9a5f"
+      }
+    }
+  ],
+  "timeStats": [
+    {
+      "date": {
+        "$date": "2025-11-24T00:00:00.000Z"
+      },
+      "minutes": 1,
+      "_id": {
+        "$oid": "6923e4169832abc3cdca99d4"
+      }
+    }
+  ],
+  "updatedAt": {
+    "$date": "2025-11-24T04:54:46.791Z"
+  },
+  "__v": 2,
+  "lastStudyDate": {
+    "$date": "2025-11-24T00:00:00.000Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "692684b5d0c8bd7900c9af29"
+  },
+  "userId": {
+    "$oid": "6923051cb743722e1c940550"
+  },
+  "completedLessonIds": [
+    {
+      "$oid": "692148d125599da761d6010f"
+    }
+  ],
+  "currentStreak": 2,
+  "totalStudyTime": 11,
+  "lessonScores": [
+    {
+      "lessonId": {
+        "$oid": "692148d125599da761d6010f"
+      },
+      "quizScore": 10,
+      "codeScore": 10,
+      "totalScore": 20,
+      "quizAttempts": 2,
+      "codeAttempts": 1,
+      "quizSessionId": {
+        "$oid": "692685aad0c8bd7900c9af98"
+      },
+      "quizTimeSpent": 7129,
+      "_id": {
+        "$oid": "6926859173aa7888319eff49"
+      },
+      "completedAt": {
+        "$date": "2025-11-26T04:48:15.936Z"
+      }
+    },
+    {
+      "lessonId": {
+        "$oid": "692148d125599da761d60118"
+      },
+      "quizScore": 10,
+      "codeScore": 2,
+      "totalScore": 12,
+      "quizAttempts": 1,
+      "codeAttempts": 3,
+      "quizSessionId": {
+        "$oid": "6928831b263a449a5a383234"
+      },
+      "quizTimeSpent": 94348,
+      "_id": {
+        "$oid": "6928837c263a449a5a38324f"
+      },
+      "completedAt": {
+        "$date": "2025-11-27T17:17:47.212Z"
+      }
+    }
+  ],
+  "levelScores": [
+    {
+      "levelId": {
+        "$oid": "692148d025599da761d6010a"
+      },
+      "averageScore": 8,
+      "isUnlocked": true,
+      "unlockedBy": "auto",
+      "unlockedAt": {
+        "$date": "2025-11-26T04:48:16.763Z"
+      },
+      "adminApproved": false,
+      "_id": {
+        "$oid": "6926859273aa7888319eff82"
+      }
+    }
+  ],
+  "timeStats": [
+    {
+      "date": {
+        "$date": "2025-11-26T00:00:00.000Z"
+      },
+      "minutes": 3,
+      "_id": {
+        "$oid": "692684b5d0c8bd7900c9af2b"
+      }
+    },
+    {
+      "date": {
+        "$date": "2025-11-27T00:00:00.000Z"
+      },
+      "minutes": 8,
+      "_id": {
+        "$oid": "69287ffae98beedbfb079ec8"
+      }
+    }
+  ],
+  "updatedAt": {
+    "$date": "2025-11-27T17:17:47.212Z"
+  },
+  "__v": 3,
+  "lastStudyDate": {
+    "$date": "2025-11-27T00:00:00.000Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6927d98ea257aabf5878a059"
+  },
+  "userId": {
+    "$oid": "6923051fb743722e1c94056a"
+  },
+  "completedLessonIds": [
+    {
+      "$oid": "692148d125599da761d6010f"
+    }
+  ],
+  "currentStreak": 1,
+  "totalStudyTime": 59,
+  "lessonScores": [
+    {
+      "lessonId": {
+        "$oid": "692148d125599da761d6010f"
+      },
+      "quizScore": 10,
+      "codeScore": 10,
+      "totalScore": 20,
+      "quizAttempts": 1,
+      "codeAttempts": 1,
+      "quizSessionId": {
+        "$oid": "6927eaf4a257aabf5878a18b"
+      },
+      "quizTimeSpent": null,
+      "_id": {
+        "$oid": "6927eafca257aabf5878a19c"
+      },
+      "completedAt": {
+        "$date": "2025-11-27T06:13:37.304Z"
+      }
+    },
+    {
+      "lessonId": {
+        "$oid": "692148d125599da761d60118"
+      },
+      "quizScore": 8.571428571428571,
+      "codeScore": 2,
+      "totalScore": 10.571428571428571,
+      "quizAttempts": 1,
+      "codeAttempts": 3,
+      "quizSessionId": {
+        "$oid": "6927f53a533771990fab8a69"
+      },
+      "quizTimeSpent": null,
+      "_id": {
+        "$oid": "6927f54e533771990fab8a9b"
+      },
+      "completedAt": {
+        "$date": "2025-11-27T07:19:19.650Z"
+      }
+    }
+  ],
+  "levelScores": [
+    {
+      "levelId": {
+        "$oid": "692148d025599da761d6010a"
+      },
+      "averageScore": 7.642857142857142,
+      "isUnlocked": true,
+      "unlockedBy": "auto",
+      "unlockedAt": {
+        "$date": "2025-11-27T06:13:38.173Z"
+      },
+      "adminApproved": false,
+      "_id": {
+        "$oid": "6927eafca257aabf5878a1d5"
+      }
+    }
+  ],
+  "timeStats": [
+    {
+      "date": {
+        "$date": "2025-11-27T00:00:00.000Z"
+      },
+      "minutes": 59,
+      "_id": {
+        "$oid": "6927d98fa257aabf5878a05b"
+      }
+    }
+  ],
+  "updatedAt": {
+    "$date": "2025-11-27T07:19:19.650Z"
+  },
+  "__v": 2,
+  "lastStudyDate": {
+    "$date": "2025-11-27T00:00:00.000Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6927eb94533771990fab87b3"
+  },
+  "userId": {
+    "$oid": "6923051fb743722e1c940565"
+  },
+  "completedLessonIds": [
+    {
+      "$oid": "692148d125599da761d6010f"
+    }
+  ],
+  "currentStreak": 1,
+  "totalStudyTime": 35,
+  "lessonScores": [
+    {
+      "lessonId": {
+        "$oid": "692148d125599da761d6010f"
+      },
+      "quizScore": 10,
+      "codeScore": 10,
+      "totalScore": 20,
+      "quizAttempts": 1,
+      "codeAttempts": 1,
+      "quizSessionId": {
+        "$oid": "6927f1c3a6ca96c569b744d7"
+      },
+      "quizTimeSpent": null,
+      "_id": {
+        "$oid": "6927f1d9a6ca96c569b744ef"
+      },
+      "completedAt": {
+        "$date": "2025-11-27T06:42:04.333Z"
+      }
+    },
+    {
+      "lessonId": {
+        "$oid": "692148d125599da761d60118"
+      },
+      "quizScore": 10,
+      "codeScore": 2,
+      "totalScore": 12,
+      "quizAttempts": 1,
+      "codeAttempts": 2,
+      "quizSessionId": {
+        "$oid": "6927f7dc533771990fab8b42"
+      },
+      "quizTimeSpent": 3987,
+      "_id": {
+        "$oid": "6927f7e4533771990fab8b5d"
+      },
+      "completedAt": {
+        "$date": "2025-11-27T07:16:55.529Z"
+      }
+    }
+  ],
+  "levelScores": [
+    {
+      "levelId": {
+        "$oid": "692148d025599da761d6010a"
+      },
+      "averageScore": 8,
+      "isUnlocked": true,
+      "unlockedBy": "auto",
+      "unlockedAt": {
+        "$date": "2025-11-27T06:42:05.156Z"
+      },
+      "adminApproved": false,
+      "_id": {
+        "$oid": "6927f1daa6ca96c569b74528"
+      }
+    }
+  ],
+  "timeStats": [
+    {
+      "date": {
+        "$date": "2025-11-27T00:00:00.000Z"
+      },
+      "minutes": 35,
+      "_id": {
+        "$oid": "6927eb95533771990fab87b5"
+      }
+    }
+  ],
+  "updatedAt": {
+    "$date": "2025-11-27T07:16:55.530Z"
+  },
+  "__v": 2,
+  "lastStudyDate": {
+    "$date": "2025-11-27T00:00:00.000Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6927ffa886979c7fce47dffb"
+  },
+  "userId": {
+    "$oid": "6927ff569479c0c00f6a355c"
+  },
+  "completedLessonIds": [],
+  "currentStreak": 1,
+  "totalStudyTime": 1,
+  "lessonScores": [
+    {
+      "lessonId": {
+        "$oid": "692148d125599da761d60118"
+      },
+      "quizScore": null,
+      "codeScore": 2,
+      "totalScore": 2,
+      "quizAttempts": 0,
+      "codeAttempts": 2,
+      "quizSessionId": null,
+      "quizTimeSpent": null,
+      "_id": {
+        "$oid": "6927ffa886979c7fce47dffd"
+      },
+      "completedAt": {
+        "$date": "2025-11-27T07:40:07.882Z"
+      }
+    },
+    {
+      "lessonId": {
+        "$oid": "69280e1e643d7291fb75717d"
+      },
+      "quizScore": null,
+      "codeScore": 4,
+      "totalScore": 4,
+      "quizAttempts": 0,
+      "codeAttempts": 2,
+      "quizSessionId": null,
+      "quizTimeSpent": null,
+      "_id": {
+        "$oid": "69280e69643d7291fb7572f4"
+      },
+      "completedAt": {
+        "$date": "2025-11-27T08:40:53.591Z"
+      }
+    }
+  ],
+  "levelScores": [
+    {
+      "levelId": {
+        "$oid": "692148d025599da761d6010a"
+      },
+      "averageScore": 1,
+      "isUnlocked": true,
+      "unlockedBy": "admin",
+      "unlockedAt": {
+        "$date": "2025-11-27T08:35:54.760Z"
+      },
+      "adminApproved": true,
+      "_id": {
+        "$oid": "6927ffa986979c7fce47e036"
+      }
+    },
+    {
+      "levelId": {
+        "$oid": "692148d025599da761d6010c"
+      },
+      "averageScore": 2,
+      "isUnlocked": true,
+      "unlockedBy": "admin",
+      "unlockedAt": {
+        "$date": "2025-11-27T08:36:02.515Z"
+      },
+      "adminApproved": true,
+      "_id": {
+        "$oid": "69280d7230a54ed5b721954d"
+      }
+    }
+  ],
+  "timeStats": [
+    {
+      "date": {
+        "$date": "2025-11-27T00:00:00.000Z"
+      },
+      "minutes": 1,
+      "_id": {
+        "$oid": "6928009c9479c0c00f6a35ff"
+      }
+    }
+  ],
+  "updatedAt": {
+    "$date": "2025-11-27T08:40:53.591Z"
+  },
+  "__v": 3,
+  "lastStudyDate": {
+    "$date": "2025-11-27T00:00:00.000Z"
+  }
+}]

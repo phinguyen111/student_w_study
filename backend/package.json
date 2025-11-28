@@ -8,7 +8,9 @@
     "start": "node app.js",
     "dev": "nodemon app.js",
     "seed": "node seed.js",
-    "test:db": "node test-connection.js"
+    "test:db": "node test-connection.js",
+    "check-data": "node scripts/check-data.js",
+    "migrate": "node scripts/migrate-and-upload.js"
   },
   "keywords": [
     "learning",

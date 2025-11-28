@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from 'mongoose'
 
 const questionSchema = new mongoose.Schema({
   question: {
@@ -12,14 +12,14 @@ const questionSchema = new mongoose.Schema({
   },
   options: {
     type: [mongoose.Schema.Types.Mixed], // Support both string[] and [{vi, en}] format
-    required: function() {
-      return this.type === 'multiple-choice';
+    required: function () {
+      return this.type === 'multiple-choice'
     }
   },
   correctAnswer: {
     type: Number,
-    required: function() {
-      return this.type === 'multiple-choice';
+    required: function () {
+      return this.type === 'multiple-choice'
     },
     min: 0
   },
@@ -30,8 +30,8 @@ const questionSchema = new mongoose.Schema({
   codeType: {
     type: String,
     enum: ['html', 'css', 'javascript', 'html-css-js'],
-    required: function() {
-      return this.type === 'code';
+    required: function () {
+      return this.type === 'code'
     }
   },
   starterCode: {
@@ -41,11 +41,18 @@ const questionSchema = new mongoose.Schema({
   },
   expectedOutput: {
     type: String,
-    required: function() {
-      return this.type === 'code';
+    required: function () {
+      return this.type === 'code'
     }
-  }
-});
+  },
+  outputCriteria: [
+    {
+      snippet: { type: String, default: '' },
+      points: { type: Number, default: 0 },
+      penalty: { type: Number, default: 0 }
+    }
+  ]
+})
 
 const lessonSchema = new mongoose.Schema({
   levelId: {
@@ -79,9 +86,16 @@ const lessonSchema = new mongoose.Schema({
       default: 'html'
     },
     description: {
-      vi: { type: String, default: '' },
-      en: { type: String, default: '' }
-    }
+      type: String,
+      default: ''
+    },
+    outputCriteria: [
+      {
+        snippet: { type: String, default: '' },
+        points: { type: Number, default: 0 },
+        penalty: { type: Number, default: 0 }
+      }
+    ]
   },
   quiz: {
     questions: [questionSchema],
@@ -94,12 +108,10 @@ const lessonSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
-});
+})
 
 // Ensure unique lesson number per level
-lessonSchema.index({ levelId: 1, lessonNumber: 1 }, { unique: true });
+lessonSchema.index({ levelId: 1, lessonNumber: 1 }, { unique: true })
 
-export default mongoose.model('Lesson', lessonSchema);
-
-
+export default mongoose.model('Lesson', lessonSchema)
 

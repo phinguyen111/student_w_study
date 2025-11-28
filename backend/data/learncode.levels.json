@@ -1,0 +1,85 @@
+[{
+  "_id": {
+    "$oid": "692148d025599da761d6010a"
+  },
+  "languageId": {
+    "$oid": "692148d025599da761d60108"
+  },
+  "levelNumber": 1,
+  "title": {
+    "vi": "Cơ Bản về HTML",
+    "en": "basic HTML,CSS,JAVASCRIPT"
+  },
+  "description": {
+    "vi": "Học các kiến thức cơ bản và cấu trúc HTML",
+    "en": "Learn HTML basics and structure"
+  },
+  "lessons": [
+    {
+      "$oid": "692148d125599da761d6010f"
+    },
+    {
+      "$oid": "692148d125599da761d60118"
+    },
+    {
+      "$oid": "692148d225599da761d60121"
+    },
+    {
+      "$oid": "692148d225599da761d6012b"
+    },
+    {
+      "$oid": "692148d225599da761d60135"
+    },
+    {
+      "$oid": "692148d325599da761d6013f"
+    },
+    {
+      "$oid": "692148d325599da761d60149"
+    }
+  ],
+  "createdAt": {
+    "$date": "2025-11-22T05:23:28.835Z"
+  },
+  "__v": 1
+},
+{
+  "_id": {
+    "$oid": "692148d025599da761d6010c"
+  },
+  "languageId": {
+    "$oid": "692148d025599da761d60108"
+  },
+  "levelNumber": 2,
+  "title": {
+    "vi": "HTML Nâng Cao",
+    "en": "Advanced HTML.CSS"
+  },
+  "description": {
+    "vi": "Học các kỹ thuật HTML nâng cao và tổ chức nội dung",
+    "en": "Learn advanced HTML techniques and content organization"
+  },
+  "lessons": [
+    {
+      "$oid": "692148d325599da761d6015d"
+    },
+    {
+      "$oid": "692148d325599da761d60153"
+    },
+    {
+      "$oid": "692148d325599da761d60166"
+    },
+    {
+      "$oid": "692148d325599da761d6016f"
+    },
+    {
+      "$oid": "692148d325599da761d60178"
+    },
+    {
+      "$oid": "6928e56fe458747acd48b3a5"
+    }
+  ],
+  "createdAt": {
+    "$date": "2025-11-22T05:23:28.912Z"
+  },
+  "__v": 20
+}]

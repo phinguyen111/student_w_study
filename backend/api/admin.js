@@ -167,7 +167,7 @@ router.get('/lessons', async (req, res) => {
 // Create lesson
 router.post('/lessons', async (req, res) => {
   try {
-    const { levelId, lessonNumber, title, content, codeExample, quiz } = req.body;
+    const { levelId, lessonNumber, title, content, codeExample, codeExercise, quiz } = req.body;
     
     const lesson = await Lesson.create({
       levelId,
@@ -175,6 +175,7 @@ router.post('/lessons', async (req, res) => {
       title,
       content,
       codeExample,
+      codeExercise,
       quiz
     });
 
@@ -296,6 +297,33 @@ router.put('/users/:userId/role', async (req, res) => {
   }
 });
 
+// Update user password
+router.put('/users/:userId/password', async (req, res) => {
+  try {
+    const { password } = req.body;
+
+    if (!password || typeof password !== 'string') {
+      return res.status(400).json({ message: 'Please provide a new password' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+    }
+
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.password = password;
+    await user.save();
+
+    res.json({ success: true, message: 'Password updated successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Bulk create users
 router.post('/users/bulk', async (req, res) => {
   try {
@@ -370,20 +398,42 @@ router.delete('/users/:userId', async (req, res) => {
 // Update lesson
 router.put('/lessons/:lessonId', async (req, res) => {
   try {
-    const { title, content, codeExample, quiz } = req.body;
+    const { levelId, lessonNumber, title, content, codeExample, codeExercise, quiz } = req.body;
+    
+    // Debug log
+    console.log('Updating lesson:', req.params.lessonId);
+    console.log('levelId:', levelId);
+    console.log('lessonNumber:', lessonNumber);
+    console.log('codeExercise received:', JSON.stringify(codeExercise, null, 2));
+    console.log('description type:', typeof codeExercise?.description);
+    console.log('description value:', codeExercise?.description);
+    
+    // Build update object, only include fields that are provided
+    const updateData = {};
+    if (levelId !== undefined) updateData.levelId = levelId;
+    if (lessonNumber !== undefined) updateData.lessonNumber = lessonNumber;
+    if (title !== undefined) updateData.title = title;
+    if (content !== undefined) updateData.content = content;
+    if (codeExample !== undefined) updateData.codeExample = codeExample;
+    if (codeExercise !== undefined) updateData.codeExercise = codeExercise;
+    if (quiz !== undefined) updateData.quiz = quiz;
     
     const lesson = await Lesson.findByIdAndUpdate(
       req.params.lessonId,
-      { title, content, codeExample, quiz },
-      { new: true }
+      updateData,
+      { new: true, runValidators: true }
     );
     
     if (!lesson) {
       return res.status(404).json({ message: 'Lesson not found' });
     }
     
+    console.log('Lesson updated successfully. LevelId:', lesson.levelId, 'LessonNumber:', lesson.lessonNumber);
+    console.log('Description:', lesson.codeExercise?.description);
+    
     res.json({ success: true, lesson });
   } catch (error) {
+    console.error('Error updating lesson:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -1269,6 +1319,7 @@ router.get('/quiz-assignments/:id/results', async (req, res) => {
 });
 
 export default router;
+
 
 
 

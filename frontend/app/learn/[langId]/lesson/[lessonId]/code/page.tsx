@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { MarkdownContent } from '@/components/MarkdownContent'
 import { CodeEditor } from '@/components/CodeEditor'
-import { ArrowLeft, Code, Loader2, FileCode, Play, RotateCcw, CheckCircle2, FileText, Palette, Zap, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Code, Loader2, FileCode, Play, RotateCcw, CheckCircle2, FileText, Palette, Zap, AlertCircle, BookOpen } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useTimeTracker } from '@/hooks/useTimeTracker'
 import { useGATracking } from '@/hooks/useGATracking'
@@ -45,6 +45,7 @@ export default function CodeExercisePage() {
   const [jsErrors, setJsErrors] = useState<any[]>([])
   const [codeErrors, setCodeErrors] = useState<any[]>([])
   const [exerciseInstructions, setExerciseInstructions] = useState<string>('')
+  const [exerciseDescription, setExerciseDescription] = useState<string>('')
 
   const combineCode = () => {
     const html = htmlCode.trim() || '<p>No HTML content yet</p>'
@@ -161,6 +162,12 @@ ${js}
     return cleaned
   }
 
+  // Simple format description - just clean and return
+  const formatDescription = (text: string) => {
+    if (!text) return ''
+    return escapeDescription(text)
+  }
+
   // Auto-update preview when code changes
   useEffect(() => {
     if (lesson?.codeExercise) {
@@ -216,6 +223,16 @@ ${js}
       setLesson(lessonData)
       if (lessonData.codeExercise?.starterCode) {
         const starterCode = lessonData.codeExercise.starterCode
+        
+        // Get description from codeExercise.description
+        if (lessonData.codeExercise.description) {
+          const desc = lessonData.codeExercise.description
+          // Description is now always a string
+          const descriptionText = typeof desc === 'string' 
+            ? desc 
+            : (typeof desc === 'object' ? (desc.en || desc.vi || '') : '')
+          setExerciseDescription(descriptionText)
+        }
         
         // Extract instructions from comment
         const instructions = extractInstructions(starterCode)
@@ -354,160 +371,77 @@ ${js}
     trackButtonClick('Submit Code', window.location.pathname)
     
     try {
-      // Calculate code score based on actual code quality and requirements
+      // Calculate code score based on outputCriteria from database
       let codeScore = 0
       
-      // Get starter code
-      const starterCode = lesson?.codeExercise?.starterCode || ''
-      const starterCodeLower = starterCode.toLowerCase()
-      const codeLower = code.toLowerCase()
+      // Get the final code (combined or single)
+      const finalCode = activeTab === 'multi' ? combineCode() : code
+      const codeToCheck = finalCode.toLowerCase()
+      
+      // Get outputCriteria from lesson
+      const outputCriteria = lesson?.codeExercise?.outputCriteria || []
       
       console.log('=== SCORING DEBUG START ===')
-      console.log('Starter code length:', starterCode.length)
-      console.log('Current code length:', code.length)
+      console.log('Code length:', finalCode.length)
+      console.log('OutputCriteria count:', outputCriteria.length)
       
       // Step 1: Check if code has errors
       const hasError = output && output.toLowerCase().includes('error')
-      console.log('Step 1 - Has error?', hasError)
-      
       if (hasError) {
         codeScore = 0
         console.log('Final score: 0 (has error)')
+      } else if (outputCriteria.length === 0) {
+        // If no outputCriteria, use basic validation
+        const starterCode = lesson?.codeExercise?.starterCode || ''
+        const codeChanged = finalCode.trim() !== starterCode.trim()
+        codeScore = codeChanged ? 5 : 0 // Default score if changed
+        console.log('No outputCriteria, using basic validation. Score:', codeScore)
       } else {
-        // Step 2: Check if code was modified from starter code
-        const codeChanged = code.trim() !== starterCode.trim()
-        console.log('Step 2 - Code changed?', codeChanged)
-        console.log('Starter code (first 100 chars):', starterCode.substring(0, 100))
-        console.log('Current code (first 100 chars):', code.substring(0, 100))
+        // Step 2: Evaluate each outputCriteria
+        let totalPoints = 0
+        let totalPenalty = 0
         
-        if (!codeChanged) {
-          codeScore = 0
-          console.log('Final score: 0 (code not changed)')
-        } else {
-          // Step 3: Count elements in starter code
-          const starterH1 = (starterCodeLower.match(/<h1[^>]*>/g) || []).length
-          const starterH2 = (starterCodeLower.match(/<h2[^>]*>/g) || []).length
-          const starterP = (starterCodeLower.match(/<p[^>]*>/g) || []).length
-          const starterA = (starterCodeLower.match(/<a[^>]*href\s*=/g) || []).length
-          const starterImg = (starterCodeLower.match(/<img[^>]*src\s*=/g) || []).length
+        outputCriteria.forEach((criteria: any, index: number) => {
+          const snippet = (criteria.snippet || '').toLowerCase().trim()
+          const points = criteria.points || 0
+          const penalty = criteria.penalty || 0
           
-          console.log('Step 3 - Elements in starter code:', {
-            h1: starterH1,
-            h2: starterH2,
-            p: starterP,
-            a: starterA,
-            img: starterImg
-          })
-          
-          // Step 4: Count elements in current code
-          const currentH1 = (codeLower.match(/<h1[^>]*>/g) || []).length
-          const currentH2 = (codeLower.match(/<h2[^>]*>/g) || []).length
-          const currentP = (codeLower.match(/<p[^>]*>/g) || []).length
-          const currentA = (codeLower.match(/<a[^>]*href\s*=/g) || []).length
-          const currentImg = (codeLower.match(/<img[^>]*src\s*=/g) || []).length
-          
-          console.log('Step 4 - Elements in current code:', {
-            h1: currentH1,
-            h2: currentH2,
-            p: currentP,
-            a: currentA,
-            img: currentImg
-          })
-          
-          // Step 5: Only count NEW elements that user added
-          // A requirement is met if current code has it AND it's new (more than starter)
-          let requirementsMet = 0
-          const totalRequirements = 5
-          
-          // Check each requirement: must exist in current code AND be new
-          if (currentH1 > starterH1) {
-            requirementsMet++
-            console.log('✓ H1 requirement met (new)')
-          } else if (currentH1 > 0 && starterH1 === 0) {
-            requirementsMet++
-            console.log('✓ H1 requirement met (added)')
-          } else {
-            console.log('✗ H1 requirement NOT met')
+          if (!snippet) {
+            console.log(`Criteria ${index + 1}: Empty snippet, skipping`)
+            return
           }
           
-          if (currentH2 > starterH2) {
-            requirementsMet++
-            console.log('✓ H2 requirement met (new)')
-          } else if (currentH2 > 0 && starterH2 === 0) {
-            requirementsMet++
-            console.log('✓ H2 requirement met (added)')
+          // Check if snippet exists in code
+          const snippetFound = codeToCheck.includes(snippet)
+          
+          if (snippetFound) {
+            totalPoints += points
+            console.log(`✓ Criteria ${index + 1}: Found "${snippet.substring(0, 50)}..." (+${points} points)`)
           } else {
-            console.log('✗ H2 requirement NOT met')
+            totalPenalty += penalty
+            console.log(`✗ Criteria ${index + 1}: Not found "${snippet.substring(0, 50)}..." (penalty: ${penalty})`)
           }
+        })
+        
+        // Step 3: Calculate final score (max 10)
+        codeScore = Math.max(0, Math.min(10, totalPoints - totalPenalty))
+        codeScore = Math.round(codeScore * 10) / 10 // Round to 1 decimal place
+        
+        console.log(`Total points: ${totalPoints}, Total penalty: ${totalPenalty}`)
+        console.log(`Calculated score: ${codeScore}/10`)
           
-          if (currentP > starterP) {
-            requirementsMet++
-            console.log('✓ P requirement met (new)')
-          } else if (currentP > 0 && starterP === 0) {
-            requirementsMet++
-            console.log('✓ P requirement met (added)')
-          } else {
-            console.log('✗ P requirement NOT met')
-          }
-          
-          if (currentA > starterA) {
-            requirementsMet++
-            console.log('✓ A requirement met (new)')
-          } else if (currentA > 0 && starterA === 0) {
-            requirementsMet++
-            console.log('✓ A requirement met (added)')
-          } else {
-            console.log('✗ A requirement NOT met')
-          }
-          
-          if (currentImg > starterImg) {
-            requirementsMet++
-            console.log('✓ IMG requirement met (new)')
-          } else if (currentImg > 0 && starterImg === 0) {
-            requirementsMet++
-            console.log('✓ IMG requirement met (added)')
-          } else {
-            console.log('✗ IMG requirement NOT met')
-          }
-          
-          console.log('Step 5 - Requirements met:', requirementsMet, '/', totalRequirements)
-          
-          // Step 6: Check if code has meaningful changes
-          const codeWithoutStarter = code.replace(starterCode, '').trim()
-          const hasMeaningfulChanges = codeWithoutStarter.length > 10
-          console.log('Step 6 - Has meaningful changes?', hasMeaningfulChanges, '(new content length:', codeWithoutStarter.length, ')')
-          
-          if (!hasMeaningfulChanges) {
+        // Step 4: Check if code was modified from starter code
+        const starterCode = lesson?.codeExercise?.starterCode || ''
+        const codeChanged = finalCode.trim() !== starterCode.trim()
+        
+        if (!codeChanged && codeScore > 0) {
             codeScore = 0
-            console.log('Final score: 0 (no meaningful changes)')
-          } else if (requirementsMet === 0) {
-            codeScore = 1
-            console.log('Final score: 1 (no requirements met)')
-          } else {
-            // Step 7: Calculate score based on requirements met
-            const baseScore = (requirementsMet / totalRequirements) * 10
-            codeScore = Math.round(baseScore * 10) / 10
-            
-            // Apply maximum limits based on requirements met
-            if (requirementsMet === 1) {
-              codeScore = Math.min(codeScore, 2)
-            } else if (requirementsMet === 2) {
-              codeScore = Math.min(codeScore, 4)
-            } else if (requirementsMet === 3) {
-              codeScore = Math.min(codeScore, 6)
-            } else if (requirementsMet === 4) {
-              codeScore = Math.min(codeScore, 8)
-            }
-            
-            console.log('Step 7 - Base score:', baseScore, 'Final score:', codeScore)
-          }
+          console.log('Score set to 0 (code not changed from starter)')
         }
       }
       
       console.log('=== FINAL SCORE:', codeScore, '/ 10 ===')
       console.log('=== SCORING DEBUG END ===')
-      
-      const finalCode = activeTab === 'multi' ? combineCode() : code
       
       await api.post(`/progress/code/${params.lessonId}`, { 
         codeScore,
@@ -598,18 +532,25 @@ ${js}
                 </Button>
               </div>
 
-              {/* Exercise Instructions from Comment - Above Code Editor */}
-              {exerciseInstructions && (
+              {/* Exercise Instructions and Description - Above Code Editor */}
+              {exerciseDescription && (
                 <Card className="mb-4">
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-3 bg-blue-50/50 dark:bg-blue-950/20 border-b">
                     <CardTitle className="text-lg flex items-center gap-2">
-                      <Code className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                      Yêu cầu bài tập
+                      <div className="p-1.5 rounded bg-blue-600 dark:bg-blue-500 text-white">
+                        <Code className="h-4 w-4" />
+                      </div>
+                      <span className="text-blue-700 dark:text-blue-400 font-semibold">
+                        Yêu cầu bài tập
+                      </span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-sm text-foreground whitespace-pre-wrap font-mono bg-muted/50 p-3 rounded border max-h-[300px] overflow-y-auto">
-                      {escapeDescription(exerciseInstructions)}
+                  <CardContent className="pt-4">
+                    <div className="bg-muted/30 p-4 rounded border max-h-[400px] overflow-y-auto space-y-4">
+                      {/* Display description if available */}
+                        <div className="text-sm text-foreground whitespace-pre-wrap">
+                          {formatDescription(exerciseDescription)}
+                        </div>
                     </div>
                   </CardContent>
                 </Card>

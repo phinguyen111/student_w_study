@@ -1,0 +1,27 @@
+[{
+  "_id": {
+    "$oid": "692148d025599da761d60108"
+  },
+  "name": {
+    "vi": "Phát Triển Web",
+    "en": "Web Development"
+  },
+  "slug": "web-development",
+  "description": {
+    "vi": "Học HTML, CSS và JavaScript - Bộ công cụ phát triển web hoàn chỉnh",
+    "en": "Learn HTML, CSS, and JavaScript - The complete web development stack"
+  },
+  "icon": "🌐",
+  "levels": [
+    {
+      "$oid": "692148d025599da761d6010a"
+    },
+    {
+      "$oid": "692148d025599da761d6010c"
+    }
+  ],
+  "createdAt": {
+    "$date": "2025-11-22T05:23:28.773Z"
+  },
+  "__v": 1
+}]
