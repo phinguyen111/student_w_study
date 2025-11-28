@@ -174,6 +174,16 @@ export function QuizModal({ questions, passingScore, lessonId, onComplete, onClo
     })
   }, [questions])
 
+  const getExplanationText = (value?: Question['explanation']) => {
+    if (!value) return ''
+    if (typeof value === 'string') return value
+    if (typeof value === 'object') {
+      const localized = value as { en?: string; vi?: string }
+      return localized.en || localized.vi || ''
+    }
+    return ''
+  }
+
   const handleCodeChange = (type: 'html' | 'css' | 'javascript', value: string) => {
     const newCodeAnswers = [...codeAnswers]
     if (!newCodeAnswers[currentQuestion]) {
@@ -523,27 +533,18 @@ export function QuizModal({ questions, passingScore, lessonId, onComplete, onClo
   if (!question) {
     return null
   }
-
+ 
   // Check if question has valid options (for multiple-choice) or is a code question
   if (question.type !== 'code' && (!question.options || question.options.length === 0)) {
     return null
   }
-
+ 
   const isCodeQuestion = question.type === 'code'
   const hasAnswer = isCodeQuestion 
     ? !!(codeAnswers[currentQuestion]?.html || codeAnswers[currentQuestion]?.css || codeAnswers[currentQuestion]?.javascript)
     : selectedAnswers[currentQuestion] !== undefined
   const progress = ((currentQuestion + 1) / normalizedQuestions.length) * 100
   const currentCode = codeAnswers[currentQuestion] || { html: '', css: '', javascript: '' }
-
-  const getExplanationText = (value?: Question['explanation']) => {
-    if (!value) return ''
-    if (typeof value === 'string') return value
-    if (typeof value === 'object') {
-      return value.en || value.vi || ''
-    }
-    return ''
-  }
 
   const extractCommentBlock = (code?: string) => {
     if (!code) return ''
