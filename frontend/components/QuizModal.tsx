@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -184,6 +184,8 @@ export function QuizModal({ questions, passingScore, lessonId, onComplete, onClo
     return ''
   }
 
+  const hasSubmittedRef = useRef(false)
+
   const handleCodeChange = (type: 'html' | 'css' | 'javascript', value: string) => {
     const newCodeAnswers = [...codeAnswers]
     if (!newCodeAnswers[currentQuestion]) {
@@ -296,6 +298,25 @@ export function QuizModal({ questions, passingScore, lessonId, onComplete, onClo
     }
   }
 
+  const finalizeQuiz = useCallback(async (finalScore: number) => {
+    if (hasSubmittedRef.current) return
+    hasSubmittedRef.current = true
+
+    if (isTracking) {
+      try {
+        await endTracking(new Date())
+      } catch (error) {
+        console.error('Failed to end quiz tracking:', error)
+      }
+    }
+
+    try {
+      await onComplete(finalScore, undefined, sessionId || undefined)
+    } catch (error) {
+      console.error('Failed to submit quiz results:', error)
+    }
+  }, [endTracking, isTracking, onComplete, sessionId])
+
   const calculateScore = () => {
     // Track time spent on last question
     const currentQuestionTime = questionTimesRef.current.find(
@@ -324,27 +345,21 @@ export function QuizModal({ questions, passingScore, lessonId, onComplete, onClo
     const finalScore = (correct / normalizedQuestions.length) * 10
     setScore(finalScore)
     setShowResults(true)
+    void finalizeQuiz(finalScore)
   }
 
   const handleSubmit = async () => {
-    // End tracking session
-    if (isTracking) {
-      await endTracking(new Date())
-    }
-    
-    // Calculate total time and question statistics
-    const totalTime = startTimeRef.current 
-      ? Date.now() - startTimeRef.current 
-      : 0
-    
-    onComplete(score, undefined, sessionId || undefined)
     onClose()
   }
 
   const handleClose = async () => {
     // End tracking if user closes modal without submitting
     if (isTracking && !showResults) {
-      await endTracking()
+      try {
+        await endTracking()
+      } catch (error) {
+        console.error('Failed to end quiz tracking on close:', error)
+      }
     }
     onClose()
   }
