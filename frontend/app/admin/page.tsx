@@ -435,10 +435,22 @@ export default function AdminPage() {
     return (criteria || []).reduce((sum, rule) => sum + (Number(rule.points) || 0), 0)
   }
 
+  type LocalizedDescription = { en?: string; vi?: string }
+
+  const getLocalizedDescription = (value?: string | LocalizedDescription) => {
+    if (!value) return ''
+    if (typeof value === 'string') return value
+    if (typeof value === 'object') {
+      const localized = value as LocalizedDescription
+      return localized.en || localized.vi || ''
+    }
+    return ''
+  }
+
   const normalizeCodeExercise = (exercise?: {
     language?: string
     starterCode?: string
-    description?: string
+    description?: string | LocalizedDescription
     outputCriteria?: OutputRule[]
   }): {
     language: string
@@ -447,15 +459,7 @@ export default function AdminPage() {
     outputCriteria: OutputRule[]
   } => {
     // Handle description: convert to string (from object if needed)
-    let descriptionValue: string = ''
-    if (exercise?.description) {
-      if (typeof exercise.description === 'string') {
-        descriptionValue = exercise.description
-      } else if (typeof exercise.description === 'object') {
-        // Convert from {vi, en} to string (prefer en, fallback to vi)
-        descriptionValue = exercise.description.en || exercise.description.vi || ''
-      }
-    }
+    const descriptionValue = getLocalizedDescription(exercise?.description)
 
     const outputCriteria = Array.isArray(exercise?.outputCriteria) && exercise.outputCriteria.length > 0
       ? exercise.outputCriteria.map(rule => ({
@@ -477,21 +481,13 @@ export default function AdminPage() {
   const sanitizeCodeExerciseForApi = (exercise?: {
     language?: string
     starterCode?: string
-    description?: string
+    description?: string | LocalizedDescription
     outputCriteria?: OutputRule[]
   }) => {
     if (!exercise) return undefined
     
     // Keep description as string
-    let descriptionStr: string = ''
-    if (exercise.description) {
-      if (typeof exercise.description === 'string') {
-        descriptionStr = exercise.description
-      } else if (typeof exercise.description === 'object') {
-        // Convert from {vi, en} to string (prefer en, fallback to vi)
-        descriptionStr = exercise.description.en || exercise.description.vi || ''
-      }
-    }
+    const descriptionStr = getLocalizedDescription(exercise.description)
     
     return {
       language: exercise.language || 'html',
