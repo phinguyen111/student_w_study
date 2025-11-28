@@ -561,7 +561,7 @@ export function QuizModal({ questions, passingScore, lessonId, onComplete, onClo
     if (codeType === 'html-css-js') {
       return [starterCode.html, starterCode.css, starterCode.javascript].filter(Boolean).join('\n')
     }
-    if (codeType && codeType !== 'html-css-js') {
+    if (codeType) {
       const langKey = codeType as 'html' | 'css' | 'javascript'
       return starterCode[langKey] || ''
     }
