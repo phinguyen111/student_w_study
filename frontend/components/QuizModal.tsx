@@ -558,14 +558,16 @@ export function QuizModal({ questions, passingScore, lessonId, onComplete, onClo
 
   const getStarterCodePreview = (starterCode?: Question['starterCode'], codeType?: Question['codeType']) => {
     if (!starterCode) return ''
-    if (codeType === 'html-css-js') {
-      return [starterCode.html, starterCode.css, starterCode.javascript].filter(Boolean).join('\n')
+    switch (codeType) {
+      case 'html-css-js':
+        return [starterCode.html, starterCode.css, starterCode.javascript].filter(Boolean).join('\n')
+      case 'html':
+      case 'css':
+      case 'javascript':
+        return starterCode[codeType] || ''
+      default:
+        return starterCode.html || starterCode.css || starterCode.javascript || ''
     }
-    if (codeType) {
-      const langKey = codeType as 'html' | 'css' | 'javascript'
-      return starterCode[langKey] || ''
-    }
-    return starterCode.html || starterCode.css || starterCode.javascript || ''
   }
 
   const getCodeQuestionRequirementPreview = (question: Question) => {
