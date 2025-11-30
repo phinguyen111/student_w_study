@@ -34,7 +34,7 @@ router.get('/leaderboard', async (req, res) => {
         .select('_id levelId')
         .populate({
           path: 'levelId',
-          select: 'languageId',
+          select: 'languageId _id',
         })
         .lean(),
       UserProgress.find()
@@ -49,12 +49,17 @@ router.get('/leaderboard', async (req, res) => {
     });
 
     const lessonLanguageMap = new Map();
+    const lessonLevelMap = new Map();
     lessons.forEach((lesson) => {
       const level = lesson.levelId;
       const languageId =
         level?.languageId?._id?.toString() || level?.languageId?.toString();
+      const levelId = level?._id?.toString();
       if (languageId) {
         lessonLanguageMap.set(lesson._id.toString(), languageId);
+        if (levelId) {
+          lessonLevelMap.set(lesson._id.toString(), levelId);
+        }
         if (
           typeof level?.languageId === 'object' &&
           level.languageId?._id &&
@@ -65,10 +70,54 @@ router.get('/leaderboard', async (req, res) => {
       }
     });
 
+    // First pass: Calculate total languages and levels for each user across all progress
+    const userLanguageCountMap = new Map(); // userId -> Set of languageIds
+    const userLevelCountMap = new Map(); // userId -> Map of languageId -> Set of levelIds
+
+    progresses.forEach((progress) => {
+      if (!progress.userId) return;
+      const userId = progress.userId._id?.toString() || progress.userId?.toString();
+      
+      if (!userLanguageCountMap.has(userId)) {
+        userLanguageCountMap.set(userId, new Set());
+        userLevelCountMap.set(userId, new Map());
+      }
+
+      const userLanguages = userLanguageCountMap.get(userId);
+      const userLevels = userLevelCountMap.get(userId);
+
+      // Collect all lesson IDs from lessonScores and completedLessonIds
+      const allLessonIds = new Set();
+      (progress.lessonScores || []).forEach((score) => {
+        const lessonId = score.lessonId?._id?.toString() || score.lessonId?.toString();
+        if (lessonId) allLessonIds.add(lessonId);
+      });
+      (progress.completedLessonIds || []).forEach((lessonIdObj) => {
+        const lessonId = lessonIdObj?._id?.toString() || lessonIdObj?.toString();
+        if (lessonId) allLessonIds.add(lessonId);
+      });
+
+      // Count languages and levels
+      allLessonIds.forEach((lessonId) => {
+        const languageId = lessonLanguageMap.get(lessonId);
+        const levelId = lessonLevelMap.get(lessonId);
+        if (languageId) {
+          userLanguages.add(languageId);
+          if (levelId) {
+            if (!userLevels.has(languageId)) {
+              userLevels.set(languageId, new Set());
+            }
+            userLevels.get(languageId).add(levelId);
+          }
+        }
+      });
+    });
+
     const leaderboardMap = new Map();
 
     progresses.forEach((progress) => {
       if (!progress.userId) return;
+      const userId = progress.userId._id?.toString() || progress.userId?.toString();
 
       const perLanguage = new Map();
 
@@ -76,6 +125,7 @@ router.get('/leaderboard', async (req, res) => {
         const lessonId =
           score.lessonId?._id?.toString() || score.lessonId?.toString();
         const languageId = lessonLanguageMap.get(lessonId);
+        const levelId = lessonLevelMap.get(lessonId);
         if (!languageId) return;
 
         if (!perLanguage.has(languageId)) {
@@ -83,6 +133,7 @@ router.get('/leaderboard', async (req, res) => {
             totalScore: 0,
             lessonCount: 0,
             completedLessons: 0,
+            levelIds: new Set(),
           });
         }
 
@@ -93,12 +144,16 @@ router.get('/leaderboard', async (req, res) => {
             : (score.quizScore || 0) + (score.codeScore || 0);
         stats.totalScore += rawScore;
         stats.lessonCount += 1;
+        if (levelId) {
+          stats.levelIds.add(levelId);
+        }
       });
 
       (progress.completedLessonIds || []).forEach((lessonIdObj) => {
         const lessonId =
           lessonIdObj?._id?.toString() || lessonIdObj?.toString();
         const languageId = lessonLanguageMap.get(lessonId);
+        const levelId = lessonLevelMap.get(lessonId);
         if (!languageId) return;
 
         if (!perLanguage.has(languageId)) {
@@ -106,10 +161,14 @@ router.get('/leaderboard', async (req, res) => {
             totalScore: 0,
             lessonCount: 0,
             completedLessons: 0,
+            levelIds: new Set(),
           });
         }
 
         perLanguage.get(languageId).completedLessons += 1;
+        if (levelId) {
+          perLanguage.get(languageId).levelIds.add(levelId);
+        }
       });
 
       perLanguage.forEach((stats, languageId) => {
@@ -133,15 +192,20 @@ router.get('/leaderboard', async (req, res) => {
             minutes: stat.minutes || 0,
           }));
 
+        // Get user's total language count and level count for this language
+        const totalLanguages = userLanguageCountMap.get(userId)?.size || 0;
+        const levelsInThisLanguage = stats.levelIds.size || 0;
+
         learners.push({
-          userId:
-            progress.userId._id?.toString() || progress.userId?.toString(),
+          userId,
           name: progress.userId.name,
           email: progress.userId.email,
           totalPoints: Number(totalPoints.toFixed(2)),
           averageScore: Number(averageScore.toFixed(2)),
           lessonCount: stats.lessonCount,
           completedLessons: stats.completedLessons,
+          totalLanguages, // Total number of languages user has studied
+          levelsInThisLanguage, // Number of levels in this specific language
           currentStreak: progress.currentStreak || 0,
           totalStudyTime: progress.totalStudyTime || 0,
           lastUpdated: progress.updatedAt,
@@ -156,12 +220,19 @@ router.get('/leaderboard', async (req, res) => {
         const languageInfo = languageMap.get(languageId) || {};
         const sortedLearners = learners
           .sort((a, b) => {
-            if (b.averageScore === a.averageScore) {
-              if (b.completedLessons === a.completedLessons) {
-                return (b.totalPoints || 0) - (a.totalPoints || 0);
-              }
+            // Priority 1: Total languages (descending - more languages first)
+            if (b.totalLanguages !== a.totalLanguages) {
+              return (b.totalLanguages || 0) - (a.totalLanguages || 0);
+            }
+            // Priority 2: Levels in this language (descending - more levels first)
+            if (b.levelsInThisLanguage !== a.levelsInThisLanguage) {
+              return (b.levelsInThisLanguage || 0) - (a.levelsInThisLanguage || 0);
+            }
+            // Priority 3: Completed lessons (descending - more lessons first)
+            if (b.completedLessons !== a.completedLessons) {
               return (b.completedLessons || 0) - (a.completedLessons || 0);
             }
+            // Priority 4: Average score (descending - higher score first)
             return (b.averageScore || 0) - (a.averageScore || 0);
           })
           .slice(0, limit)
