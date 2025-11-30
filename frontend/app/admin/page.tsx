@@ -343,8 +343,8 @@ export default function AdminPage() {
     if (codeType === 'html-css-js') {
       return [starterCode.html, starterCode.css, starterCode.javascript].filter(Boolean).join('\n')
     }
-    if (codeType && codeType !== 'html-css-js') {
-      const langKey = codeType as 'html' | 'css' | 'javascript'
+    if (codeType === 'html' || codeType === 'css' || codeType === 'javascript') {
+      const langKey = codeType
       return starterCode[langKey] || ''
     }
     return starterCode.html || starterCode.css || starterCode.javascript || ''
