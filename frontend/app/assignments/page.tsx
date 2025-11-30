@@ -420,7 +420,7 @@ export default function AssignmentsPage() {
                 </div>
                 <div className="flex gap-2">
                   <Input
-                    ref={(el) => fileInputRefs.current[fileAssignment._id] = el}
+                    ref={(el) => { fileInputRefs.current[fileAssignment._id] = el }}
                     type="file"
                     onChange={(e) => handleFileSelect(fileAssignment._id, e.target.files?.[0] || null)}
                     disabled={submittingFile === fileAssignment._id}
