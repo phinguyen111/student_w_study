@@ -153,6 +153,36 @@ export interface QuizAssignment {
   createdAt: string
 }
 
+export interface FileAssignment {
+  _id: string
+  title: string
+  description: string
+  fileUrl: string
+  fileName: string
+  submissionLocation: string
+  assignedBy: { _id: string; name: string; email: string }
+  assignedTo: Array<{ _id: string; name: string; email: string }>
+  deadline: string
+  status: 'active' | 'expired' | 'completed'
+  submittedCount?: number
+  totalAssigned?: number
+  createdAt: string
+}
+
+export interface AssignmentSubmission {
+  _id: string
+  assignmentId: string
+  userId: { _id: string; name: string; email: string }
+  fileUrl: string
+  fileName: string
+  submittedAt: string
+  status?: 'submitted' | 'reviewed'
+  score?: number
+  feedback?: string
+  gradedBy?: { _id: string; name: string; email: string }
+  gradedAt?: string
+}
+
 export interface TopUser {
   userId: { _id: string; name: string; email: string }
   name: string

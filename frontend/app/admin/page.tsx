@@ -1,7 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useMemo, useRef, useDeferredValue } from 'react'
-import dynamic from 'next/dynamic'
+import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
@@ -37,19 +36,11 @@ import {
   ChevronDown,
   ChevronUp,
   Code2,
-  ListChecks
+  ListChecks,
+  Upload,
+  Download
 } from 'lucide-react'
-const ProgressTabSection = dynamic(
-  () => import('./components/ProgressTabSection').then((mod) => mod.ProgressTabSection),
-  {
-    loading: () => (
-      <div className="py-10 text-center text-sm text-muted-foreground">
-        Đang tải dữ liệu tiến độ...
-      </div>
-    ),
-    ssr: false,
-  }
-)
+import { ProgressTabSection } from './components/ProgressTabSection'
 import type {
   User,
   UserProgress,
@@ -57,10 +48,11 @@ import type {
   Level,
   Question,
   OutputRule,
-  LocalizedString,
   Lesson,
   Stats,
   QuizAssignment,
+  FileAssignment,
+  AssignmentSubmission,
   TopUser
 } from './types'
 
@@ -161,14 +153,6 @@ export default function AdminPage() {
   const { isAuthenticated, user, loading } = useAuth()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('dashboard')
-  const deferredActiveTab = useDeferredValue(activeTab)
-  const isAdminUser = isAuthenticated && user?.role === 'admin'
-  const loadedSectionsRef = useRef({
-    dashboard: false,
-    users: false,
-    content: false,
-    assignments: false,
-  })
   
   // Dashboard
   const [stats, setStats] = useState<Stats | null>(null)
@@ -269,37 +253,6 @@ export default function AdminPage() {
   
   // Helper function to generate unique IDs for criteria
   const generateCriteriaId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
-
-  // Sorted collections for cleaner UI listing
-  const sortedLanguages = useMemo(() => {
-    if (!languages?.length) return []
-    return [...languages].sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }))
-  }, [languages])
-
-  const sortedLevels = useMemo(() => {
-    if (!levels?.length) return []
-    return [...levels].sort((a, b) => {
-      const langA = (typeof a.languageId === 'object' && a.languageId?.name) ? a.languageId.name.toLowerCase() : ''
-      const langB = (typeof b.languageId === 'object' && b.languageId?.name) ? b.languageId.name.toLowerCase() : ''
-      if (langA !== langB) return langA.localeCompare(langB)
-      return (a.levelNumber || 0) - (b.levelNumber || 0)
-    })
-  }, [levels])
-
-  const sortedLessons = useMemo(() => {
-    if (!lessons?.length) return []
-    return [...lessons].sort((a, b) => {
-      const levelNumberA = (typeof a.levelId === 'object' && a.levelId?.levelNumber) ? a.levelId.levelNumber : 0
-      const levelNumberB = (typeof b.levelId === 'object' && b.levelId?.levelNumber) ? b.levelId.levelNumber : 0
-      if (levelNumberA !== levelNumberB) return levelNumberA - levelNumberB
-
-      const levelTitleA = (typeof a.levelId === 'object' && a.levelId?.title) ? a.levelId.title.toLowerCase() : ''
-      const levelTitleB = (typeof b.levelId === 'object' && b.levelId?.title) ? b.levelId.title.toLowerCase() : ''
-      if (levelTitleA !== levelTitleB) return levelTitleA.localeCompare(levelTitleB)
-
-      return (a.lessonNumber || 0) - (b.lessonNumber || 0)
-    })
-  }, [lessons])
   
   const [newLesson, setNewLesson] = useState({
     levelId: '',
@@ -323,11 +276,11 @@ export default function AdminPage() {
     quiz: true
   })
   
-  // Quiz Assignments
-  const [quizAssignments, setQuizAssignments] = useState<QuizAssignment[]>([])
-  const [selectedAssignment, setSelectedAssignment] = useState<QuizAssignment | null>(null)
-  const [assignmentResults, setAssignmentResults] = useState<any[]>([])
-  const [assignmentTracking, setAssignmentTracking] = useState<any[]>([])
+  // File Assignments
+  const [fileAssignments, setFileAssignments] = useState<FileAssignment[]>([])
+  const [selectedAssignment, setSelectedAssignment] = useState<FileAssignment | null>(null)
+  const [assignmentSubmissions, setAssignmentSubmissions] = useState<AssignmentSubmission[]>([])
+  const [gradingSubmissions, setGradingSubmissions] = useState<{ [key: string]: { score: string; feedback: string } }>({})
   const [showCreateAssignment, setShowCreateAssignment] = useState(false)
   const [selectedSession, setSelectedSession] = useState<any>(null)
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set())
@@ -336,11 +289,11 @@ export default function AdminPage() {
   const [newAssignment, setNewAssignment] = useState({
     title: '',
     description: '',
-    questions: [] as any[],
-    passingScore: 7,
+    file: null as File | null,
     assignedTo: [] as string[],
     deadline: ''
   })
+  const [uploadingFile, setUploadingFile] = useState(false)
 
   const toggleNewLessonSection = (section: 'quiz' | 'codeExercise') => {
     setNewLessonSectionVisibility(prev => ({
@@ -390,7 +343,7 @@ export default function AdminPage() {
     if (codeType === 'html-css-js') {
       return [starterCode.html, starterCode.css, starterCode.javascript].filter(Boolean).join('\n')
     }
-    if (codeType) {
+    if (codeType && codeType !== 'html-css-js') {
       const langKey = codeType as 'html' | 'css' | 'javascript'
       return starterCode[langKey] || ''
     }
@@ -455,19 +408,10 @@ export default function AdminPage() {
     return (criteria || []).reduce((sum, rule) => sum + (Number(rule.points) || 0), 0)
   }
 
-  const getLocalizedDescription = (value?: LocalizedString) => {
-    if (!value) return ''
-    if (typeof value === 'string') return value
-    if (typeof value === 'object') {
-      return value.en || value.vi || ''
-    }
-    return ''
-  }
-
   const normalizeCodeExercise = (exercise?: {
     language?: string
     starterCode?: string
-    description?: LocalizedString
+    description?: string
     outputCriteria?: OutputRule[]
   }): {
     language: string
@@ -476,7 +420,15 @@ export default function AdminPage() {
     outputCriteria: OutputRule[]
   } => {
     // Handle description: convert to string (from object if needed)
-    const descriptionValue = getLocalizedDescription(exercise?.description)
+    let descriptionValue: string = ''
+    if (exercise?.description) {
+      if (typeof exercise.description === 'string') {
+        descriptionValue = exercise.description
+      } else if (typeof exercise.description === 'object') {
+        // Convert from {vi, en} to string (prefer en, fallback to vi)
+        descriptionValue = exercise.description.en || exercise.description.vi || ''
+      }
+    }
 
     const outputCriteria = Array.isArray(exercise?.outputCriteria) && exercise.outputCriteria.length > 0
       ? exercise.outputCriteria.map(rule => ({
@@ -498,13 +450,21 @@ export default function AdminPage() {
   const sanitizeCodeExerciseForApi = (exercise?: {
     language?: string
     starterCode?: string
-    description?: LocalizedString
+    description?: string
     outputCriteria?: OutputRule[]
   }) => {
     if (!exercise) return undefined
     
     // Keep description as string
-    const descriptionStr = getLocalizedDescription(exercise.description)
+    let descriptionStr: string = ''
+    if (exercise.description) {
+      if (typeof exercise.description === 'string') {
+        descriptionStr = exercise.description
+      } else if (typeof exercise.description === 'object') {
+        // Convert from {vi, en} to string (prefer en, fallback to vi)
+        descriptionStr = exercise.description.en || exercise.description.vi || ''
+      }
+    }
     
     return {
       language: exercise.language || 'html',
@@ -551,7 +511,7 @@ export default function AdminPage() {
     })
   }
 
-  const fetchDashboard = useCallback(async () => {
+  const fetchDashboard = async () => {
     try {
       const response = await api.get('/admin/stats?lang=en')
       setStats(response.data.stats)
@@ -560,25 +520,25 @@ export default function AdminPage() {
     } catch (error) {
       console.error('Error fetching stats:', error)
     }
-  }, [])
+  }
 
-  const fetchTrackingStats = useCallback(async () => {
+  const fetchTrackingStats = async () => {
     try {
       const response = await api.get('/admin/tracking-stats?lang=en')
       setTrackingStats(response.data.stats)
     } catch (error) {
       console.error('Error fetching tracking stats:', error)
     }
-  }, [])
+  }
 
-  const fetchUsers = useCallback(async () => {
+  const fetchUsers = async () => {
     try {
       const response = await api.get('/admin/users')
       setUsers(response.data.users)
     } catch (error) {
       console.error('Error fetching users:', error)
     }
-  }, [])
+  }
 
   const fetchUserProgress = async (userId: string) => {
     try {
@@ -590,32 +550,32 @@ export default function AdminPage() {
     }
   }
 
-  const fetchLanguages = useCallback(async () => {
+  const fetchLanguages = async () => {
     try {
       const response = await api.get('/admin/languages?lang=en')
       setLanguages(response.data.languages)
     } catch (error) {
       console.error('Error fetching languages:', error)
     }
-  }, [])
+  }
 
-  const fetchLevels = useCallback(async () => {
+  const fetchLevels = async () => {
     try {
       const response = await api.get('/admin/levels?lang=en')
       setLevels(response.data.levels)
     } catch (error) {
       console.error('Error fetching levels:', error)
     }
-  }, [])
+  }
 
-  const fetchLessons = useCallback(async () => {
+  const fetchLessons = async () => {
     try {
       const response = await api.get('/admin/lessons?lang=en')
       setLessons(response.data.lessons)
     } catch (error) {
       console.error('Error fetching lessons:', error)
     }
-  }, [])
+  }
 
   const handleUnlockLevel = async (levelId?: string) => {
     if (!selectedUser) {
@@ -1899,15 +1859,15 @@ export default function AdminPage() {
     })
   }
 
-  // Quiz Assignment functions
-  const fetchQuizAssignments = useCallback(async () => {
+  // File Assignment functions
+  const fetchFileAssignments = async () => {
     try {
-      const response = await api.get('/admin/quiz-assignments')
-      setQuizAssignments(response.data.assignments || [])
+      const response = await api.get('/admin/file-assignments')
+      setFileAssignments(response.data.assignments || [])
     } catch (error) {
-      console.error('Error fetching quiz assignments:', error)
+      console.error('Error fetching file assignments:', error)
     }
-  }, [])
+  }
 
   const fetchActivityLog = useCallback(async () => {
     setLoadingActivityLog(true)
@@ -1937,49 +1897,16 @@ export default function AdminPage() {
   }, [isAuthenticated, user, loading, router])
 
   useEffect(() => {
-    if (!isAdminUser) {
-      loadedSectionsRef.current = {
-        dashboard: false,
-        users: false,
-        content: false,
-        assignments: false,
-      }
+    if (isAuthenticated && user?.role === 'admin') {
+      fetchDashboard()
+      fetchTrackingStats()
+      fetchUsers()
+      fetchLanguages()
+      fetchLevels()
+      fetchLessons()
+      fetchFileAssignments()
     }
-  }, [isAdminUser])
-
-  useEffect(() => {
-    if (!isAdminUser) return
-    if (loadedSectionsRef.current.dashboard) return
-    loadedSectionsRef.current.dashboard = true
-    fetchDashboard()
-    fetchTrackingStats()
-  }, [isAdminUser, fetchDashboard, fetchTrackingStats])
-
-  useEffect(() => {
-    if (!isAdminUser) return
-    if (!['users', 'progress', 'quiz-assignments'].includes(activeTab)) return
-    if (loadedSectionsRef.current.users) return
-    loadedSectionsRef.current.users = true
-    fetchUsers()
-  }, [isAdminUser, activeTab, fetchUsers])
-
-  useEffect(() => {
-    if (!isAdminUser) return
-    if (!(activeTab === 'content' || activeTab === 'progress')) return
-    if (loadedSectionsRef.current.content) return
-    loadedSectionsRef.current.content = true
-    fetchLanguages()
-    fetchLevels()
-    fetchLessons()
-  }, [isAdminUser, activeTab, fetchLanguages, fetchLevels, fetchLessons])
-
-  useEffect(() => {
-    if (!isAdminUser) return
-    if (activeTab !== 'quiz-assignments') return
-    if (loadedSectionsRef.current.assignments) return
-    loadedSectionsRef.current.assignments = true
-    fetchQuizAssignments()
-  }, [isAdminUser, activeTab, fetchQuizAssignments])
+  }, [isAuthenticated, user])
 
   useEffect(() => {
     if (isAuthenticated && user?.role === 'admin' && activeTab === 'activity-log') {
@@ -1997,199 +1924,108 @@ export default function AdminPage() {
 
   const fetchAssignmentDetails = async (assignmentId: string) => {
     try {
-      const response = await api.get(`/admin/quiz-assignments/${assignmentId}`)
+      const response = await api.get(`/admin/file-assignments/${assignmentId}`)
       setSelectedAssignment(response.data.assignment)
-      setAssignmentResults(response.data.results || [])
-      
-      // Fetch tracking data
-      try {
-        const trackingResponse = await api.get(`/admin/quiz-assignments/${assignmentId}/tracking`)
-        setAssignmentTracking(trackingResponse.data.sessions || [])
-      } catch (trackingError) {
-        console.error('Error fetching tracking data:', trackingError)
-        setAssignmentTracking([])
-      }
+      setAssignmentSubmissions(response.data.submissions || [])
+      // Initialize grading state
+      const gradingState: { [key: string]: { score: string; feedback: string } } = {}
+      response.data.submissions.forEach((sub: AssignmentSubmission) => {
+        gradingState[sub._id] = {
+          score: sub.score?.toString() || '',
+          feedback: sub.feedback || ''
+        }
+      })
+      setGradingSubmissions(gradingState)
     } catch (error) {
       console.error('Error fetching assignment details:', error)
     }
   }
 
-  const handleCreateQuizAssignment = async () => {
+  const handleGradeSubmission = async (assignmentId: string, submissionId: string) => {
     try {
-      if (!newAssignment.title || newAssignment.questions.length === 0 || newAssignment.assignedTo.length === 0 || !newAssignment.deadline) {
-        alert('Please fill in all required fields')
+      const grading = gradingSubmissions[submissionId]
+      if (!grading || !grading.score) {
+        alert('Vui lòng nhập điểm')
         return
       }
 
-      // Normalize questions - remove correctAnswer for code questions, remove code fields for multiple-choice
-      const normalizedQuestions = newAssignment.questions.map((q) => {
-        if (q.type === 'code') {
-          const { correctAnswer, options, ...codeQuestion } = q
-          return {
-            type: 'code',
-            question: codeQuestion.question,
-            codeType: codeQuestion.codeType || 'html',
-            starterCode: {
-              html: codeQuestion.starterCode?.html || '',
-              css: codeQuestion.starterCode?.css || '',
-              javascript: codeQuestion.starterCode?.javascript || ''
-            },
-            expectedOutput: codeQuestion.expectedOutput || '',
-            explanation: codeQuestion.explanation || undefined
-          }
-        } else {
-          const { codeType, starterCode, expectedOutput, ...multipleChoiceQuestion } = q
-          return {
-            type: 'multiple-choice',
-            question: multipleChoiceQuestion.question,
-            options: multipleChoiceQuestion.options || [],
-            correctAnswer: multipleChoiceQuestion.correctAnswer || 0,
-            explanation: multipleChoiceQuestion.explanation || undefined
-          }
-        }
-      })
-
-      const assignmentData = {
-        ...newAssignment,
-        questions: normalizedQuestions
+      const score = parseFloat(grading.score)
+      if (isNaN(score) || score < 0 || score > 10) {
+        alert('Điểm phải từ 0 đến 10')
+        return
       }
 
-      await api.post('/admin/quiz-assignments', assignmentData)
-      fetchQuizAssignments()
+      await api.put(`/admin/file-assignments/${assignmentId}/submissions/${submissionId}/grade`, {
+        score,
+        feedback: grading.feedback || ''
+      })
+
+      alert('Chấm điểm thành công!')
+      fetchAssignmentDetails(assignmentId)
+    } catch (error: any) {
+      console.error('Error grading submission:', error)
+      alert(error.response?.data?.message || 'Lỗi khi chấm điểm')
+    }
+  }
+
+  const handleDownloadSubmissionFile = (fileUrl: string) => {
+    const apiUrl = api.defaults.baseURL?.replace('/api', '') || 'http://localhost:5000'
+    const url = fileUrl.startsWith('http') ? fileUrl : `${apiUrl}${fileUrl}`
+    window.open(url, '_blank')
+  }
+
+  const handleCreateFileAssignment = async () => {
+    try {
+      if (!newAssignment.title || !newAssignment.file || newAssignment.assignedTo.length === 0 || !newAssignment.deadline) {
+        alert('Vui lòng điền đầy đủ các trường bắt buộc')
+        return
+      }
+
+      setUploadingFile(true)
+      const formData = new FormData()
+      formData.append('file', newAssignment.file)
+      formData.append('title', newAssignment.title)
+      formData.append('description', newAssignment.description)
+      formData.append('assignedTo', JSON.stringify(newAssignment.assignedTo))
+      formData.append('deadline', newAssignment.deadline)
+
+      await api.post('/admin/file-assignments', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+      
+      fetchFileAssignments()
       setNewAssignment({
         title: '',
         description: '',
-        questions: [],
-        passingScore: 7,
+        file: null,
         assignedTo: [],
         deadline: ''
       })
       setShowCreateAssignment(false)
-      alert('Quiz assignment created successfully!')
+      alert('Tạo assignment thành công!')
     } catch (error: any) {
-      console.error('Error creating quiz assignment:', error)
-      alert(error.response?.data?.message || 'Error creating quiz assignment')
+      console.error('Error creating file assignment:', error)
+      alert(error.response?.data?.message || 'Lỗi khi tạo assignment')
+    } finally {
+      setUploadingFile(false)
     }
   }
 
-  const handleDeleteQuizAssignment = async (assignmentId: string) => {
-    if (!confirm('Are you sure you want to delete this quiz assignment? All results will be deleted too.')) return
+  const handleDeleteFileAssignment = async (assignmentId: string) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa assignment này? Tất cả submissions sẽ bị xóa.')) return
     try {
-      await api.delete(`/admin/quiz-assignments/${assignmentId}`)
-      fetchQuizAssignments()
+      await api.delete(`/admin/file-assignments/${assignmentId}`)
+      fetchFileAssignments()
       if (selectedAssignment?._id === assignmentId) {
         setSelectedAssignment(null)
-        setAssignmentResults([])
+        setAssignmentSubmissions([])
       }
     } catch (error) {
-      console.error('Error deleting quiz assignment:', error)
-      alert('Error deleting quiz assignment')
+      console.error('Error deleting file assignment:', error)
+      alert('Lỗi khi xóa assignment')
     }
-  }
-
-  const addQuestion = (type: 'multiple-choice' | 'code' = 'multiple-choice') => {
-    if (type === 'code') {
-      setNewAssignment({
-        ...newAssignment,
-        questions: [...newAssignment.questions, {
-          type: 'code',
-          question: '',
-          codeType: 'html',
-          starterCode: {
-            html: '',
-            css: '',
-            javascript: ''
-          },
-          expectedOutput: '',
-          explanation: ''
-        }]
-      })
-    } else {
-      setNewAssignment({
-        ...newAssignment,
-        questions: [...newAssignment.questions, { 
-          type: 'multiple-choice',
-          question: '', 
-          options: ['', '', '', ''], 
-          correctAnswer: 0, 
-          explanation: '' 
-        }]
-      })
-    }
-  }
-
-  const removeQuestion = (index: number) => {
-    setNewAssignment({
-      ...newAssignment,
-      questions: newAssignment.questions.filter((_, i) => i !== index)
-    })
-  }
-
-  const updateQuestion = (index: number, field: string, value: any) => {
-    const updatedQuestions = [...newAssignment.questions]
-    if (field === 'type' && value === 'code') {
-      // Reset to code question structure
-      updatedQuestions[index] = {
-        type: 'code',
-        question: updatedQuestions[index].question || '',
-        codeType: 'html',
-        starterCode: {
-          html: '',
-          css: '',
-          javascript: ''
-        },
-        expectedOutput: '',
-        explanation: ''
-      }
-    } else if (field === 'type' && value === 'multiple-choice') {
-      // Reset to multiple-choice structure
-      updatedQuestions[index] = {
-        type: 'multiple-choice',
-        question: updatedQuestions[index].question || '',
-        options: ['', '', '', ''],
-        correctAnswer: 0,
-        explanation: ''
-      }
-    } else {
-      updatedQuestions[index] = { ...updatedQuestions[index], [field]: value }
-    }
-    setNewAssignment({ ...newAssignment, questions: updatedQuestions })
-  }
-
-  const updateQuestionOption = (qIndex: number, optIndex: number, value: string) => {
-    const updatedQuestions = [...newAssignment.questions]
-    const newOptions = [...(updatedQuestions[qIndex].options || [])]
-    newOptions[optIndex] = value
-    updatedQuestions[qIndex].options = newOptions
-    setNewAssignment({ ...newAssignment, questions: updatedQuestions })
-  }
-
-  const addQuestionOption = (qIndex: number) => {
-    const updatedQuestions = [...newAssignment.questions]
-    const newOptions = [...(updatedQuestions[qIndex].options || [])]
-    newOptions.push('')
-    updatedQuestions[qIndex].options = newOptions
-    setNewAssignment({ ...newAssignment, questions: updatedQuestions })
-  }
-
-  const removeQuestionOption = (qIndex: number, optIndex: number) => {
-    const updatedQuestions = [...newAssignment.questions]
-    const newOptions = [...(updatedQuestions[qIndex].options || [])]
-    newOptions.splice(optIndex, 1)
-    updatedQuestions[qIndex].options = newOptions
-    setNewAssignment({ ...newAssignment, questions: updatedQuestions })
-  }
-
-  const updateAssignmentStarterCode = (qIndex: number, lang: 'html' | 'css' | 'javascript', value: string) => {
-    const updatedQuestions = [...newAssignment.questions]
-    updatedQuestions[qIndex] = {
-      ...updatedQuestions[qIndex],
-      starterCode: {
-        ...(updatedQuestions[qIndex].starterCode || { html: '', css: '', javascript: '' }),
-        [lang]: value
-      }
-    }
-    setNewAssignment({ ...newAssignment, questions: updatedQuestions })
   }
 
   const toggleUserAssignment = (userId: string) => {
@@ -2233,7 +2069,7 @@ export default function AdminPage() {
           </TabsTrigger>
           <TabsTrigger value="quiz-assignments">
             <ClipboardList className="h-4 w-4 mr-2" />
-            Quiz Assignments
+            Assignments
           </TabsTrigger>
           <TabsTrigger value="progress">
             <TrendingUp className="h-4 w-4 mr-2" />
@@ -2242,7 +2078,6 @@ export default function AdminPage() {
         </TabsList>
 
         {/* Dashboard Tab */}
-        {deferredActiveTab === 'dashboard' && (
         <TabsContent value="dashboard" className="space-y-6">
           {/* Bulk Create Users */}
           <Card>
@@ -2797,10 +2632,8 @@ export default function AdminPage() {
             </>
           )}
         </TabsContent>
-        )}
 
         {/* Activity Log Tab */}
-        {deferredActiveTab === 'activity-log' && (
         <TabsContent value="activity-log" className="space-y-6">
           <Card>
             <CardHeader>
@@ -3482,10 +3315,8 @@ export default function AdminPage() {
             </CardContent>
           </Card>
         </TabsContent>
-        )}
 
         {/* Users Tab */}
-        {deferredActiveTab === 'users' && (
         <TabsContent value="users" className="space-y-6">
           <Card>
             <CardHeader>
@@ -3662,10 +3493,8 @@ export default function AdminPage() {
             </CardContent>
           </Card>
         </TabsContent>
-        )}
 
         {/* Content Management Tab */}
-        {deferredActiveTab === 'content' && (
         <TabsContent value="content" className="space-y-6">
           {/* Languages */}
           <Card>
@@ -3715,11 +3544,8 @@ export default function AdminPage() {
                 </div>
               )}
               <div className="space-y-2">
-                {sortedLanguages.map((lang) => (
-                  <div
-                    key={lang._id}
-                    className="p-4 border rounded-xl bg-white/70 dark:bg-slate-900/40 shadow-sm hover:shadow-lg hover:border-primary/40 transition-all duration-200"
-                  >
+                {languages.map((lang) => (
+                  <div key={lang._id} className="p-4 border rounded-lg">
                     {editingLanguage === lang._id && editingLanguageData ? (
                       <div className="space-y-3">
                         <Input
@@ -3811,7 +3637,7 @@ export default function AdminPage() {
                     onChange={(e) => setNewLevel({ ...newLevel, languageId: e.target.value })}
                   >
                     <option value="">Select Language</option>
-                    {sortedLanguages.map((lang) => (
+                    {languages.map((lang) => (
                       <option key={lang._id} value={lang._id}>
                         {lang.name}
                       </option>
@@ -3846,8 +3672,8 @@ export default function AdminPage() {
                 </div>
               )}
               <div className="space-y-2">
-                {sortedLevels.map((level) => (
-                  <div key={level._id} className="p-4 border rounded-xl bg-white/70 dark:bg-slate-900/40 shadow-sm hover:shadow-lg hover:border-primary/40 transition-all duration-200">
+                {levels.map((level) => (
+                  <div key={level._id} className="p-4 border rounded-lg">
                     {editingLevel === level._id && editingLevelData ? (
                       <div className="space-y-3">
                         <select
@@ -3856,7 +3682,7 @@ export default function AdminPage() {
                           onChange={(e) => setEditingLevelData({ ...editingLevelData, languageId: e.target.value })}
                         >
                           <option value="">Select Language</option>
-                          {sortedLanguages.map((lang) => (
+                          {languages.map((lang) => (
                             <option key={lang._id} value={lang._id}>
                               {lang.name}
                             </option>
@@ -3962,7 +3788,7 @@ export default function AdminPage() {
                           }}
                         >
                           <option value="">Select Level</option>
-                          {sortedLevels.map((level) => (
+                          {levels.map((level) => (
                             <option key={level._id} value={String(level._id)}>
                               {level.title} (Level {level.levelNumber})
                             </option>
@@ -4141,7 +3967,7 @@ export default function AdminPage() {
                                 Add Rule
                               </Button>
                             </div>
-                            {(newLesson.codeExercise?.outputCriteria || []).map((rule: OutputRule, index) => (
+                            {(newLesson.codeExercise?.outputCriteria || []).map((rule, index) => (
                               <div key={rule.id || `new-code-ex-rule-${index}`} className="grid gap-2 md:grid-cols-[2fr_auto_auto_auto] items-start">
                                 <div className="md:col-span-1">
                                   <Input
@@ -4279,7 +4105,7 @@ export default function AdminPage() {
                         {newLesson.quiz.questions.map((q, qIndex) => {
                           const requirementPreview =
                             q.type === 'code' ? getCodeQuestionRequirementPreview(q as Question) : ''
-                                const readOnlyRules: OutputRule[] = Array.isArray(q.outputCriteria) ? q.outputCriteria : []
+                          const readOnlyRules = Array.isArray(q.outputCriteria) ? q.outputCriteria : []
                           return (
                           <Card key={qIndex} className="p-4 border-2">
                             <div className="flex justify-between items-center mb-3">
@@ -4394,7 +4220,7 @@ export default function AdminPage() {
                                       </div>
                                       <div className="space-y-2">
                                         {readOnlyRules.length ? (
-                                          readOnlyRules.map((rule: OutputRule, ruleIndex: number) => (
+                                          readOnlyRules.map((rule, ruleIndex) => (
                                             <div
                                               key={rule.id || `create-preview-rule-${qIndex}-${ruleIndex}`}
                                               className="flex items-center justify-between gap-3 rounded-lg border bg-background/70 p-2"
@@ -4521,7 +4347,7 @@ export default function AdminPage() {
                                         Add Rule
                                       </Button>
                                     </div>
-                                    {(q.outputCriteria || []).map((rule: OutputRule, ruleIndex: number) => (
+                                    {(q.outputCriteria || []).map((rule, ruleIndex) => (
                                       <div
                                         key={rule.id || `${qIndex}-rule-${ruleIndex}`}
                                         className="grid gap-2 md:grid-cols-[2fr_auto_auto_auto] items-start"
@@ -4636,8 +4462,8 @@ export default function AdminPage() {
               )}
               
               <div className="space-y-2">
-                {sortedLessons.map((lesson) => (
-                  <div key={lesson._id} className="p-4 border rounded-xl bg-white/70 dark:bg-slate-900/40 shadow-sm hover:shadow-lg hover:border-primary/40 transition-all duration-200">
+                {lessons.map((lesson) => (
+                  <div key={lesson._id} className="p-4 border rounded-lg">
                     {editingLesson === lesson._id && editingLessonData ? (
                       <Card className="border-2">
                         <CardHeader>
@@ -4661,7 +4487,7 @@ export default function AdminPage() {
                                 style={{ pointerEvents: 'auto', position: 'relative', zIndex: 10 }}
                               >
                                 <option value="">Select Level</option>
-                                {sortedLevels.map((level) => (
+                                {levels.map((level) => (
                                   <option key={level._id} value={String(level._id)}>
                                     {level.title} (Level {level.levelNumber})
                                   </option>
@@ -4708,7 +4534,11 @@ export default function AdminPage() {
                             <label className="text-sm font-medium mb-2 block">Title *</label>
                             <Input
                               placeholder="Lesson Title"
-                              value={getLocalizedDescription(editingLessonData.title)}
+                              value={typeof editingLessonData.title === 'string' 
+                                ? editingLessonData.title 
+                                : (typeof editingLessonData.title === 'object' && editingLessonData.title !== null
+                                  ? (editingLessonData.title.en || editingLessonData.title.vi || '')
+                                  : '')}
                               onChange={(e) => setEditingLessonData({ ...editingLessonData, title: e.target.value })}
                             />
                           </div>
@@ -4718,7 +4548,11 @@ export default function AdminPage() {
                               className="w-full p-2 border rounded-lg"
                               rows={6}
                               placeholder="Lesson content (markdown supported)"
-                              value={getLocalizedDescription(editingLessonData.content)}
+                              value={typeof editingLessonData.content === 'string' 
+                                ? editingLessonData.content 
+                                : (typeof editingLessonData.content === 'object' && editingLessonData.content !== null
+                                  ? (editingLessonData.content.en || editingLessonData.content.vi || '')
+                                  : '')}
                               onChange={(e) => setEditingLessonData({ ...editingLessonData, content: e.target.value })}
                             />
                           </div>
@@ -4827,69 +4661,71 @@ export default function AdminPage() {
             </CardContent>
           </Card>
         </TabsContent>
-        )}
 
-        {/* Quiz Assignments Tab */}
-        {deferredActiveTab === 'quiz-assignments' && (
+        {/* File Assignments Tab */}
         <TabsContent value="quiz-assignments" className="space-y-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>Quiz Assignments</CardTitle>
-                <CardDescription>Create and manage quiz assignments for users</CardDescription>
+                <CardTitle>File Assignments</CardTitle>
+                <CardDescription>Tạo và quản lý assignments dạng file cho người dùng</CardDescription>
               </div>
               <Button onClick={() => setShowCreateAssignment(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Create Assignment
+                Tạo Assignment
               </Button>
             </CardHeader>
             <CardContent>
               {showCreateAssignment && (
                 <Card className="mb-6 border-2">
                   <CardHeader>
-                    <CardTitle>Create New Quiz Assignment</CardTitle>
+                    <CardTitle>Tạo Assignment Mới</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <label className="text-sm font-medium mb-2 block">Title *</label>
+                      <label className="text-sm font-medium mb-2 block">Tiêu đề *</label>
                       <Input
                         value={newAssignment.title}
                         onChange={(e) => setNewAssignment({ ...newAssignment, title: e.target.value })}
-                        placeholder="Quiz Assignment Title"
+                        placeholder="Tiêu đề assignment"
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium mb-2 block">Description</label>
+                      <label className="text-sm font-medium mb-2 block">Mô tả</label>
                       <textarea
                         className="w-full p-2 border rounded-lg"
                         rows={3}
                         value={newAssignment.description}
                         onChange={(e) => setNewAssignment({ ...newAssignment, description: e.target.value })}
-                        placeholder="Assignment description"
+                        placeholder="Mô tả assignment"
                       />
                     </div>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm font-medium mb-2 block">Passing Score (0-10) *</label>
-                        <Input
-                          type="number"
-                          min="0"
-                          max="10"
-                          value={newAssignment.passingScore}
-                          onChange={(e) => setNewAssignment({ ...newAssignment, passingScore: parseFloat(e.target.value) || 7 })}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium mb-2 block">Deadline *</label>
-                        <Input
-                          type="datetime-local"
-                          value={newAssignment.deadline}
-                          onChange={(e) => setNewAssignment({ ...newAssignment, deadline: e.target.value })}
-                        />
-                      </div>
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">File đề bài *</label>
+                      <Input
+                        type="file"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] || null
+                          setNewAssignment({ ...newAssignment, file })
+                        }}
+                        className="cursor-pointer"
+                      />
+                      {newAssignment.file && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Đã chọn: {newAssignment.file.name}
+                        </p>
+                      )}
                     </div>
                     <div>
-                      <label className="text-sm font-medium mb-2 block">Assign To Users *</label>
+                      <label className="text-sm font-medium mb-2 block">Deadline *</label>
+                      <Input
+                        type="datetime-local"
+                        value={newAssignment.deadline}
+                        onChange={(e) => setNewAssignment({ ...newAssignment, deadline: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Gán cho người dùng *</label>
                       <div className="max-h-40 overflow-y-auto border rounded-lg p-2 space-y-2">
                         {users.filter(u => u.role !== 'admin').map((user) => (
                           <label key={user._id} className="flex items-center gap-2 cursor-pointer p-2 rounded transition-all duration-200 hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:shadow-sm hover:shadow-primary/10 hover:scale-[1.02] group">
@@ -4903,196 +4739,23 @@ export default function AdminPage() {
                         ))}
                       </div>
                     </div>
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="text-sm font-medium">Questions *</label>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline" onClick={() => addQuestion('multiple-choice')}>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Text Question
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => addQuestion('code')}>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Code Question
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="space-y-4">
-                        {newAssignment.questions.map((q, qIndex) => (
-                          <Card key={qIndex} className="p-4 border-2">
-                            <div className="flex justify-between items-center mb-3">
-                              <span className="font-medium">Question {qIndex + 1}</span>
-                              <div className="flex gap-2">
-                                <select
-                                  className="text-sm px-2 py-1 border rounded"
-                                  value={q.type || 'multiple-choice'}
-                                  onChange={(e) => updateQuestion(qIndex, 'type', e.target.value)}
-                                >
-                                  <option value="multiple-choice">Text Question</option>
-                                  <option value="code">Code Question</option>
-                                </select>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => removeQuestion(qIndex)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                            <div className="space-y-3">
-                              <Input
-                                placeholder="Question text"
-                                value={typeof q.question === 'string' ? q.question : ''}
-                                onChange={(e) => updateQuestion(qIndex, 'question', e.target.value)}
-                              />
-                              
-                              {q.type === 'code' ? (
-                                <>
-                                  <div>
-                                    <label className="text-xs font-medium mb-1 block">Code Type *</label>
-                                    <select
-                                      className="w-full px-2 py-1 border rounded text-sm"
-                                      value={q.codeType || 'html'}
-                                      onChange={(e) => updateQuestion(qIndex, 'codeType', e.target.value)}
-                                    >
-                                      <option value="html">HTML</option>
-                                      <option value="css">CSS</option>
-                                      <option value="javascript">JavaScript</option>
-                                      <option value="html-css-js">HTML + CSS + JS</option>
-                                    </select>
-                                  </div>
-                                  {q.codeType === 'html-css-js' ? (
-                                    <div className="space-y-2">
-                                      <div>
-                                        <label className="text-xs font-medium mb-1 block">HTML Starter Code</label>
-                                        <textarea
-                                          className="w-full p-2 border rounded font-mono text-xs"
-                                          rows={3}
-                                          value={q.starterCode?.html || ''}
-                                          onChange={(e) => updateAssignmentStarterCode(qIndex, 'html', e.target.value)}
-                                        />
-                                      </div>
-                                      <div>
-                                        <label className="text-xs font-medium mb-1 block">CSS Starter Code</label>
-                                        <textarea
-                                          className="w-full p-2 border rounded font-mono text-xs"
-                                          rows={3}
-                                          value={q.starterCode?.css || ''}
-                                          onChange={(e) => updateAssignmentStarterCode(qIndex, 'css', e.target.value)}
-                                        />
-                                      </div>
-                                      <div>
-                                        <label className="text-xs font-medium mb-1 block">JavaScript Starter Code</label>
-                                        <textarea
-                                          className="w-full p-2 border rounded font-mono text-xs"
-                                          rows={3}
-                                          value={q.starterCode?.javascript || ''}
-                                          onChange={(e) => updateAssignmentStarterCode(qIndex, 'javascript', e.target.value)}
-                                        />
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div>
-                                      <label className="text-xs font-medium mb-1 block">
-                                        {q.codeType?.toUpperCase()} Starter Code
-                                      </label>
-                                      <textarea
-                                        className="w-full p-2 border rounded font-mono text-xs"
-                                        rows={4}
-                                        value={q.starterCode?.[q.codeType as 'html' | 'css' | 'javascript'] || ''}
-                                        onChange={(e) => updateAssignmentStarterCode(qIndex, q.codeType as 'html' | 'css' | 'javascript', e.target.value)}
-                                      />
-                                    </div>
-                                  )}
-                                  <div>
-                                    <label className="text-xs font-medium mb-1 block">Expected Output *</label>
-                                    <textarea
-                                      className="w-full p-2 border rounded text-xs"
-                                      rows={2}
-                                      placeholder="Expected output or result (used for auto-grading)"
-                                      value={q.expectedOutput || ''}
-                                      onChange={(e) => updateQuestion(qIndex, 'expectedOutput', e.target.value)}
-                                    />
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                      Describe what the code should produce or output
-                                    </p>
-                                  </div>
-                                  <Input
-                                    placeholder="Explanation (optional)"
-                                    value={q.explanation || ''}
-                                    onChange={(e) => updateQuestion(qIndex, 'explanation', e.target.value)}
-                                  />
-                                </>
-                              ) : (
-                                <>
-                                  <div className="space-y-2">
-                                    <label className="text-xs font-medium">Options (select correct answer)</label>
-                                    {q.options?.map((opt: string, optIndex: number) => (
-                                      <div key={optIndex} className="flex items-center gap-2">
-                                        <input
-                                          type="radio"
-                                          name={`correct-${qIndex}`}
-                                          checked={q.correctAnswer === optIndex}
-                                          onChange={() => updateQuestion(qIndex, 'correctAnswer', optIndex)}
-                                          className="w-4 h-4"
-                                        />
-                                        <Input
-                                          placeholder={`Option ${optIndex + 1}`}
-                                          value={opt}
-                                          onChange={(e) => updateQuestionOption(qIndex, optIndex, e.target.value)}
-                                        />
-                                        {q.options && q.options.length > 2 && (
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={() => removeQuestionOption(qIndex, optIndex)}
-                                          >
-                                            <X className="h-4 w-4" />
-                                          </Button>
-                                        )}
-                                      </div>
-                                    ))}
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => addQuestionOption(qIndex)}
-                                    >
-                                      <Plus className="h-4 w-4 mr-2" />
-                                      Add Option
-                                    </Button>
-                                  </div>
-                                  <Input
-                                    placeholder="Explanation (optional)"
-                                    value={q.explanation || ''}
-                                    onChange={(e) => updateQuestion(qIndex, 'explanation', e.target.value)}
-                                  />
-                                </>
-                              )}
-                            </div>
-                          </Card>
-                        )
-                      )}
-                      </div>
-                    </div>
                     <div className="flex gap-2">
-                      <Button onClick={handleCreateQuizAssignment}>
+                      <Button onClick={handleCreateFileAssignment} disabled={uploadingFile}>
                         <Save className="h-4 w-4 mr-2" />
-                        Create Assignment
+                        {uploadingFile ? 'Đang tạo...' : 'Tạo Assignment'}
                       </Button>
                       <Button variant="outline" onClick={() => {
                         setShowCreateAssignment(false)
                         setNewAssignment({
                           title: '',
                           description: '',
-                          questions: [],
-                          passingScore: 7,
+                          file: null,
                           assignedTo: [],
                           deadline: ''
                         })
                       }}>
                         <X className="h-4 w-4 mr-2" />
-                        Cancel
+                        Hủy
                       </Button>
                     </div>
                   </CardContent>
@@ -5100,10 +4763,10 @@ export default function AdminPage() {
               )}
 
               <div className="space-y-4">
-                {quizAssignments.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">No quiz assignments yet</p>
+                {fileAssignments.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">Chưa có assignment nào</p>
                 ) : (
-                  quizAssignments.map((assignment) => {
+                  fileAssignments.map((assignment) => {
                     const isExpired = new Date(assignment.deadline) < new Date()
                     const deadlineDate = new Date(assignment.deadline)
                     
@@ -5111,17 +4774,17 @@ export default function AdminPage() {
                       <Card key={assignment._id} className={isExpired ? 'opacity-75' : ''}>
                         <CardHeader>
                           <div className="flex justify-between items-start">
-                            <div>
+                            <div className="flex-1">
                               <CardTitle className="flex items-center gap-2">
                                 {assignment.title}
                                 {isExpired && (
                                   <span className="text-xs px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded">
-                                    Expired
+                                    Đã hết hạn
                                   </span>
                                 )}
                                 {assignment.status === 'active' && !isExpired && (
                                   <span className="text-xs px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded">
-                                    Active
+                                    Đang hoạt động
                                   </span>
                                 )}
                               </CardTitle>
@@ -5131,35 +4794,14 @@ export default function AdminPage() {
                               <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                                 <span className="flex items-center gap-1">
                                   <Clock className="h-4 w-4" />
-                                  Deadline: {deadlineDate.toLocaleString()}
+                                  Deadline: {deadlineDate.toLocaleString('vi-VN')}
                                 </span>
-                                <span>Passing: {assignment.passingScore}/10</span>
-                                <span>{assignment.questions.length} questions</span>
-                                <span>{assignment.totalAssigned || assignment.assignedTo.length} users assigned</span>
+                                <span>{assignment.totalAssigned || assignment.assignedTo.length} người được gán</span>
                                 <span className="flex items-center gap-1">
                                   <CheckCircle2 className="h-4 w-4" />
-                                  {assignment.submittedCount || 0}/{assignment.totalAssigned || assignment.assignedTo.length} submitted
-                                  ({assignment.passedCount || 0} passed)
+                                  {assignment.submittedCount || 0}/{assignment.totalAssigned || assignment.assignedTo.length} đã nộp
                                 </span>
                               </div>
-                              {/* Quick tracking summary - fetch when assignment is selected */}
-                              {selectedAssignment?._id === assignment._id && assignmentTracking.length > 0 && (
-                                <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded">
-                                  <div className="flex items-center gap-2 text-sm">
-                                    <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                                    <span className="font-semibold text-blue-800 dark:text-blue-200">Tracking Summary:</span>
-                                    <span className="text-blue-700 dark:text-blue-300">
-                                      {assignmentTracking.filter((t: any) => t.hasExternalVisits).length} user(s) visited external websites
-                                    </span>
-                                    {assignmentTracking.filter((t: any) => t.hasSuspiciousActivity).length > 0 && (
-                                      <span className="px-2 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 text-xs rounded flex items-center gap-1">
-                                        <AlertTriangle className="h-3 w-3" />
-                                        {assignmentTracking.filter((t: any) => t.hasSuspiciousActivity).length} suspicious
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
                             </div>
                             <div className="flex gap-2">
                               <Button
@@ -5167,12 +4809,12 @@ export default function AdminPage() {
                                 variant="outline"
                                 onClick={() => fetchAssignmentDetails(assignment._id)}
                               >
-                                View Details
+                                Xem chi tiết
                               </Button>
                               <Button
                                 size="sm"
                                 variant="destructive"
-                                onClick={() => handleDeleteQuizAssignment(assignment._id)}
+                                onClick={() => handleDeleteFileAssignment(assignment._id)}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -5182,62 +4824,23 @@ export default function AdminPage() {
                         {selectedAssignment?._id === assignment._id && (
                           <CardContent>
                             <div className="space-y-4">
-                              {/* Tracking Summary Section */}
-                              {assignmentTracking.length > 0 && (
-                                <div className="p-4 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20 border-2 border-yellow-300 dark:border-yellow-700 rounded-lg">
-                                  <div className="flex items-center gap-2 mb-3">
-                                    <Eye className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                                    <h4 className="font-bold text-lg text-yellow-900 dark:text-yellow-100">
-                                      Cheating Detection Report
-                                    </h4>
-                                  </div>
-                                  <div className="grid md:grid-cols-2 gap-4 mb-3">
-                                    <div className="p-3 bg-white dark:bg-gray-900 rounded border">
-                                      <p className="text-sm text-muted-foreground mb-1">Users with External Visits</p>
-                                      <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                                        {assignmentTracking.filter((t: any) => t.hasExternalVisits).length}
-                                      </p>
-                                    </div>
-                                    <div className="p-3 bg-white dark:bg-gray-900 rounded border">
-                                      <p className="text-sm text-muted-foreground mb-1">Suspicious Activities</p>
-                                      <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                                        {assignmentTracking.filter((t: any) => t.hasSuspiciousActivity).length}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <div className="space-y-2">
-                                    {assignmentTracking
-                                      .filter((t: any) => t.hasExternalVisits)
-                                      .map((tracking: any) => (
-                                        <div key={tracking._id} className="p-2 bg-white dark:bg-gray-900 rounded border border-yellow-200 dark:border-yellow-800">
-                                          <div className="flex justify-between items-center">
-                                            <span className="font-medium text-sm">
-                                              {tracking.userId?.name || 'Unknown'} ({tracking.userId?.email})
-                                            </span>
-                                            <span className="text-xs text-yellow-700 dark:text-yellow-300">
-                                              {tracking.totalExternalTimeMinutes} min on external sites
-                                            </span>
-                                          </div>
-                                          <div className="mt-1 flex flex-wrap gap-2">
-                                            {tracking.externalVisits.slice(0, 3).map((visit: any, idx: number) => (
-                                              <span key={idx} className="text-xs px-2 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 rounded">
-                                                {visit.domain} ({visit.totalDurationMinutes} min)
-                                              </span>
-                                            ))}
-                                            {tracking.externalVisits.length > 3 && (
-                                              <span className="text-xs text-muted-foreground">
-                                                +{tracking.externalVisits.length - 3} more
-                                              </span>
-                                            )}
-                                          </div>
-                                        </div>
-                                      ))}
-                                  </div>
-                                </div>
-                              )}
-                              
                               <div>
-                                <h4 className="font-semibold mb-2">Assigned Users:</h4>
+                                <h4 className="font-semibold mb-2">File đề bài:</h4>
+                                <div className="flex items-center gap-2">
+                                  <FileText className="h-4 w-4" />
+                                  <a
+                                    href={assignment.fileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                                  >
+                                    <Download className="h-4 w-4" />
+                                    {assignment.fileName || 'Download file'}
+                                  </a>
+                                </div>
+                              </div>
+                              <div>
+                                <h4 className="font-semibold mb-2">Người được gán:</h4>
                                 <div className="flex flex-wrap gap-2">
                                   {assignment.assignedTo.map((user: any) => (
                                     <span
@@ -5249,88 +4852,120 @@ export default function AdminPage() {
                                   ))}
                                 </div>
                               </div>
-                              {assignmentResults.length > 0 && (
+                              {assignmentSubmissions.length > 0 && (
                                 <div>
-                                  <h4 className="font-semibold mb-2">Results:</h4>
-                                  <div className="space-y-2">
-                                    {assignmentResults.map((result: any) => {
-                                      // Find tracking data for this user
-                                      const userTracking = assignmentTracking.find(
-                                        (t: any) => t.userId?._id === result.userId?._id
-                                      )
-                                      const hasSuspiciousActivity = userTracking?.hasSuspiciousActivity || false
-                                      const hasExternalVisits = userTracking?.hasExternalVisits || false
-                                      
-                                      return (
-                                        <div
-                                          key={result._id}
-                                          className={`p-3 border rounded-lg ${
-                                            result.passed
-                                              ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20'
-                                              : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20'
-                                          } ${hasSuspiciousActivity || hasExternalVisits ? 'border-yellow-500 dark:border-yellow-600 border-2' : ''}`}
-                                        >
+                                  <h4 className="font-semibold mb-2">Bài nộp ({assignmentSubmissions.length}):</h4>
+                                  <div className="space-y-4">
+                                    {assignmentSubmissions.map((submission: AssignmentSubmission) => (
+                                      <Card
+                                        key={submission._id}
+                                        className="p-4 border-2"
+                                      >
+                                        <div className="space-y-4">
                                           <div className="flex justify-between items-start">
                                             <div className="flex-1">
                                               <div className="flex items-center gap-2 mb-1">
                                                 <p className="font-medium">
-                                                  {result.userId?.name || 'Unknown'} ({result.userId?.email})
+                                                  {submission.userId?.name || 'Unknown'} ({submission.userId?.email})
                                                 </p>
-                                                {(hasSuspiciousActivity || hasExternalVisits) && (
-                                                  <span className="px-2 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 text-xs rounded flex items-center gap-1">
-                                                    <AlertTriangle className="h-3 w-3" />
-                                                    Suspicious Activity
+                                                <span className={`px-2 py-0.5 text-xs rounded ${
+                                                  submission.status === 'reviewed' 
+                                                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200'
+                                                    : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
+                                                }`}>
+                                                  {submission.status === 'reviewed' ? 'Đã chấm' : 'Đã nộp'}
+                                                </span>
+                                                {submission.score !== undefined && (
+                                                  <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 text-xs rounded font-semibold">
+                                                    Điểm: {submission.score}/10
                                                   </span>
                                                 )}
                                               </div>
                                               <p className="text-sm text-muted-foreground">
-                                                Submitted: {new Date(result.submittedAt).toLocaleString()}
+                                                Nộp lúc: {new Date(submission.submittedAt).toLocaleString('vi-VN')}
                                               </p>
-                                              
-                                              {/* External Visits Info */}
-                                              {userTracking && hasExternalVisits && (
-                                                <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded">
-                                                  <div className="flex items-center gap-2 mb-1">
-                                                    <ExternalLink className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-                                                    <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-200">
-                                                      External Website Visits Detected
-                                                    </p>
-                                                  </div>
-                                                  <p className="text-xs text-yellow-700 dark:text-yellow-300 mb-2">
-                                                    Total time on external sites: {userTracking.totalExternalTimeMinutes} minutes
-                                                  </p>
-                                                  <div className="space-y-1">
-                                                    {userTracking.externalVisits.map((visit: any, idx: number) => (
-                                                      <div key={idx} className="text-xs text-yellow-700 dark:text-yellow-300 flex justify-between items-center">
-                                                        <span className="font-medium">{visit.domain}</span>
-                                                        <span>
-                                                          {visit.count} visit(s) • {visit.totalDurationMinutes} min
-                                                        </span>
-                                                      </div>
-                                                    ))}
-                                                  </div>
-                                                  {userTracking.suspiciousCount > 0 && (
-                                                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                                                      {userTracking.suspiciousCount} suspicious activity(ies) detected
-                                                    </p>
-                                                  )}
-                                                </div>
+                                              {submission.gradedAt && (
+                                                <p className="text-sm text-muted-foreground">
+                                                  Chấm lúc: {new Date(submission.gradedAt).toLocaleString('vi-VN')}
+                                                  {submission.gradedBy && ` bởi ${submission.gradedBy.name}`}
+                                                </p>
                                               )}
-                                            </div>
-                                            <div className="text-right ml-4">
-                                              <p className="font-bold text-lg">
-                                                {result.score.toFixed(1)}/10
-                                              </p>
-                                              <p className={`text-sm ${result.passed ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                                                {result.passed ? 'Passed' : 'Failed'}
-                                              </p>
+                                              <div className="mt-2">
+                                                <Button
+                                                  variant="outline"
+                                                  size="sm"
+                                                  onClick={() => handleDownloadSubmissionFile(submission.fileUrl)}
+                                                  className="flex items-center gap-1"
+                                                >
+                                                  <Download className="h-4 w-4" />
+                                                  Tải file: {submission.fileName || 'Download file nộp'}
+                                                </Button>
+                                              </div>
                                             </div>
                                           </div>
+                                          
+                                          <div className="border-t pt-4 space-y-3">
+                                            <div className="grid md:grid-cols-2 gap-4">
+                                              <div>
+                                                <label className="text-sm font-medium mb-2 block">Điểm (0-10) *</label>
+                                                <Input
+                                                  type="number"
+                                                  min="0"
+                                                  max="10"
+                                                  step="0.1"
+                                                  value={gradingSubmissions[submission._id]?.score || ''}
+                                                  onChange={(e) => setGradingSubmissions({
+                                                    ...gradingSubmissions,
+                                                    [submission._id]: {
+                                                      ...gradingSubmissions[submission._id],
+                                                      score: e.target.value
+                                                    }
+                                                  })}
+                                                  placeholder="Nhập điểm"
+                                                />
+                                              </div>
+                                              <div className="flex items-end">
+                                                <Button
+                                                  onClick={() => handleGradeSubmission(assignment._id, submission._id)}
+                                                  className="w-full"
+                                                  disabled={!gradingSubmissions[submission._id]?.score}
+                                                >
+                                                  <Save className="h-4 w-4 mr-2" />
+                                                  {submission.status === 'reviewed' ? 'Cập nhật điểm' : 'Chấm điểm'}
+                                                </Button>
+                                              </div>
+                                            </div>
+                                            <div>
+                                              <label className="text-sm font-medium mb-2 block">Feedback</label>
+                                              <textarea
+                                                className="w-full p-2 border rounded-lg"
+                                                rows={3}
+                                                value={gradingSubmissions[submission._id]?.feedback || ''}
+                                                onChange={(e) => setGradingSubmissions({
+                                                  ...gradingSubmissions,
+                                                  [submission._id]: {
+                                                    ...gradingSubmissions[submission._id],
+                                                    feedback: e.target.value
+                                                  }
+                                                })}
+                                                placeholder="Nhập feedback cho học sinh..."
+                                              />
+                                            </div>
+                                            {submission.feedback && (
+                                              <div className="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded">
+                                                <p className="text-sm font-medium mb-1">Feedback hiện tại:</p>
+                                                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{submission.feedback}</p>
+                                              </div>
+                                            )}
+                                          </div>
                                         </div>
-                                      )
-                                    })}
+                                      </Card>
+                                    ))}
                                   </div>
                                 </div>
+                              )}
+                              {assignmentSubmissions.length === 0 && (
+                                <p className="text-center text-muted-foreground py-4">Chưa có bài nộp nào</p>
                               )}
                             </div>
                           </CardContent>
@@ -5343,36 +4978,33 @@ export default function AdminPage() {
             </CardContent>
           </Card>
         </TabsContent>
-        )}
 
         {/* Progress Tab */}
-        {deferredActiveTab === 'progress' && (
-          <ProgressTabSection
-            userProgressTabSearch={userProgressTabSearch}
-            onSearchChange={setUserProgressTabSearch}
-            userProgressTabSort={userProgressTabSort}
-            onSortChange={(value) => setUserProgressTabSort(value)}
-            userProgressTabSortOrder={userProgressTabSortOrder}
-            onSortOrderChange={(value) => setUserProgressTabSortOrder(value)}
-            getFilteredAndSortedUserProgressTab={getFilteredAndSortedUserProgressTab}
-            selectedUser={selectedUser}
-            fetchUserProgress={fetchUserProgress}
-            getUserInfoForSearch={getUserInfoForSearch}
-            userProgress={userProgress}
-            getCurrentLanguageAndLevel={getCurrentLanguageAndLevel}
-            selectedLanguageId={selectedLanguageId}
-            onSelectLanguage={(languageId) => {
-              setSelectedLanguageId(languageId)
-              setSelectedLevelId('')
-            }}
-            selectedLevelId={selectedLevelId}
-            onSelectLevel={setSelectedLevelId}
-            languages={languages}
-            getAvailableLevels={getAvailableLevels}
-            handleUnlockLevel={handleUnlockLevel}
-            handleLockLevel={handleLockLevel}
-          />
-        )}
+        <ProgressTabSection
+          userProgressTabSearch={userProgressTabSearch}
+          onSearchChange={setUserProgressTabSearch}
+          userProgressTabSort={userProgressTabSort}
+          onSortChange={(value) => setUserProgressTabSort(value)}
+          userProgressTabSortOrder={userProgressTabSortOrder}
+          onSortOrderChange={(value) => setUserProgressTabSortOrder(value)}
+          getFilteredAndSortedUserProgressTab={getFilteredAndSortedUserProgressTab}
+          selectedUser={selectedUser}
+          fetchUserProgress={fetchUserProgress}
+          getUserInfoForSearch={getUserInfoForSearch}
+          userProgress={userProgress}
+          getCurrentLanguageAndLevel={getCurrentLanguageAndLevel}
+          selectedLanguageId={selectedLanguageId}
+          onSelectLanguage={(languageId) => {
+            setSelectedLanguageId(languageId)
+            setSelectedLevelId('')
+          }}
+          selectedLevelId={selectedLevelId}
+          onSelectLevel={setSelectedLevelId}
+          languages={languages}
+          getAvailableLevels={getAvailableLevels}
+          handleUnlockLevel={handleUnlockLevel}
+          handleLockLevel={handleLockLevel}
+        />
       </Tabs>
 
       {editingLesson && editingLessonData && showCodeExerciseModal && (
@@ -5403,19 +5035,24 @@ export default function AdminPage() {
                     <option value="html-css-js">HTML + CSS + JS</option>
                   </select>
                 </div>
-                <div>
-                  <label className="text-xs font-medium mb-1 block">Description</label>
-                  <textarea
-                    className="w-full p-2 border rounded text-sm"
-                    rows={3}
-                    placeholder="BÀI TẬP: Tên bài tập&#10;&#10;Yêu cầu:&#10;1. Yêu cầu 1&#10;2. Yêu cầu 2&#10;..."
-                    value={getLocalizedDescription(editingLessonData.codeExercise?.description)}
-                    onChange={(e) => updateEditingCodeExercise('description', e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Nhập mô tả và yêu cầu bài tập. Format: BÀI TẬP: ... Yêu cầu: 1. ... 2. ...
-                  </p>
-                </div>
+                                <div>
+                                  <label className="text-xs font-medium mb-1 block">Description</label>
+                                  <textarea
+                                    className="w-full p-2 border rounded text-sm"
+                                    rows={3}
+                                    placeholder="BÀI TẬP: Tên bài tập&#10;&#10;Yêu cầu:&#10;1. Yêu cầu 1&#10;2. Yêu cầu 2&#10;..."
+                                    value={(() => {
+                                      const desc = editingLessonData.codeExercise?.description
+                                      if (typeof desc === 'string') return desc
+                                      if (typeof desc === 'object' && desc !== null) return desc.en || desc.vi || ''
+                                      return ''
+                                    })()}
+                                    onChange={(e) => updateEditingCodeExercise('description', e.target.value)}
+                                  />
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    Nhập mô tả và yêu cầu bài tập. Format: BÀI TẬP: ... Yêu cầu: 1. ... 2. ...
+                                  </p>
+                                </div>
               </div>
               <div>
                 <label className="text-xs font-medium mb-1 block">Starter Code *</label>
@@ -5443,7 +5080,7 @@ export default function AdminPage() {
                     Add Rule
                   </Button>
                 </div>
-                {editingLessonData.codeExercise.outputCriteria.map((rule: OutputRule, index) => (
+                {editingLessonData.codeExercise.outputCriteria.map((rule, index) => (
                   <div key={rule.id || `code-ex-rule-${index}`} className="grid gap-2 md:grid-cols-[2fr_auto_auto_auto] items-start">
                     <div className="md:col-span-1">
                       <Input
@@ -5549,7 +5186,7 @@ export default function AdminPage() {
                 {editingLessonData.quiz.questions.map((q, qIndex) => {
                   const requirementPreview =
                     q.type === 'code' ? getCodeQuestionRequirementPreview(q as Question) : ''
-                  const readOnlyRules: OutputRule[] = Array.isArray(q.outputCriteria) ? q.outputCriteria : []
+                  const readOnlyRules = Array.isArray(q.outputCriteria) ? q.outputCriteria : []
                   return (
                   <Card key={`edit-quiz-${qIndex}`} className="p-4 border-2">
                     <div className="flex justify-between items-center mb-3">
@@ -5650,7 +5287,7 @@ export default function AdminPage() {
                               </div>
                               <div className="space-y-2">
                                 {readOnlyRules.length ? (
-                                  readOnlyRules.map((rule: OutputRule, ruleIndex: number) => (
+                                  readOnlyRules.map((rule, ruleIndex) => (
                                     <div
                                       key={rule.id || `preview-rule-${qIndex}-${ruleIndex}`}
                                       className="flex items-center justify-between gap-3 rounded-lg border bg-background/70 p-2"
@@ -5775,7 +5412,7 @@ export default function AdminPage() {
                                 Add Rule
                               </Button>
                             </div>
-                            {(q.outputCriteria || []).map((rule: OutputRule, ruleIndex: number) => (
+                            {(q.outputCriteria || []).map((rule, ruleIndex) => (
                               <div
                                 key={rule.id || `${qIndex}-edit-rule-${ruleIndex}`}
                                 className="grid gap-2 md:grid-cols-[2fr_auto_auto_auto] items-start"

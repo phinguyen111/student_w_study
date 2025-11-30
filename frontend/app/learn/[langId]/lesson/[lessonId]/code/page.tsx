@@ -420,7 +420,39 @@ ${js}
           }
           
           // Check if snippet exists in code
-          const snippetFound = codeToCheck.includes(snippet)
+          let snippetFound = false
+          
+          // If snippet is a simple HTML tag like <a>, <img>, <div>, etc.
+          // Check for the tag with or without attributes, with or without spaces
+          const simpleTagMatch = snippet.match(/^<(\w+)(\s|>|$)/)
+          if (simpleTagMatch) {
+            const tagName = simpleTagMatch[1]
+            // Create regex to match the tag in various forms:
+            // - <tagName> (with closing bracket)
+            // - <tagName (with space or attribute after)
+            // - <tagName> (self-closing)
+            // - <tagName (no space before attribute, like <imgsrc)
+            // Use word boundary to avoid matching longer tag names (e.g., <a> should not match <abbr>)
+            // But for HTML tags, we need to be more flexible
+            const tagRegex = new RegExp(`<${tagName}(?:\\s|>|$|[^>]*>)`, 'i')
+            snippetFound = tagRegex.test(codeToCheck)
+            
+            if (!snippetFound) {
+              // Also check for tag name directly (handles cases like <imgsrc="...">)
+              // This is a fallback for malformed HTML where there's no space between tag and attribute
+              const tagNameRegex = new RegExp(`<${tagName}[^>]*>`, 'i')
+              snippetFound = tagNameRegex.test(codeToCheck)
+            }
+            
+            // Additional check: if still not found, try to find the tag name as a substring
+            // This handles edge cases like <imgsrc (no closing bracket yet)
+            if (!snippetFound) {
+              snippetFound = codeToCheck.includes(`<${tagName}`)
+            }
+          } else {
+            // For more complex snippets, use includes check
+            snippetFound = codeToCheck.includes(snippet)
+          }
           
           if (snippetFound) {
             totalPoints += points

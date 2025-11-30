@@ -52,3 +52,10 @@ exec(command, (error, stdout, stderr) => {
   console.log(`mongorestore --uri="${CONNECTION_STRING}" "${BACKUP_DIR}/${DATABASE_NAME}"`);
 });
 
+
+
+
+
+
+
+

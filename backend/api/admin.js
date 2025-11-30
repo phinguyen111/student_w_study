@@ -1,4 +1,7 @@
 import express from 'express';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import User from '../models/User.js';
 import UserProgress from '../models/UserProgress.js';
 import Lesson from '../models/Lesson.js';
@@ -7,8 +10,14 @@ import Language from '../models/Language.js';
 import QuizAssignment from '../models/QuizAssignment.js';
 import QuizAssignmentResult from '../models/QuizAssignmentResult.js';
 import QuizSessionTracking from '../models/QuizSessionTracking.js';
+import FileAssignment from '../models/FileAssignment.js';
+import AssignmentSubmission from '../models/AssignmentSubmission.js';
 import { authenticate, adminOnly } from '../middleware/auth.js';
 import { localizeData, extractLocalizedString } from '../utils/i18n.js';
+import uploadFile from '../middleware/uploadFile.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
@@ -1313,6 +1322,200 @@ router.get('/quiz-assignments/:id/results', async (req, res) => {
       .sort({ submittedAt: -1 });
 
     res.json({ success: true, results });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// File Assignment Management
+
+// Create file assignment
+router.post('/file-assignments', uploadFile.single('file'), async (req, res) => {
+  try {
+    const { title, description, assignedTo, deadline } = req.body;
+
+    if (!title || !req.file || !assignedTo || !deadline) {
+      return res.status(400).json({ message: 'Title, file, assignedTo, and deadline are required' });
+    }
+
+    let assignedToArray;
+    try {
+      assignedToArray = JSON.parse(assignedTo);
+    } catch (e) {
+      assignedToArray = Array.isArray(assignedTo) ? assignedTo : [assignedTo];
+    }
+
+    if (!Array.isArray(assignedToArray) || assignedToArray.length === 0) {
+      return res.status(400).json({ message: 'assignedTo must be a non-empty array' });
+    }
+
+    const deadlineDate = new Date(deadline);
+    if (isNaN(deadlineDate.getTime())) {
+      return res.status(400).json({ message: 'Invalid deadline date' });
+    }
+
+    // File đã được lưu bởi multer, tạo URL để truy cập
+    // URL sẽ là: /uploads/assignments/filename
+    const fileUrl = `/uploads/assignments/${req.file.filename}`;
+
+    const assignment = await FileAssignment.create({
+      title,
+      description: description || '',
+      fileUrl: fileUrl,
+      fileName: req.file.originalname,
+      assignedBy: req.user._id,
+      assignedTo: assignedToArray,
+      deadline: deadlineDate
+    });
+
+    const populatedAssignment = await FileAssignment.findById(assignment._id)
+      .populate('assignedBy', 'name email')
+      .populate('assignedTo', 'name email');
+
+    res.status(201).json({ success: true, assignment: populatedAssignment });
+  } catch (error) {
+    console.error('Error creating file assignment:', error);
+    res.status(500).json({ message: error.message || 'Error creating file assignment' });
+  }
+});
+
+// Get all file assignments
+router.get('/file-assignments', async (req, res) => {
+  try {
+    const assignments = await FileAssignment.find()
+      .populate('assignedBy', 'name email')
+      .populate('assignedTo', 'name email')
+      .sort({ createdAt: -1 });
+
+    // Get submissions count for each assignment
+    const assignmentsWithStats = await Promise.all(
+      assignments.map(async (assignment) => {
+        const submissions = await AssignmentSubmission.find({ assignmentId: assignment._id });
+        const submittedCount = submissions.length;
+        
+        return {
+          ...assignment.toObject(),
+          submittedCount,
+          totalAssigned: assignment.assignedTo.length
+        };
+      })
+    );
+
+    res.json({ success: true, assignments: assignmentsWithStats });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get file assignment by ID
+router.get('/file-assignments/:id', async (req, res) => {
+  try {
+    const assignment = await FileAssignment.findById(req.params.id)
+      .populate('assignedBy', 'name email')
+      .populate('assignedTo', 'name email');
+
+    if (!assignment) {
+      return res.status(404).json({ message: 'File assignment not found' });
+    }
+
+    // Get submissions for this assignment
+    const submissions = await AssignmentSubmission.find({ assignmentId: assignment._id })
+      .populate('userId', 'name email')
+      .sort({ submittedAt: -1 });
+
+    res.json({ success: true, assignment, submissions });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Grade file assignment submission
+router.put('/file-assignments/:assignmentId/submissions/:submissionId/grade', async (req, res) => {
+  try {
+    const { assignmentId, submissionId } = req.params;
+    const { score, feedback } = req.body;
+
+    if (score === undefined || score === null) {
+      return res.status(400).json({ message: 'Score is required' });
+    }
+
+    if (score < 0 || score > 10) {
+      return res.status(400).json({ message: 'Score must be between 0 and 10' });
+    }
+
+    const submission = await AssignmentSubmission.findById(submissionId);
+
+    if (!submission) {
+      return res.status(404).json({ message: 'Submission not found' });
+    }
+
+    if (submission.assignmentId.toString() !== assignmentId) {
+      return res.status(400).json({ message: 'Submission does not belong to this assignment' });
+    }
+
+    submission.score = score;
+    submission.feedback = feedback || '';
+    submission.status = 'reviewed';
+    submission.gradedBy = req.user._id;
+    submission.gradedAt = new Date();
+
+    await submission.save();
+
+    const populatedSubmission = await AssignmentSubmission.findById(submission._id)
+      .populate('userId', 'name email')
+      .populate('gradedBy', 'name email');
+
+    res.json({ success: true, submission: populatedSubmission });
+  } catch (error) {
+    console.error('Error grading submission:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Delete file assignment
+router.delete('/file-assignments/:id', async (req, res) => {
+  try {
+    const assignment = await FileAssignment.findById(req.params.id);
+
+    if (!assignment) {
+      return res.status(404).json({ message: 'File assignment not found' });
+    }
+
+    // Delete all submissions for this assignment
+    const submissions = await AssignmentSubmission.find({ assignmentId: assignment._id });
+    
+    // Delete submission files
+    for (const submission of submissions) {
+      if (submission.fileUrl && submission.fileUrl.startsWith('/uploads/')) {
+        const filePath = path.join(__dirname, '..', 'public', submission.fileUrl);
+        try {
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+          }
+        } catch (err) {
+          console.error('Error deleting submission file:', err);
+        }
+      }
+    }
+    
+    await AssignmentSubmission.deleteMany({ assignmentId: assignment._id });
+
+    // Delete assignment file
+    if (assignment.fileUrl && assignment.fileUrl.startsWith('/uploads/')) {
+      const filePath = path.join(__dirname, '..', 'public', assignment.fileUrl);
+      try {
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      } catch (err) {
+        console.error('Error deleting assignment file:', err);
+      }
+    }
+
+    // Delete assignment
+    await FileAssignment.findByIdAndDelete(req.params.id);
+
+    res.json({ success: true, message: 'File assignment deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

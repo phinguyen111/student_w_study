@@ -133,3 +133,10 @@ function customMigration(doc) {
 await uploadCollection(Model, data, 'collectionName', customMigration);
 ```
 
+
+
+
+
+
+
+

@@ -6,11 +6,6 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/admin/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/admin/page.js"
-    ],
     "/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -46,15 +41,15 @@
       "static/chunks/main-app.js",
       "static/chunks/app/learn/[langId]/lesson/[lessonId]/code/page.js"
     ],
-    "/profile/page": [
+    "/admin/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/profile/page.js"
+      "static/chunks/app/admin/page.js"
     ],
-    "/assignments/page": [
+    "/not-found": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/assignments/page.js"
+      "static/chunks/app/not-found.js"
     ]
   }
 }

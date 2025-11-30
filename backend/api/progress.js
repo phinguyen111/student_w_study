@@ -4,9 +4,12 @@ import Lesson from '../models/Lesson.js';
 import Level from '../models/Level.js';
 import QuizAssignment from '../models/QuizAssignment.js';
 import QuizAssignmentResult from '../models/QuizAssignmentResult.js';
+import FileAssignment from '../models/FileAssignment.js';
+import AssignmentSubmission from '../models/AssignmentSubmission.js';
 import { authenticate } from '../middleware/auth.js';
 import { localizeData } from '../utils/i18n.js';
 import Language from '../models/Language.js';
+import uploadFile from '../middleware/uploadFile.js';
 
 const resolveLocalizedString = (value, fallback = 'Unknown') => {
   if (!value) return fallback;
@@ -560,6 +563,97 @@ router.get('/quiz-assignments', authenticate, async (req, res) => {
 
     res.json({ success: true, assignments: filteredAssignments });
   } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get user's file assignments
+router.get('/file-assignments', authenticate, async (req, res) => {
+  try {
+    const assignments = await FileAssignment.find({
+      assignedTo: req.user._id,
+      status: { $in: ['active', 'expired'] }
+    })
+      .populate('assignedBy', 'name email')
+      .sort({ deadline: 1 });
+
+    // Get user's submissions for each assignment
+    const assignmentsWithSubmissions = await Promise.all(
+      assignments.map(async (assignment) => {
+        const submission = await AssignmentSubmission.findOne({
+          assignmentId: assignment._id,
+          userId: req.user._id
+        })
+          .populate('gradedBy', 'name email')
+          .sort({ submittedAt: -1 });
+
+        const isExpired = new Date(assignment.deadline) < new Date();
+        const isSubmitted = !!submission;
+
+        return {
+          ...assignment.toObject(),
+          isExpired,
+          isSubmitted,
+          submission: submission || null,
+          canSubmit: !isSubmitted && !isExpired
+        };
+      })
+    );
+
+    res.json({ success: true, assignments: assignmentsWithSubmissions });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Submit file assignment
+router.post('/file-assignments/:id/submit', authenticate, uploadFile.single('file'), async (req, res) => {
+  try {
+    const assignment = await FileAssignment.findById(req.params.id);
+
+    if (!assignment) {
+      return res.status(404).json({ message: 'File assignment not found' });
+    }
+
+    // Check if user is assigned to this assignment
+    if (!assignment.assignedTo.includes(req.user._id)) {
+      return res.status(403).json({ message: 'You are not assigned to this assignment' });
+    }
+
+    // Check if deadline has passed
+    const isExpired = new Date(assignment.deadline) < new Date();
+    if (isExpired) {
+      return res.status(400).json({ message: 'Assignment deadline has passed' });
+    }
+
+    // Check if already submitted
+    const existingSubmission = await AssignmentSubmission.findOne({
+      assignmentId: assignment._id,
+      userId: req.user._id
+    });
+
+    if (existingSubmission) {
+      return res.status(400).json({ message: 'You have already submitted this assignment' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: 'File is required' });
+    }
+
+    // File đã được lưu bởi multer, tạo URL
+    const fileUrl = `/uploads/assignments/${req.file.filename}`;
+
+    const submission = await AssignmentSubmission.create({
+      assignmentId: assignment._id,
+      userId: req.user._id,
+      fileUrl: fileUrl,
+      fileName: req.file.originalname,
+      status: 'submitted'
+    });
+
+    res.status(201).json({ success: true, submission });
+  } catch (error) {
+    console.error('Error submitting file assignment:', error);
     res.status(500).json({ message: error.message });
   }
 });
