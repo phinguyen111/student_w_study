@@ -125,12 +125,13 @@ export default function AssignmentsPage() {
     }
   }
 
-  const handleDownloadFile = (fileUrl: string, fileName: string) => {
-    // Tạo full URL nếu là relative path
-    const apiUrl = getApiUrl().replace('/api', '') // Remove /api from base URL
-    const url = fileUrl.startsWith('http') ? fileUrl : `${apiUrl}${fileUrl}`
-    window.open(url, '_blank')
-  }
+  const handleDownloadFile = async (fileKey: string) => {
+  const res = await fetch(`/api/r2/presign-download?key=${encodeURIComponent(fileKey)}`)
+  const { downloadUrl } = await res.json()
+  window.open(downloadUrl, '_blank')
+}
+
+
 
   const handleFileSelect = (assignmentId: string, file: File | null) => {
     if (file) {
@@ -138,31 +139,39 @@ export default function AssignmentsPage() {
     }
   }
 
-  const handleSubmitFile = async (assignmentId: string, file: File) => {
-    try {
-      setSubmittingFile(assignmentId)
-      const formData = new FormData()
-      formData.append('file', file)
+ const handleSubmitFile = async (assignmentId: string, file: File) => {
+  try {
+    setSubmittingFile(assignmentId)
 
-      await api.post(`/progress/file-assignments/${assignmentId}/submit`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+    const presignRes = await fetch('/api/r2/presign-upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fileName: file.name,
+        contentType: file.type || 'application/octet-stream'
       })
+    })
 
-      alert('Nộp bài thành công!')
-      fetchAssignments()
-    } catch (error: any) {
-      console.error('Error submitting file:', error)
-      alert(error.response?.data?.message || 'Lỗi khi nộp bài')
-    } finally {
-      setSubmittingFile(null)
-      // Reset file input
-      if (fileInputRefs.current[assignmentId]) {
-        fileInputRefs.current[assignmentId]!.value = ''
-      }
-    }
+    const { uploadUrl, key } = await presignRes.json()
+
+    await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': file.type || 'application/octet-stream' },
+      body: file
+    })
+
+    // 3. gửi key về backend (KHÔNG gửi file)
+    await api.post(`/progress/file-assignments/${assignmentId}/submit`, {
+      fileKey: key
+    })
+
+  } catch (error) {
+    console.error('Error submitting file:', error)
+    alert('Upload file thất bại')
+  } finally {
+    setSubmittingFile(null)
   }
+}
 
   const handleQuizComplete = async (quizScore: number, codeScore?: number) => {
     if (!selectedAssignment) return

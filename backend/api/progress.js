@@ -678,56 +678,55 @@ router.get('/file-assignments', authenticate, async (req, res) => {
 });
 
 // Submit file assignment
-router.post('/file-assignments/:id/submit', authenticate, uploadFile.single('file'), async (req, res) => {
-  try {
-    const assignment = await FileAssignment.findById(req.params.id);
+router.post(
+  '/file-assignments/:id/submit',
+  authenticate,
+  async (req, res) => {
+    try {
+      const assignmentId = req.params.id;
+      const { fileKey, fileName } = req.body;
 
-    if (!assignment) {
-      return res.status(404).json({ message: 'File assignment not found' });
+      if (!fileKey) {
+        return res.status(400).json({ message: 'fileKey is required' });
+      }
+
+      const assignment = await Assignment.findById(assignmentId);
+      if (!assignment) {
+        return res.status(404).json({ message: 'Assignment not found' });
+      }
+
+      // Check nếu user đã nộp bài
+      const existingSubmission = await AssignmentSubmission.findOne({
+        assignmentId: assignment._id,
+        userId: req.user._id
+      });
+
+      if (existingSubmission) {
+        return res.status(400).json({ message: 'You already submitted this assignment' });
+      }
+
+      // LƯU CHỈ FILEKEY (KHÔNG LƯU FILE LOCAL)
+      const submission = await AssignmentSubmission.create({
+        assignmentId: assignment._id,
+        userId: req.user._id,
+        fileKey: fileKey,
+        fileName: fileName || fileKey.split('/').pop(),
+        status: 'submitted',
+        submittedAt: new Date()
+      });
+
+      return res.status(201).json({
+        success: true,
+        message: 'Assignment submitted successfully',
+        submission
+      });
+    } catch (error) {
+      console.error('Submit assignment error:', error);
+      return res.status(500).json({ message: 'Internal server error' });
     }
-
-    // Check if user is assigned to this assignment
-    if (!assignment.assignedTo.includes(req.user._id)) {
-      return res.status(403).json({ message: 'You are not assigned to this assignment' });
-    }
-
-    // Check if deadline has passed
-    const isExpired = new Date(assignment.deadline) < new Date();
-    if (isExpired) {
-      return res.status(400).json({ message: 'Assignment deadline has passed' });
-    }
-
-    // Check if already submitted
-    const existingSubmission = await AssignmentSubmission.findOne({
-      assignmentId: assignment._id,
-      userId: req.user._id
-    });
-
-    if (existingSubmission) {
-      return res.status(400).json({ message: 'You have already submitted this assignment' });
-    }
-
-    if (!req.file) {
-      return res.status(400).json({ message: 'File is required' });
-    }
-
-    // File đã được lưu bởi multer, tạo URL
-    const fileUrl = `/uploads/assignments/${req.file.filename}`;
-
-    const submission = await AssignmentSubmission.create({
-      assignmentId: assignment._id,
-      userId: req.user._id,
-      fileUrl: fileUrl,
-      fileName: req.file.originalname,
-      status: 'submitted'
-    });
-
-    res.status(201).json({ success: true, submission });
-  } catch (error) {
-    console.error('Error submitting file assignment:', error);
-    res.status(500).json({ message: error.message });
   }
-});
+);
+
 
 // Get quiz assignment by ID (for taking quiz)
 router.get('/quiz-assignments/:id', authenticate, async (req, res) => {

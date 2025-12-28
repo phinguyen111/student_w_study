@@ -4896,7 +4896,7 @@ export default function AdminPage() {
                                                 <Button
                                                   variant="outline"
                                                   size="sm"
-                                                  onClick={() => handleDownloadSubmissionFile(submission.fileUrl)}
+                                                  onClick={() => handleDownloadFile(submission.fileKey)}
                                                   className="flex items-center gap-1"
                                                 >
                                                   <Download className="h-4 w-4" />
