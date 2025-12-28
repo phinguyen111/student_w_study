@@ -154,6 +154,7 @@ export interface QuizAssignment {
 }
 
 export interface FileAssignment {
+  fileKey?: string
   _id: string
   title: string
   description: string
