@@ -1970,11 +1970,24 @@ export default function AdminPage() {
     }
   }
 
-  const handleDownloadSubmissionFile = (fileUrl: string) => {
-    const apiUrl = api.defaults.baseURL?.replace('/api', '') || 'http://localhost:5000'
-    const url = fileUrl.startsWith('http') ? fileUrl : `${apiUrl}${fileUrl}`
-    window.open(url, '_blank')
+  const handleDownloadSubmissionFile = async (fileKey: string) => {
+  try {
+    const res = await fetch(
+      `/api/r2/presign-download?key=${encodeURIComponent(fileKey)}`
+    )
+    const data = await res.json()
+
+    if (!data.downloadUrl) {
+      throw new Error('No download URL')
+    }
+
+    window.open(data.downloadUrl, '_blank')
+  } catch (err) {
+    console.error(err)
+    alert('Không tải được file')
   }
+}
+
 
   const handleCreateFileAssignment = async () => {
     try {
@@ -2036,6 +2049,20 @@ export default function AdminPage() {
       : [...newAssignment.assignedTo, userId]
     setNewAssignment({ ...newAssignment, assignedTo })
   }
+  const handleDownloadAssignmentFile = async (fileKey: string) => {
+  try {
+    const res = await fetch(
+      `/api/r2/presign-download?key=${encodeURIComponent(fileKey)}`
+    )
+    const data = await res.json()
+    if (!data.downloadUrl) throw new Error("No downloadUrl")
+    window.open(data.downloadUrl, "_blank")
+  } catch (e) {
+    console.error(e)
+    alert("Không tải được file đề bài")
+  }
+}
+
 
   if (loading) {
     return (
@@ -4830,15 +4857,15 @@ export default function AdminPage() {
                                 <h4 className="font-semibold mb-2">File đề bài:</h4>
                                 <div className="flex items-center gap-2">
                                   <FileText className="h-4 w-4" />
-                                  <a
-                                    href={assignment.fileUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleDownloadAssignmentFile(assignment.fileKey)}
+                                    className="flex items-center gap-1"
                                   >
                                     <Download className="h-4 w-4" />
-                                    {assignment.fileName || 'Download file'}
-                                  </a>
+                                    {assignment.fileName || "Download file"}
+                                  </Button>
                                 </div>
                               </div>
                               <div>
@@ -4896,7 +4923,7 @@ export default function AdminPage() {
                                                 <Button
                                                   variant="outline"
                                                   size="sm"
-                                                  onClick={() => handleDownloadFile(submission.fileKey)}
+                                                  onClick={() => handleDownloadSubmissionFile(submission.fileKey)}
                                                   className="flex items-center gap-1"
                                                 >
                                                   <Download className="h-4 w-4" />
