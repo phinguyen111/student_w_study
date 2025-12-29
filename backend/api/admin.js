@@ -1357,11 +1357,18 @@ router.post('/file-assignments', uploadFile.single('file'), async (req, res) => 
     // Upload file to R2
     let fileUrl = '';
     let fileKey = '';
-    
+
     if (req.file) {
       try {
         const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
-        
+
+        // Log R2 envs for debugging (non-sensitive values only)
+        console.log('R2 upload - env', {
+          endpointSet: !!process.env.R2_ENDPOINT,
+          bucket: process.env.R2_BUCKET || null,
+          region: process.env.R2_REGION || null
+        });
+
         const s3Client = new S3Client({
           region: process.env.R2_REGION || 'auto',
           endpoint: process.env.R2_ENDPOINT,
@@ -1383,12 +1390,20 @@ router.post('/file-assignments', uploadFile.single('file'), async (req, res) => 
           ContentType: req.file.mimetype,
         };
 
-        await s3Client.send(new PutObjectCommand(uploadParams));
-        
+        console.log('R2 upload - sending PutObject', { Key: fileKey, Bucket: process.env.R2_BUCKET });
+
+        const { PutObjectCommand: POC } = await import('@aws-sdk/client-s3');
+        await s3Client.send(new POC(uploadParams));
+
         fileUrl = `${process.env.R2_ENDPOINT}/${process.env.R2_BUCKET}/${fileKey}`;
       } catch (uploadError) {
-        console.error('R2 upload error:', uploadError);
-        return res.status(500).json({ message: 'Failed to upload file to R2' });
+        console.error('R2 upload error full:', uploadError);
+        // Return detailed error to help debugging on Vercel logs
+        return res.status(500).json({
+          message: 'Failed to upload file to R2',
+          error: uploadError && uploadError.message ? uploadError.message : String(uploadError),
+          stack: process.env.NODE_ENV === 'development' && uploadError && uploadError.stack ? uploadError.stack : undefined
+        });
       }
     }
 
