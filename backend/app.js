@@ -32,7 +32,7 @@ connectDB().catch(err => {
 });
 
 // Middleware
-// CORS configuration - allow all origins in development, specific origins in production
+// CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
@@ -45,47 +45,32 @@ const corsOptions = {
     
     // Vercel pattern to match all vercel.app domains
     const vercelPattern = /^https:\/\/.*\.vercel\.app$/;
-    
-    // Check if it's a Vercel domain
     const isVercelDomain = vercelPattern.test(origin);
     
-    const allowedOrigins = process.env.FRONTEND_URL 
-      ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
-      : [
-          'http://localhost:3000',
-          'https://codecatalyst.vercel.app',
-          'https://code-catalyst-sigma.vercel.app',
-          'https://student-w-study.vercel.app', // Frontend domain
-          'https://codecatalyst-azure.vercel.app', // Backend domain (for same-origin requests)
-        ];
-    
-    // Check if origin matches allowed origins
-    const isExplicitlyAllowed = allowedOrigins.includes(origin);
-    
-    // Allow if explicitly in list OR matches Vercel pattern
-    const isAllowed = isExplicitlyAllowed || isVercelDomain;
-    
-    console.log('CORS: isVercelDomain:', isVercelDomain, 'isExplicitlyAllowed:', isExplicitlyAllowed, 'isAllowed:', isAllowed);
-    
-    if (isAllowed) {
-      callback(null, true);
-    } else {
-      // In development, allow all origins
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('CORS: Development mode, allowing all origins');
-        callback(null, true);
-      } else {
-        console.log('CORS: Blocked origin:', origin);
-        callback(new Error('Not allowed by CORS'));
+    // In production, allow Vercel domains or FRONTEND_URL if set
+    if (process.env.NODE_ENV === 'production') {
+      if (isVercelDomain) {
+        console.log('CORS: Vercel domain allowed');
+        return callback(null, true);
       }
+      if (process.env.FRONTEND_URL && process.env.FRONTEND_URL.includes(origin)) {
+        console.log('CORS: FRONTEND_URL match');
+        return callback(null, true);
+      }
+      console.log('CORS: Origin not allowed in production:', origin);
+      return callback(new Error('CORS not allowed'), false);
     }
+    
+    // In development, allow all origins
+    console.log('CORS: Development mode, allowing all origins');
+    callback(null, true);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   exposedHeaders: ['Content-Range', 'X-Content-Range'],
   preflightContinue: false,
-  optionsSuccessStatus: 204,
+  optionsSuccessStatus: 200,
 };
 
 // Handle preflight OPTIONS requests explicitly
