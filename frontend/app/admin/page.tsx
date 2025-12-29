@@ -4860,7 +4860,7 @@ export default function AdminPage() {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                   onClick={() => handleDownloadAssignmentFile((assignment as any).fileKey || assignment.fileUrl)}
+                                    onClick={() => handleDownloadAssignmentFile((assignment as any).fileKey || assignment.fileUrl)}
                                     className="flex items-center gap-1"
                                   >
                                     <Download className="h-4 w-4" />
@@ -4923,8 +4923,9 @@ export default function AdminPage() {
                                                 <Button
                                                   variant="outline"
                                                   size="sm"
-                                                  onClick={() => handleDownloadSubmissionFile(submission.fileKey)}
+                                                  onClick={() => handleDownloadSubmissionFile(submission.fileKey || submission.fileUrl || '')}
                                                   className="flex items-center gap-1"
+                                                  disabled={!submission.fileKey && !submission.fileUrl}
                                                 >
                                                   <Download className="h-4 w-4" />
                                                   Tải file: {submission.fileName || 'Download file nộp'}

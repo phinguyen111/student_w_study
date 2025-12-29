@@ -174,7 +174,8 @@ export interface AssignmentSubmission {
   _id: string
   assignmentId: string
   userId: { _id: string; name: string; email: string }
-  fileUrl: string
+  fileKey?: string
+  fileUrl?: string
   fileName: string
   submittedAt: string
   status?: 'submitted' | 'reviewed'

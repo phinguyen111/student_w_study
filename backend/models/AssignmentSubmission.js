@@ -13,9 +13,12 @@ const assignmentSubmissionSchema = new mongoose.Schema({
     required: true,
     index: true
   },
-  fileUrl: {
+  fileKey: {
     type: String,
     required: true
+  },
+  fileUrl: {
+    type: String
   },
   fileName: {
     type: String,

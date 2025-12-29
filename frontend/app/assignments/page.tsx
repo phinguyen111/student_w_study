@@ -53,6 +53,7 @@ interface FileAssignment {
   _id: string
   title: string
   description: string
+  fileKey?: string
   fileUrl: string
   fileName: string
   assignedBy: { _id: string; name: string; email: string }
@@ -62,7 +63,8 @@ interface FileAssignment {
   canSubmit: boolean
   submission?: {
     _id: string
-    fileUrl: string
+    fileKey?: string
+    fileUrl?: string
     fileName: string
     submittedAt: string
     score?: number
@@ -413,7 +415,7 @@ export default function AssignmentsPage() {
               </div>
               <Button
                 variant="outline"
-                onClick={() => handleDownloadFile(fileAssignment.fileUrl, fileAssignment.fileName)}
+                onClick={() => handleDownloadFile(fileAssignment.fileKey || fileAssignment.fileUrl)}
                 className="w-full sm:w-auto"
               >
                 <Download className="h-4 w-4 mr-2" />

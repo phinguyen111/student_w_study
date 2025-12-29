@@ -1,6 +1,17 @@
 {
-  "/page": "app/page.js",
-  "/login/page": "app/login/page.js",
+  "/_not-found": "app/_not-found.js",
   "/admin/page": "app/admin/page.js",
-  "/assignments/page": "app/assignments/page.js"
+  "/api/r2/presign-download/route": "app/api/r2/presign-download/route.js",
+  "/api/r2/presign-upload/route": "app/api/r2/presign-upload/route.js",
+  "/assignments/[assignmentId]/code/[questionIndex]/page": "app/assignments/[assignmentId]/code/[questionIndex]/page.js",
+  "/assignments/[assignmentId]/quiz/page": "app/assignments/[assignmentId]/quiz/page.js",
+  "/assignments/page": "app/assignments/page.js",
+  "/learn/[langId]/lesson/[lessonId]/code/page": "app/learn/[langId]/lesson/[lessonId]/code/page.js",
+  "/learn/[langId]/lesson/[lessonId]/page": "app/learn/[langId]/lesson/[lessonId]/page.js",
+  "/learn/[langId]/level/[levelId]/page": "app/learn/[langId]/level/[levelId]/page.js",
+  "/learn/[langId]/page": "app/learn/[langId]/page.js",
+  "/learn/page": "app/learn/page.js",
+  "/login/page": "app/login/page.js",
+  "/page": "app/page.js",
+  "/profile/page": "app/profile/page.js"
 }
