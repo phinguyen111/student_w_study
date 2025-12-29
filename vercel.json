@@ -1,5 +1,23 @@
 {
-  "buildCommand": "cd frontend && npm run build",
-  "installCommand": "npm install --prefix frontend && npm install --prefix backend",
-  "outputDirectory": "frontend/.next"
+  "version": 2,
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/next"
+    },
+    {
+      "src": "backend/app.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/backend/app.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend"
+    }
+  ]
 }
