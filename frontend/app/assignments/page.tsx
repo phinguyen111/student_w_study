@@ -145,6 +145,7 @@ export default function AssignmentsPage() {
   try {
     setSubmittingFile(assignmentId)
 
+    // Step 1: Get presigned upload URL
     const presignRes = await fetch('/api/r2/presign-upload', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -154,24 +155,44 @@ export default function AssignmentsPage() {
       })
     })
 
+    if (!presignRes.ok) {
+      const errorData = await presignRes.json()
+      console.error('Presign error:', errorData)
+      throw new Error(errorData.message || 'Không lấy được URL upload')
+    }
+
     const { uploadUrl, key, fileUrl } = await presignRes.json()
 
-    await fetch(uploadUrl, {
+    console.log('Presigned URL received, uploading file...', { key, fileUrl })
+
+    // Step 2: Upload file to R2
+    const uploadRes = await fetch(uploadUrl, {
       method: 'PUT',
       headers: { 'Content-Type': file.type || 'application/octet-stream' },
       body: file
     })
 
-    // 3. gửi key và fileUrl về backend (KHÔNG gửi file)
-    await api.post(`/progress/file-assignments/${assignmentId}/submit`, {
+    if (!uploadRes.ok) {
+      console.error('Upload response:', uploadRes.status, uploadRes.statusText)
+      throw new Error(`Upload failed: ${uploadRes.status} ${uploadRes.statusText}`)
+    }
+
+    console.log('File uploaded successfully to R2')
+
+    // Step 3: Submit assignment with file key
+    const submitRes = await api.post(`/progress/file-assignments/${assignmentId}/submit`, {
       fileKey: key,
       fileUrl: fileUrl,
       fileName: file.name
     })
 
+    console.log('Assignment submitted:', submitRes.data)
+    alert('Nộp file thành công!')
+    fetchAssignments()
+
   } catch (error) {
     console.error('Error submitting file:', error)
-    alert('Upload file thất bại')
+    alert(`Upload file thất bại: ${error instanceof Error ? error.message : 'Lỗi không xác định'}`)
   } finally {
     setSubmittingFile(null)
   }
