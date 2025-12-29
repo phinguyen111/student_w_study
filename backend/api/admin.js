@@ -1354,14 +1354,49 @@ router.post('/file-assignments', uploadFile.single('file'), async (req, res) => 
       return res.status(400).json({ message: 'Invalid deadline date' });
     }
 
-    // File đã được lưu bởi multer, tạo URL để truy cập
-    // URL sẽ là: /uploads/assignments/filename
-    const fileUrl = `/uploads/assignments/${req.file.filename}`;
+    // Upload file to R2
+    let fileUrl = '';
+    let fileKey = '';
+    
+    if (req.file) {
+      try {
+        const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
+        
+        const s3Client = new S3Client({
+          region: process.env.R2_REGION || 'auto',
+          endpoint: process.env.R2_ENDPOINT,
+          credentials: {
+            accessKeyId: process.env.R2_ACCESS_KEY_ID,
+            secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+          },
+        });
+
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = req.file.originalname.split('.').pop();
+        const name = req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_').replace(/\.[^.]*$/, '');
+        fileKey = `assignments/${name}-${uniqueSuffix}.${ext}`;
+
+        const uploadParams = {
+          Bucket: process.env.R2_BUCKET,
+          Key: fileKey,
+          Body: req.file.buffer,
+          ContentType: req.file.mimetype,
+        };
+
+        await s3Client.send(new PutObjectCommand(uploadParams));
+        
+        fileUrl = `${process.env.R2_ENDPOINT}/${process.env.R2_BUCKET}/${fileKey}`;
+      } catch (uploadError) {
+        console.error('R2 upload error:', uploadError);
+        return res.status(500).json({ message: 'Failed to upload file to R2' });
+      }
+    }
 
     const assignment = await FileAssignment.create({
       title,
       description: description || '',
       fileUrl: fileUrl,
+      fileKey: fileKey,
       fileName: req.file.originalname,
       assignedBy: req.user._id,
       assignedTo: assignedToArray,

@@ -18,6 +18,7 @@ import progressRoutes from './api/progress.js';
 import adminRoutes from './api/admin.js';
 import activityRoutes from './api/activity.js';
 import quizTrackingRoutes from './api/quizTracking.js';
+import r2Routes from './api/r2.js';
 
 dotenv.config();
 
@@ -145,6 +146,7 @@ app.use('/api/progress', progressRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/quiz-tracking', quizTrackingRoutes);
+app.use('/api/r2', r2Routes);
 
 // Error handling
 app.use(notFound);

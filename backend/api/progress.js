@@ -684,7 +684,7 @@ router.post(
   async (req, res) => {
     try {
       const assignmentId = req.params.id;
-      const { fileKey, fileName } = req.body;
+      const { fileKey, fileName, fileUrl } = req.body;
 
       if (!fileKey) {
         return res.status(400).json({ message: 'fileKey is required' });
@@ -705,11 +705,12 @@ router.post(
         return res.status(400).json({ message: 'You already submitted this assignment' });
       }
 
-      // LƯU CHỈ FILEKEY (KHÔNG LƯU FILE LOCAL)
+      // LƯU FILEKEY VÀ FILEURL (DỮ LIỆU TỪ R2)
       const submission = await AssignmentSubmission.create({
         assignmentId: assignment._id,
         userId: req.user._id,
         fileKey: fileKey,
+        fileUrl: fileUrl || `${process.env.R2_ENDPOINT}/${process.env.R2_BUCKET}/${fileKey}`,
         fileName: fileName || fileKey.split('/').pop(),
         status: 'submitted',
         submittedAt: new Date()

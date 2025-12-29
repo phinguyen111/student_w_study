@@ -13,6 +13,10 @@ const fileAssignmentSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  fileKey: {
+    type: String,
+    required: true
+  },
   fileName: {
     type: String,
     required: true

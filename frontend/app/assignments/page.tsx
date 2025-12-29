@@ -154,7 +154,7 @@ export default function AssignmentsPage() {
       })
     })
 
-    const { uploadUrl, key } = await presignRes.json()
+    const { uploadUrl, key, fileUrl } = await presignRes.json()
 
     await fetch(uploadUrl, {
       method: 'PUT',
@@ -162,9 +162,11 @@ export default function AssignmentsPage() {
       body: file
     })
 
-    // 3. gửi key về backend (KHÔNG gửi file)
+    // 3. gửi key và fileUrl về backend (KHÔNG gửi file)
     await api.post(`/progress/file-assignments/${assignmentId}/submit`, {
-      fileKey: key
+      fileKey: key,
+      fileUrl: fileUrl,
+      fileName: file.name
     })
 
   } catch (error) {
