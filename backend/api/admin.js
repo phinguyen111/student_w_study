@@ -1360,13 +1360,26 @@ router.post('/file-assignments', uploadFile.single('file'), async (req, res) => 
 
     if (req.file) {
       try {
+        // Validate R2 environment variables
+        const missingEnvs = [];
+        if (!process.env.R2_ENDPOINT) missingEnvs.push('R2_ENDPOINT');
+        if (!process.env.R2_BUCKET) missingEnvs.push('R2_BUCKET');
+        if (!process.env.R2_ACCESS_KEY_ID) missingEnvs.push('R2_ACCESS_KEY_ID');
+        if (!process.env.R2_SECRET_ACCESS_KEY) missingEnvs.push('R2_SECRET_ACCESS_KEY');
+
+        if (missingEnvs.length > 0) {
+          console.error('Missing R2 env vars:', missingEnvs);
+          return res.status(500).json({
+            message: 'R2 configuration incomplete on server',
+            missing: missingEnvs
+          });
+        }
+
         const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
 
-        // Log R2 envs for debugging (non-sensitive values only)
-        console.log('R2 upload - env', {
-          endpointSet: !!process.env.R2_ENDPOINT,
-          bucket: process.env.R2_BUCKET || null,
-          region: process.env.R2_REGION || null
+        console.log('🔵 R2 upload starting...', {
+          bucket: process.env.R2_BUCKET,
+          endpoint: process.env.R2_ENDPOINT.substring(0, 30) + '...'
         });
 
         const s3Client = new S3Client({
@@ -1390,19 +1403,24 @@ router.post('/file-assignments', uploadFile.single('file'), async (req, res) => 
           ContentType: req.file.mimetype,
         };
 
-        console.log('R2 upload - sending PutObject', { Key: fileKey, Bucket: process.env.R2_BUCKET });
+        console.log('📤 Uploading to R2...', { Key: fileKey, Size: req.file.buffer.length });
 
-        const { PutObjectCommand: POC } = await import('@aws-sdk/client-s3');
-        await s3Client.send(new POC(uploadParams));
+        await s3Client.send(new PutObjectCommand(uploadParams));
 
         fileUrl = `${process.env.R2_ENDPOINT}/${process.env.R2_BUCKET}/${fileKey}`;
+        
+        console.log('✅ R2 upload success', { fileUrl });
       } catch (uploadError) {
-        console.error('R2 upload error full:', uploadError);
-        // Return detailed error to help debugging on Vercel logs
+        console.error('❌ R2 upload failed:', {
+          message: uploadError?.message,
+          code: uploadError?.code,
+          statusCode: uploadError?.$metadata?.httpStatusCode
+        });
+        
         return res.status(500).json({
           message: 'Failed to upload file to R2',
-          error: uploadError && uploadError.message ? uploadError.message : String(uploadError),
-          stack: process.env.NODE_ENV === 'development' && uploadError && uploadError.stack ? uploadError.stack : undefined
+          error: uploadError?.message || String(uploadError),
+          code: uploadError?.code
         });
       }
     }
