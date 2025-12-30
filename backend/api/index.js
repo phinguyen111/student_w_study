@@ -1,7 +1,18 @@
 import serverless from "serverless-http";
 import app from "../app.js";
 
-export default serverless(app);
+const handler = serverless(app);
+
+export default async function vercelHandler(req, res) {
+  try {
+    return await handler(req, res);
+  } catch (error) {
+    console.error("Vercel function crashed:", error);
+    res.statusCode = 500;
+    res.setHeader("Content-Type", "application/json");
+    res.end(JSON.stringify({ success: false, message: "FUNCTION_CRASH", error: String(error?.message || error) }));
+  }
+}
 import serverless from "serverless-http";
 import app from "../app.js";
 
