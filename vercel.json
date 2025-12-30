@@ -1,0 +1,11 @@
+{
+  "buildCommand": "npm install --prefix frontend && npm install --prefix backend",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "outputDirectory": "frontend/.next",
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "nodejs18.x"
+    }
+  }
+}
