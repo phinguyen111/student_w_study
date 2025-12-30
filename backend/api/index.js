@@ -1,3 +1,7 @@
+import serverless from "serverless-http";
+import app from "../app.js";
+
+export default serverless(app);
 // Vercel serverless function entry point
 import app from '../app.js';
 import connectDB from '../config/database.js';
