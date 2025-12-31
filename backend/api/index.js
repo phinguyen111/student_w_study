@@ -15,6 +15,29 @@ async function getHandler() {
 
 export default async function vercelHandler(req, res) {
   try {
+    // Fast health check without importing the whole app (helps debug crashes)
+    const url = req?.url || "";
+    if (req?.method === "GET" && (url === "/" || url === "/health" || url === "/api/health")) {
+      res.statusCode = 200;
+      res.setHeader("Content-Type", "application/json");
+      res.end(
+        JSON.stringify({
+          ok: true,
+          path: url,
+          env: {
+            NODE_ENV: process.env.NODE_ENV || null,
+            hasMongo: Boolean(process.env.MONGODB_URI),
+            hasJwt: Boolean(process.env.JWT_SECRET),
+            hasR2Endpoint: Boolean(process.env.R2_ENDPOINT),
+            hasR2Bucket: Boolean(process.env.R2_BUCKET),
+            hasR2AccessKey: Boolean(process.env.R2_ACCESS_KEY_ID),
+            hasR2Secret: Boolean(process.env.R2_SECRET_ACCESS_KEY),
+          },
+        })
+      );
+      return;
+    }
+
     const handler = await getHandler();
     return await handler(req, res);
   } catch (error) {
