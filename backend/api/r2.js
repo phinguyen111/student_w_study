@@ -1,12 +1,19 @@
 import express from 'express';
 import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import multer from 'multer';
 import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // Require authentication for all R2 routes
 router.use(authenticate);
+
+// Setup multer for file uploads
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB
+});
 
 // Initialize R2 client
 const createS3Client = () => {
@@ -119,6 +126,66 @@ router.post('/presign-upload', async (req, res) => {
       message: 'Failed to generate upload URL',
       error: error.message,
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+// Upload file directly to R2 (bypass presigned URL to avoid CORS issues)
+router.post('/upload', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file provided' });
+    }
+
+    // Validate environment variables
+    const missingEnvs = [];
+    if (!process.env.R2_ENDPOINT) missingEnvs.push('R2_ENDPOINT');
+    if (!process.env.R2_ACCESS_KEY_ID) missingEnvs.push('R2_ACCESS_KEY_ID');
+    if (!process.env.R2_SECRET_ACCESS_KEY) missingEnvs.push('R2_SECRET_ACCESS_KEY');
+    if (!process.env.R2_BUCKET) missingEnvs.push('R2_BUCKET');
+
+    if (missingEnvs.length > 0) {
+      console.error('Missing R2 environment variables:', missingEnvs);
+      return res.status(500).json({ 
+        message: 'R2 configuration is incomplete',
+        missing: missingEnvs
+      });
+    }
+
+    const s3Client = createS3Client();
+
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = req.file.originalname.split('.').pop();
+    const nameWithoutExt = req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_').replace(/\.[^.]*$/, '');
+    const key = `submissions/${nameWithoutExt}-${uniqueSuffix}.${ext}`;
+
+    const putObjectParams = {
+      Bucket: process.env.R2_BUCKET,
+      Key: key,
+      Body: req.file.buffer,
+      ContentType: req.file.mimetype || 'application/octet-stream',
+    };
+
+    console.log('Uploading file to R2:', key);
+
+    await s3Client.send(new PutObjectCommand(putObjectParams));
+
+    const fileUrl = `${process.env.R2_ENDPOINT}/${process.env.R2_BUCKET}/${key}`;
+
+    console.log('File uploaded successfully to R2:', fileUrl);
+
+    res.json({
+      success: true,
+      key,
+      fileUrl,
+      fileName: req.file.originalname
+    });
+  } catch (error) {
+    console.error('Error uploading file to R2:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to upload file',
+      error: error.message
     });
   }
 });

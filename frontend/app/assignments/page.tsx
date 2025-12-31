@@ -145,29 +145,22 @@ export default function AssignmentsPage() {
   try {
     setSubmittingFile(assignmentId)
 
-    // Step 1: Get presigned upload URL using api instance (with auth token)
-    const presignRes = await api.post('/r2/presign-upload', {
-      fileName: file.name,
-      contentType: file.type || 'application/octet-stream'
+    // Step 1: Upload file to backend (which uploads to R2)
+    const formData = new FormData()
+    formData.append('file', file)
+
+    console.log('Uploading file to backend...', file.name)
+
+    const uploadRes = await api.post('/r2/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      timeout: 60000, // 60 seconds for large files
     })
 
-    const { uploadUrl, key, fileUrl } = presignRes.data
+    const { key, fileUrl } = uploadRes.data
 
-    console.log('Presigned URL received, uploading file...', { key, fileUrl })
-
-    // Step 2: Upload file to R2
-    const uploadRes = await fetch(uploadUrl, {
-      method: 'PUT',
-      headers: { 'Content-Type': file.type || 'application/octet-stream' },
-      body: file
-    })
-
-    if (!uploadRes.ok) {
-      console.error('Upload response:', uploadRes.status, uploadRes.statusText)
-      throw new Error(`Upload failed: ${uploadRes.status} ${uploadRes.statusText}`)
-    }
-
-    console.log('File uploaded successfully to R2')
+    console.log('File uploaded successfully to R2', { key, fileUrl })
 
     // Step 3: Submit assignment with file key
     const submitRes = await api.post(`/progress/file-assignments/${assignmentId}/submit`, {
