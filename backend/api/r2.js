@@ -2,9 +2,37 @@ import express from 'express';
 import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import multer from 'multer';
+import cors from 'cors';
 import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
+
+// CORS for R2 routes - allow all Vercel domains
+const r2Cors = cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    
+    const allowedPatterns = [
+      /^https:\/\/.*\.vercel\.app$/,
+      /^http:\/\/localhost/,
+    ];
+    
+    const isAllowed = allowedPatterns.some(pattern => pattern.test(origin));
+    
+    if (isAllowed) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('CORS not allowed'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+});
+
+// Apply CORS before authentication
+router.use(r2Cors);
+router.options('*', r2Cors); // Handle preflight
 
 // Require authentication for all R2 routes
 router.use(authenticate);
