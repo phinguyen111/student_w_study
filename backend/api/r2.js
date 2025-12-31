@@ -1,8 +1,12 @@
 import express from 'express';
 import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
+
+// Require authentication for all R2 routes
+router.use(authenticate);
 
 // Initialize R2 client
 const createS3Client = () => {

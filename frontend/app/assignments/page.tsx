@@ -145,23 +145,13 @@ export default function AssignmentsPage() {
   try {
     setSubmittingFile(assignmentId)
 
-    // Step 1: Get presigned upload URL
-    const presignRes = await fetch('/api/r2/presign-upload', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        fileName: file.name,
-        contentType: file.type || 'application/octet-stream'
-      })
+    // Step 1: Get presigned upload URL using api instance (with auth token)
+    const presignRes = await api.post('/r2/presign-upload', {
+      fileName: file.name,
+      contentType: file.type || 'application/octet-stream'
     })
 
-    if (!presignRes.ok) {
-      const errorData = await presignRes.json()
-      console.error('Presign error:', errorData)
-      throw new Error(errorData.message || 'Không lấy được URL upload')
-    }
-
-    const { uploadUrl, key, fileUrl } = await presignRes.json()
+    const { uploadUrl, key, fileUrl } = presignRes.data
 
     console.log('Presigned URL received, uploading file...', { key, fileUrl })
 
@@ -190,9 +180,33 @@ export default function AssignmentsPage() {
     alert('Nộp file thành công!')
     fetchAssignments()
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error submitting file:', error)
-    alert(`Upload file thất bại: ${error instanceof Error ? error.message : 'Lỗi không xác định'}`)
+    
+    let errorMessage = 'Lỗi không xác định'
+    
+    // Handle axios errors
+    if (error.response) {
+      // Server responded with error
+      errorMessage = error.response.data?.message || `Server error: ${error.response.status}`
+      
+      if (error.response.status === 401) {
+        errorMessage = 'Bạn cần đăng nhập lại'
+      } else if (error.response.status === 500) {
+        if (error.response.data?.missing) {
+          errorMessage = `Cấu hình R2 chưa đầy đủ: ${error.response.data.missing.join(', ')}`
+        } else {
+          errorMessage = 'Lỗi server. Vui lòng thử lại sau.'
+        }
+      }
+    } else if (error.request) {
+      // Request made but no response
+      errorMessage = 'Không thể kết nối đến server. Kiểm tra kết nối mạng.'
+    } else if (error.message) {
+      errorMessage = error.message
+    }
+    
+    alert(`Upload file thất bại: ${errorMessage}`)
   } finally {
     setSubmittingFile(null)
   }

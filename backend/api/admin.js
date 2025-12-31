@@ -1589,6 +1589,57 @@ router.delete('/file-assignments/:id', async (req, res) => {
   }
 });
 
+// Fix language index issue - Drop id_1 index
+router.post('/fix-language-index', async (req, res) => {
+  try {
+    const db = Language.db;
+    const collection = db.collection('languages');
+
+    // Check existing indexes
+    const indexes = await collection.indexes();
+    console.log('Current indexes:', indexes);
+
+    // Drop the problematic id_1 index if it exists
+    let dropResult = null;
+    try {
+      await collection.dropIndex('id_1');
+      dropResult = 'Index id_1 dropped successfully';
+      console.log(dropResult);
+    } catch (error) {
+      if (error.code === 27 || error.codeName === 'IndexNotFound') {
+        dropResult = 'Index id_1 does not exist (already fixed)';
+        console.log(dropResult);
+      } else {
+        throw error;
+      }
+    }
+
+    // Remove id field from all documents if it exists
+    const updateResult = await collection.updateMany(
+      { id: { $exists: true } },
+      { $unset: { id: '' } }
+    );
+    console.log(`Updated ${updateResult.modifiedCount} documents`);
+
+    // Get indexes after fix
+    const indexesAfter = await collection.indexes();
+
+    res.json({ 
+      success: true, 
+      message: 'Language index fixed successfully',
+      details: {
+        dropResult,
+        documentsUpdated: updateResult.modifiedCount,
+        indexesBefore: indexes,
+        indexesAfter: indexesAfter
+      }
+    });
+  } catch (error) {
+    console.error('Error fixing language index:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 export default router;
 
 
