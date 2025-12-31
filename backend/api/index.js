@@ -1,16 +1,37 @@
 import serverless from "serverless-http";
-import app from "../app.js";
 
-const handler = serverless(app);
+let cachedHandler;
+
+async function getHandler() {
+  if (cachedHandler) return cachedHandler;
+  const mod = await import("../app.js");
+  const app = mod?.default;
+  if (!app) {
+    throw new Error("backend/app.js does not export default app");
+  }
+  cachedHandler = serverless(app);
+  return cachedHandler;
+}
 
 export default async function vercelHandler(req, res) {
   try {
+    const handler = await getHandler();
     return await handler(req, res);
   } catch (error) {
     console.error("Vercel function crashed:", error);
-    res.statusCode = 500;
-    res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify({ success: false, message: "FUNCTION_CRASH", error: String(error?.message || error) }));
+    try {
+      res.statusCode = 500;
+      res.setHeader("Content-Type", "application/json");
+      res.end(
+        JSON.stringify({
+          success: false,
+          message: "FUNCTION_CRASH",
+          error: String(error?.message || error),
+        })
+      );
+    } catch (_e) {
+      // ignore
+    }
   }
 }
 import serverless from "serverless-http";
