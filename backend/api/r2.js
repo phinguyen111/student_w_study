@@ -30,12 +30,21 @@ const r2Cors = cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 });
 
-// Apply CORS before authentication
+// Apply CORS before everything
 router.use(r2Cors);
-router.options('*', r2Cors); // Handle preflight
 
-// Require authentication for all R2 routes
-router.use(authenticate);
+// Handle preflight OPTIONS requests WITHOUT authentication
+router.options('*', (req, res) => {
+  res.status(200).end();
+});
+
+// Require authentication for actual requests (not OPTIONS)
+router.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    return next();
+  }
+  return authenticate(req, res, next);
+});
 
 // Setup multer for file uploads
 const upload = multer({ 
