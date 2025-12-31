@@ -2,40 +2,28 @@ import express from 'express';
 import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import multer from 'multer';
-import cors from 'cors';
 import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// CORS for R2 routes - allow all Vercel domains
-const r2Cors = cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    
-    const allowedPatterns = [
-      /^https:\/\/.*\.vercel\.app$/,
-      /^http:\/\/localhost/,
-    ];
-    
-    const isAllowed = allowedPatterns.some(pattern => pattern.test(origin));
-    
-    if (isAllowed) {
-      return callback(null, true);
-    }
-    
-    callback(new Error('CORS not allowed'));
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-});
-
-// Apply CORS before everything
-router.use(r2Cors);
-
-// Handle preflight OPTIONS requests WITHOUT authentication
-router.options('*', (req, res) => {
-  res.status(200).end();
+// Simple CORS middleware for R2 routes
+router.use((req, res, next) => {
+  const origin = req.headers.origin;
+  
+  // Allow all Vercel domains and localhost
+  if (origin && (origin.includes('.vercel.app') || origin.includes('localhost'))) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  }
+  
+  // Handle preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
 });
 
 // Require authentication for actual requests (not OPTIONS)
