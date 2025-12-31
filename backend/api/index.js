@@ -1,18 +1,3 @@
-import serverless from "serverless-http";
-
-let cachedHandler;
-
-async function getHandler() {
-  if (cachedHandler) return cachedHandler;
-  const mod = await import("../app.js");
-  const app = mod?.default;
-  if (!app) {
-    throw new Error("backend/app.js does not export default app");
-  }
-  cachedHandler = serverless(app);
-  return cachedHandler;
-}
-
 export default async function vercelHandler(req, res) {
   try {
     // Fast health check without importing the whole app (helps debug crashes)
@@ -38,8 +23,13 @@ export default async function vercelHandler(req, res) {
       return;
     }
 
-    const handler = await getHandler();
-    return await handler(req, res);
+    // Vercel Node Functions use (req, res). Express app can handle this directly.
+    const mod = await import("../app.js");
+    const app = mod?.default;
+    if (!app) {
+      throw new Error("backend/app.js does not export default app");
+    }
+    return await app(req, res);
   } catch (error) {
     console.error("Vercel function crashed:", error);
     try {
