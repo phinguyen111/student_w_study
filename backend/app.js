@@ -43,27 +43,24 @@ const corsOptions = {
     
     console.log('CORS: Checking origin:', origin);
     
-    // Vercel pattern to match all vercel.app domains
-    const vercelPattern = /^https:\/\/.*\.vercel\.app$/;
-    const isVercelDomain = vercelPattern.test(origin);
+    // Allow specific Vercel domains
+    const allowedOrigins = [
+      /^https:\/\/.*\.vercel\.app$/, // All Vercel domains
+      /^http:\/\/localhost/, // Local development
+      /^http:\/\/127\.0\.0\.1/, // Local development
+    ];
     
-    // In production, allow Vercel domains or FRONTEND_URL if set
-    if (process.env.NODE_ENV === 'production') {
-      if (isVercelDomain) {
-        console.log('CORS: Vercel domain allowed');
-        return callback(null, true);
-      }
-      if (process.env.FRONTEND_URL && process.env.FRONTEND_URL.includes(origin)) {
-        console.log('CORS: FRONTEND_URL match');
-        return callback(null, true);
-      }
-      console.log('CORS: Origin not allowed in production:', origin);
-      return callback(new Error('CORS not allowed'), false);
+    const isAllowed = allowedOrigins.some(pattern => 
+      pattern instanceof RegExp ? pattern.test(origin) : pattern === origin
+    );
+    
+    if (isAllowed) {
+      console.log('CORS: Origin allowed:', origin);
+      return callback(null, true);
     }
     
-    // In development, allow all origins
-    console.log('CORS: Development mode, allowing all origins');
-    callback(null, true);
+    console.log('CORS: Origin not allowed:', origin);
+    return callback(new Error('CORS not allowed'), false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
