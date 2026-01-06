@@ -142,7 +142,7 @@ export default function LessonPage() {
         <div>
           <BookOpen className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
           <h2 className="text-2xl font-bold mb-2">Lesson not found</h2>
-          <p className="text-muted-foreground mb-4">The lesson you're looking for doesn't exist.</p>
+          <p className="text-muted-foreground mb-4">The lesson you&apos;re looking for doesn&apos;t exist.</p>
           <Link href={`/learn/${params.langId}`}>
             <Button>Go Back</Button>
           </Link>
@@ -251,7 +251,7 @@ export default function LessonPage() {
                 Ready to test your knowledge?
               </h3>
               <p className="text-sm text-muted-foreground">
-                Choose how you want to practice and reinforce what you've learned
+                Choose how you want to practice and reinforce what you&apos;ve learned
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

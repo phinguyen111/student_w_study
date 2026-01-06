@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import api from '@/lib/api'
@@ -38,14 +38,9 @@ export default function LanguagePage() {
     }
   }, [isAuthenticated, loading, router])
 
-  useEffect(() => {
-    if (isAuthenticated && params.langId) {
-      fetchLanguage()
-    }
-  }, [isAuthenticated, params.langId])
-
-  const fetchLanguage = async () => {
+  const fetchLanguage = useCallback(async () => {
     try {
+      setLoadingLang(true)
       const response = await api.get(`/languages/${params.langId}?lang=en`)
       setLanguage(response.data.language)
     } catch (error) {
@@ -53,7 +48,13 @@ export default function LanguagePage() {
     } finally {
       setLoadingLang(false)
     }
-  }
+  }, [params.langId])
+
+  useEffect(() => {
+    if (isAuthenticated && params.langId) {
+      fetchLanguage()
+    }
+  }, [isAuthenticated, params.langId, fetchLanguage])
 
   if (loading || loadingLang) {
     return (

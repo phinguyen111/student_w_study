@@ -4084,7 +4084,7 @@ export default function AdminPage() {
                                 'Output summary sẽ xuất hiện tại đây dựa trên các rule đã cấu hình.'}
                             </div>
                             <p className="text-[11px] text-muted-foreground">
-                              Ví dụ: &lt;h1&gt;Welcome to Website&lt;/h1&gt; — 2 điểm. &lt;a&gt; ... &lt;/a&gt; — 2 điểm (thiếu href="example.com" trừ 1 điểm).
+                              Ví dụ: &lt;h1&gt;Welcome to Website&lt;/h1&gt; — 2 điểm. &lt;a&gt; ... &lt;/a&gt; — 2 điểm (thiếu href=&quot;example.com&quot; trừ 1 điểm).
                             </p>
                           </div>
                         </div>
@@ -4460,7 +4460,7 @@ export default function AdminPage() {
                                       Tổng điểm đã cấu hình: {calculateCriteriaPoints(q.outputCriteria).toFixed(2)} pts / 10 pts
                                     </p>
                                     <p className="text-[11px] text-muted-foreground">
-                                      Ví dụ: &lt;h1&gt;Welcome to Website&lt;/h1&gt; — 2 điểm. &lt;a href="example.com"&gt; — 2 điểm (thiếu
+                                      Ví dụ: &lt;h1&gt;Welcome to Website&lt;/h1&gt; — 2 điểm. &lt;a href=&quot;example.com&quot;&gt; — 2 điểm (thiếu
                                       href trừ 1 điểm).
                                     </p>
                                   </div>
@@ -4472,7 +4472,7 @@ export default function AdminPage() {
                         })}
                         {newLesson.quiz.questions.length === 0 && (
                           <p className="text-center text-muted-foreground py-4">
-                            No questions yet. Click "Add Question" to get started.
+                            No questions yet. Click &quot;Add Question&quot; to get started.
                           </p>
                         )}
                       </div>
@@ -5179,7 +5179,7 @@ export default function AdminPage() {
                     'Output summary sẽ xuất hiện tại đây dựa trên các rule đã cấu hình.'}
                 </div>
                 <p className="text-[11px] text-muted-foreground">
-                  Ví dụ: &lt;h1&gt;Welcome to Website&lt;/h1&gt; — 2 điểm. &lt;a&gt; ... &lt;/a&gt; — 2 điểm (thiếu href="example.com" trừ 1 điểm).
+                  Ví dụ: &lt;h1&gt;Welcome to Website&lt;/h1&gt; — 2 điểm. &lt;a&gt; ... &lt;/a&gt; — 2 điểm (thiếu href=&quot;example.com&quot; trừ 1 điểm).
                 </p>
               </div>
               <div className="flex justify-end gap-2">
@@ -5551,7 +5551,7 @@ export default function AdminPage() {
                               Tổng điểm đã cấu hình: {calculateCriteriaPoints(q.outputCriteria).toFixed(2)} pts / 10 pts
                             </p>
                             <p className="text-[11px] text-muted-foreground">
-                              Ví dụ: &lt;h1&gt;Welcome to Website&lt;/h1&gt; — 2 điểm. &lt;a href="example.com"&gt; — 2 điểm (thiếu href trừ 1 điểm).
+                              Ví dụ: &lt;h1&gt;Welcome to Website&lt;/h1&gt; — 2 điểm. &lt;a href=&quot;example.com&quot;&gt; — 2 điểm (thiếu href trừ 1 điểm).
                             </p>
                           </div>
                         </div>

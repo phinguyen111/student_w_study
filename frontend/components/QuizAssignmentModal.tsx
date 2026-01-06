@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { X, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Trophy, AlertCircle, Loader2 } from 'lucide-react'
@@ -71,7 +71,7 @@ export function QuizAssignmentModal({
         endTracking()
       }
     }
-  }, [assignmentId, showCorrectAnswers])
+  }, [assignmentId, showCorrectAnswers, startTracking, endTracking, isTracking])
 
   // Track when quiz starts and request fullscreen
   useEffect(() => {
@@ -133,16 +133,7 @@ export function QuizAssignmentModal({
     }
   }, [assignmentId, showCorrectAnswers, showResults])
 
-  // If showing correct answers (already submitted), load the result and show results immediately
-  useEffect(() => {
-    if (showCorrectAnswers) {
-      fetchResult().then(() => {
-        setShowResults(true)
-      })
-    }
-  }, [showCorrectAnswers, assignmentId])
-
-  const fetchResult = async () => {
+  const fetchResult = useCallback(async () => {
     try {
       const response = await api.get(`/progress/quiz-assignments/${assignmentId}`)
       if (response.data.assignment?.latestResult) {
@@ -165,7 +156,16 @@ export function QuizAssignmentModal({
     } catch (error) {
       console.error('Error fetching result:', error)
     }
-  }
+  }, [assignmentId])
+
+  // If showing correct answers (already submitted), load the result and show results immediately
+  useEffect(() => {
+    if (showCorrectAnswers) {
+      fetchResult().then(() => {
+        setShowResults(true)
+      })
+    }
+  }, [showCorrectAnswers, fetchResult])
 
   const handleAnswerSelect = (answerIndex: number) => {
     if (showCorrectAnswers) return // Don't allow changing answers if already submitted
@@ -316,7 +316,7 @@ export function QuizAssignmentModal({
   }
 
   // Handle abandoning quiz - STRICT MODE: abandon immediately
-  const handleAbandonQuiz = async (reason: string = 'user_choice') => {
+  const handleAbandonQuiz = useCallback(async (reason: string = 'user_choice') => {
     if (isHandlingAbandonRef.current) return // Prevent multiple calls
     isHandlingAbandonRef.current = true
     setIsAbandoning(true)
@@ -382,7 +382,7 @@ export function QuizAssignmentModal({
       setIsAbandoning(false)
       // Keep isHandlingAbandonRef true to prevent any retries
     }
-  }
+  }, [assignmentId, endTracking, isTracking, onClose, onComplete, selectedAnswers, trackQuizAction])
 
   // Warn user when trying to leave/tab away
   useEffect(() => {
@@ -553,7 +553,7 @@ export function QuizAssignmentModal({
       window.removeEventListener('blur', handleBlur)
       window.removeEventListener('focus', handleFocus)
     }
-  }, [showResults, showCorrectAnswers, assignmentId])
+  }, [showResults, showCorrectAnswers, assignmentId, handleAbandonQuiz])
 
   if (showResults || showCorrectAnswers) {
     const passed = score >= passingScore

@@ -7,6 +7,7 @@ import api from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import Image from 'next/image'
 import { User, Lock, Mail, Loader2, AlertCircle, CheckCircle, Eye, EyeOff, Save, X, Edit2, Shield, Sparkles, KeyRound, CheckCircle2, Camera } from 'lucide-react'
 
 export default function ProfilePage() {
@@ -366,11 +367,14 @@ export default function ProfilePage() {
                     <div className={`absolute -inset-2 bg-gradient-to-br ${avatarColor} rounded-full blur-2xl opacity-60 group-hover:opacity-80 transition-opacity duration-500`}></div>
                     <div className={`relative w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white text-4xl md:text-5xl font-extrabold shadow-2xl transform group-hover:scale-110 transition-all duration-500 ring-4 ring-white dark:ring-slate-900`}>
                       {avatarPreview ? (
-                        <img 
-                          src={avatarPreview} 
-                          alt={user?.name || 'User'} 
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
+                        <Image
+                          src={avatarPreview}
+                          alt={user?.name || 'User'}
+                          fill
+                          sizes="(max-width: 768px) 112px, 128px"
+                          className="object-cover"
+                          unoptimized
+                          onError={() => {
                             // Fallback về initials nếu ảnh không load được
                             console.error('Failed to load avatar image:', avatarPreview)
                             setAvatarPreview(null)

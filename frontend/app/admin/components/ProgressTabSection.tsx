@@ -162,7 +162,7 @@ export function ProgressTabSection({
               <Card className="border-primary/30 bg-primary/5">
                 <CardHeader>
                   <CardTitle className="text-lg">Current Learning Status</CardTitle>
-                  <CardDescription>User's current language and level</CardDescription>
+                  <CardDescription>User&apos;s current language and level</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center gap-4">

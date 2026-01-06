@@ -523,7 +523,7 @@ export default function AssignmentsPage() {
                 <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
                 <h3 className="text-xl font-semibold mb-2">No Assignments</h3>
                 <p className="text-muted-foreground">
-                  You don't have any assignments yet.
+                  You don&apos;t have any assignments yet.
                 </p>
               </div>
             </CardContent>

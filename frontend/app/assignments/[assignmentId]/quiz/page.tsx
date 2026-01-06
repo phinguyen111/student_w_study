@@ -746,7 +746,7 @@ ${js}
         <div>
           <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
           <h2 className="text-2xl font-bold mb-2">Quiz Not Found</h2>
-          <p className="text-muted-foreground mb-4">This quiz assignment doesn't exist or has no questions.</p>
+          <p className="text-muted-foreground mb-4">This quiz assignment doesn&apos;t exist or has no questions.</p>
           <Link href={`/assignments`}>
             <Button>Back to Assignments</Button>
           </Link>
