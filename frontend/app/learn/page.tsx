@@ -153,7 +153,7 @@ export default function LearnPage() {
                     onClick={() => setSelectedCategory(category)}
                     className={`px-3 py-1.5 rounded-full text-sm border transition ${
                       selectedCategory === category
-                        ? 'border-slate-900 bg-slate-900 text-white dark:border-white dark:bg-white/90 dark:text-slate-900'
+                        ? 'border-primary bg-primary text-primary-foreground'
                         : 'border-transparent bg-white/70 text-slate-600 dark:bg-white/5 dark:text-slate-300 hover:border-slate-300'
                     }`}
                   >
@@ -189,24 +189,24 @@ export default function LearnPage() {
             {filteredLanguages.map((lang) => (
               <Card
                 key={lang._id}
-                className="relative overflow-hidden border border-border/60 bg-card/80 rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 group"
+                className="relative overflow-hidden border border-border/60 bg-card/80 rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 group flex h-full flex-col"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                <CardHeader className="relative">
+                <CardHeader className="relative flex-1">
                   <div className="flex items-center justify-between">
                     <div className="text-4xl">{lang.icon || '🌐'}</div>
                     <span className="text-xs px-3 py-1 rounded-full bg-primary/10 text-primary uppercase tracking-wide">
                       {lang.slug || 'path'}
                     </span>
                   </div>
-                  <CardTitle className="text-2xl mt-3">
+                  <CardTitle className="text-2xl mt-3 overflow-hidden [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
                     {resolveText(lang.name)}
                   </CardTitle>
-                  <CardDescription className="line-clamp-3">
+                  <CardDescription className="overflow-hidden [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3]">
                     {resolveText(lang.description) || 'Embark on a guided learning journey tailored for this language.'}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="relative pt-0">
+                <CardContent className="relative pt-0 mt-auto">
                   <Link href={`/learn/${lang._id}`}>
                     <Button className="w-full group/btn">
                       Start Learning

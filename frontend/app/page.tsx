@@ -78,19 +78,16 @@ export default function Home() {
       icon: BookOpen,
       title: 'Learn by Level',
       description: 'Progress through structured levels from basics to advanced, each step designed to build a solid foundation',
-      gradient: 'from-cyan-500 to-blue-500'
     },
     {
       icon: Target,
       title: 'Interactive Quiz',
       description: 'Test your knowledge with quizzes after each lesson, get instant feedback and continuously improve',
-      gradient: 'from-blue-500 to-purple-500'
     },
     {
       icon: BarChart3,
       title: 'Track Progress',
       description: 'Track your learning streak, time, and achievements with intuitive and detailed dashboards',
-      gradient: 'from-purple-500 to-pink-500'
     }
   ]
 
@@ -197,7 +194,7 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-20 pb-32 px-4">
         {/* Animated Background Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-50/50 via-blue-50/50 to-purple-50/50 dark:from-cyan-950/20 dark:via-blue-950/20 dark:to-purple-950/20" />
+        <div className="absolute inset-0 gradient-primary-light opacity-40 dark:gradient-primary-dark dark:opacity-20" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(120,119,198,0.1),transparent_50%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(59,130,246,0.1),transparent_50%)]" />
         
@@ -227,13 +224,13 @@ export default function Home() {
                 <div className="code-background-wrapper">
                   <div className="code-background-container">
                     <div className="code-background-text">
-                      <span className="code-comment">// Welcome to Code Catalyst</span>
+                      <span className="code-comment">{'// Welcome to Code Catalyst'}</span>
                       <br />
                       <span className="code-keyword">function</span> <span className="code-function">learn</span><span className="code-punctuation">()</span> <span className="code-punctuation">{'{'}</span>
                       <br />
-                      &nbsp;&nbsp;<span className="code-keyword">const</span> <span className="code-variable">skills</span> <span className="code-operator">=</span> <span className="code-punctuation">[</span><span className="code-string">'HTML'</span><span className="code-punctuation">,</span> <span className="code-string">'CSS'</span><span className="code-punctuation">,</span> <span className="code-string">'JS'</span><span className="code-punctuation">]</span><span className="code-punctuation">;</span>
+                      &nbsp;&nbsp;<span className="code-keyword">const</span> <span className="code-variable">skills</span> <span className="code-operator">=</span> <span className="code-punctuation">[</span><span className="code-string">{`'HTML'`}</span><span className="code-punctuation">,</span> <span className="code-string">{`'CSS'`}</span><span className="code-punctuation">,</span> <span className="code-string">{`'JS'`}</span><span className="code-punctuation">]</span><span className="code-punctuation">;</span>
                       <br />
-                      &nbsp;&nbsp;<span className="code-keyword">const</span> <span className="code-variable">frameworks</span> <span className="code-operator">=</span> <span className="code-punctuation">[</span><span className="code-string">'React'</span><span className="code-punctuation">,</span> <span className="code-string">'Next.js'</span><span className="code-punctuation">]</span><span className="code-punctuation">;</span>
+                      &nbsp;&nbsp;<span className="code-keyword">const</span> <span className="code-variable">frameworks</span> <span className="code-operator">=</span> <span className="code-punctuation">[</span><span className="code-string">{`'React'`}</span><span className="code-punctuation">,</span> <span className="code-string">{`'Next.js'`}</span><span className="code-punctuation">]</span><span className="code-punctuation">;</span>
                       <br />
                       <br />
                       &nbsp;&nbsp;<span className="code-keyword">return</span> <span className="code-variable">skills</span><span className="code-punctuation">.</span><span className="code-function">map</span><span className="code-punctuation">(</span><span className="code-variable">skill</span> <span className="code-operator">{'=>'}</span>
@@ -272,14 +269,14 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-in fade-in slide-in-from-bottom-4 duration-700 delay-600">
               {!isAuthenticated ? (
                 <Link href="/login">
-                  <Button size="lg" className="group text-lg px-8 py-6 h-auto bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 shadow-lg hover:shadow-xl transition-all duration-300">
+                  <Button size="lg" className="group w-full sm:w-auto text-lg px-8 py-6 h-auto shadow-lg hover:shadow-xl transition-shadow">
                     Get Started
                     <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
               ) : (
                 <Link href="/learn">
-                  <Button size="lg" className="group text-lg px-8 py-6 h-auto bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 shadow-lg hover:shadow-xl transition-all duration-300">
+                  <Button size="lg" className="group w-full sm:w-auto text-lg px-8 py-6 h-auto shadow-lg hover:shadow-xl transition-shadow">
                     Continue Learning
                     <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
@@ -480,14 +477,14 @@ export default function Home() {
               return (
                 <Card 
                   key={index}
-                  className="group relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 bg-card/50 backdrop-blur-sm"
+                  className="group relative overflow-hidden border border-border/60 bg-card/80 rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                 >
-                  {/* Gradient Background on Hover */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
+                  {/* Accent wash on hover */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   
                   <CardHeader className="relative">
-                    <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${feature.gradient} p-3 mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
-                      <Icon className="w-full h-full text-white" />
+                    <div className="w-14 h-14 rounded-2xl bg-primary text-primary-foreground p-3 mb-4 group-hover:scale-105 transition-transform duration-300 shadow-sm">
+                      <Icon className="w-full h-full" />
                     </div>
                     <CardTitle className="text-2xl mb-2">{feature.title}</CardTitle>
                     <CardDescription className="text-base leading-relaxed">
@@ -546,8 +543,9 @@ export default function Home() {
 
 
       {/* Final CTA Section */}
-      <section className="py-20 px-4 bg-gradient-to-br from-cyan-50/50 via-blue-50/50 to-purple-50/50 dark:from-cyan-950/20 dark:via-blue-950/20 dark:to-purple-950/20">
-        <div className="container mx-auto text-center max-w-3xl">
+      <section className="py-20 px-4 relative overflow-hidden">
+        <div className="absolute inset-0 gradient-primary-light opacity-40 dark:gradient-primary-dark dark:opacity-20" />
+        <div className="container mx-auto text-center max-w-3xl relative z-10">
           <Award className="w-16 h-16 mx-auto mb-6 text-primary" />
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
             Ready to Start Your Journey with <span className="code-catalyst-text cursor-pointer">Code Catalyst</span>?
@@ -557,14 +555,14 @@ export default function Home() {
           </p>
           {!isAuthenticated ? (
             <Link href="/login">
-              <Button size="lg" className="text-lg px-10 py-6 h-auto bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 shadow-lg hover:shadow-xl transition-all duration-300">
+              <Button size="lg" className="relative text-lg px-10 py-6 h-auto shadow-lg hover:shadow-xl transition-shadow">
                 Start Learning Now
                 <Sparkles className="ml-2 h-5 w-5" />
               </Button>
             </Link>
           ) : (
             <Link href="/learn">
-              <Button size="lg" className="text-lg px-10 py-6 h-auto bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 shadow-lg hover:shadow-xl transition-all duration-300">
+              <Button size="lg" className="relative text-lg px-10 py-6 h-auto shadow-lg hover:shadow-xl transition-shadow">
                 Continue Your Journey
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
