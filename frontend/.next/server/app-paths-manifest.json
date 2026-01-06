@@ -1,8 +1,7 @@
 {
-  "/learn/page": "app/learn/page.js",
+  "/not-found": "app/not-found.js",
   "/page": "app/page.js",
-  "/learn/[langId]/lesson/[lessonId]/page": "app/learn/[langId]/lesson/[lessonId]/page.js",
-  "/learn/[langId]/page": "app/learn/[langId]/page.js",
-  "/learn/[langId]/level/[levelId]/page": "app/learn/[langId]/level/[levelId]/page.js",
-  "/learn/[langId]/lesson/[lessonId]/code/page": "app/learn/[langId]/lesson/[lessonId]/code/page.js"
+  "/assignments/page": "app/assignments/page.js",
+  "/login/page": "app/login/page.js",
+  "/api/r2/presign-download/route": "app/api/r2/presign-download/route.js"
 }
