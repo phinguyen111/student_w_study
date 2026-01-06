@@ -19,6 +19,7 @@ import adminRoutes from './api/admin.js';
 import activityRoutes from './api/activity.js';
 import quizTrackingRoutes from './api/quizTracking.js';
 import r2Routes from './api/r2.js';
+import codeRoutes from './api/code.js';
 
 dotenv.config();
 
@@ -43,14 +44,20 @@ const corsOptions = {
     
     console.log('CORS: Checking origin:', origin);
     
-    // Allow specific Vercel domains
+    const envAllowedOrigins = (process.env.FRONTEND_URL || '')
+      .split(',')
+      .map((url) => url.trim())
+      .filter(Boolean);
+
+    // Allow specific Vercel domains + local dev + explicitly configured frontend URLs
     const allowedOrigins = [
+      ...envAllowedOrigins,
       /^https:\/\/.*\.vercel\.app$/, // All Vercel domains
       /^http:\/\/localhost/, // Local development
       /^http:\/\/127\.0\.0\.1/, // Local development
     ];
     
-    const isAllowed = allowedOrigins.some(pattern => 
+    const isAllowed = allowedOrigins.some((pattern) =>
       pattern instanceof RegExp ? pattern.test(origin) : pattern === origin
     );
     
@@ -129,10 +136,20 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/quiz-tracking', quizTrackingRoutes);
 app.use('/api/r2', r2Routes);
+app.use('/api/code', codeRoutes);
 
 // Error handling
 app.use(notFound);
 app.use(errorHandler);
+
+// Start server (only if not in Vercel environment)
+const PORT = process.env.PORT || 5000;
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📡 API URL: http://localhost:${PORT}/api`);
+  });
+}
 
 // Export app for Vercel serverless functions
 export default app;

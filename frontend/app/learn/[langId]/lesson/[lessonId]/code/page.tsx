@@ -13,6 +13,7 @@ import { ArrowLeft, Code, Loader2, FileCode, Play, RotateCcw, CheckCircle2, File
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useTimeTracker } from '@/hooks/useTimeTracker'
 import { useGATracking } from '@/hooks/useGATracking'
+import { detectLanguageFromCode, preprocessListedCode } from '@/lib/codeDetect'
 
 interface OutputRule {
   id?: string
@@ -26,7 +27,7 @@ interface Lesson {
   title: string
   codeExercise?: {
     starterCode: string
-    language: 'html' | 'javascript' | 'css' | 'python' | 'html-css-js'
+    language: string
     description?: string | { vi?: string; en?: string }
     outputCriteria?: OutputRule[]
   }
@@ -38,11 +39,13 @@ export default function CodeExercisePage() {
   const { isAuthenticated, loading } = useAuth()
   const [lesson, setLesson] = useState<Lesson | null>(null)
   const [loadingLesson, setLoadingLesson] = useState(true)
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('html')
   const [code, setCode] = useState('')
   const [htmlCode, setHtmlCode] = useState('')
   const [cssCode, setCssCode] = useState('')
   const [jsCode, setJsCode] = useState('')
   const [output, setOutput] = useState('')
+  const [stdinInput, setStdinInput] = useState('')
   const [isRunning, setIsRunning] = useState(false)
   const [iframeKey, setIframeKey] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -54,6 +57,32 @@ export default function CodeExercisePage() {
   const [codeErrors, setCodeErrors] = useState<any[]>([])
   const [exerciseInstructions, setExerciseInstructions] = useState<string>('')
   const [exerciseDescription, setExerciseDescription] = useState<string>('')
+  const [ioTab, setIoTab] = useState<'terminal' | 'preview'>('preview')
+
+  const fallbackLanguages = [
+    { id: 'html', label: 'HTML' },
+    { id: 'css', label: 'CSS' },
+    { id: 'javascript', label: 'JavaScript' },
+    { id: 'typescript', label: 'TypeScript' },
+    { id: 'html-css-js', label: 'HTML + CSS + JS' },
+    { id: 'python', label: 'Python' },
+    { id: 'java', label: 'Java' },
+    { id: 'cpp', label: 'C++' },
+    { id: 'c', label: 'C' },
+    { id: 'csharp', label: 'C#' },
+    { id: 'go', label: 'Go' },
+    { id: 'rust', label: 'Rust' },
+    { id: 'ruby', label: 'Ruby' },
+    { id: 'php', label: 'PHP' },
+    { id: 'swift', label: 'Swift' },
+    { id: 'kotlin', label: 'Kotlin' },
+    { id: 'r', label: 'R' },
+    { id: 'sql', label: 'SQL' },
+    { id: 'bash', label: 'Bash' },
+    { id: 'powershell', label: 'PowerShell' },
+  ]
+
+  const [languageOptions, setLanguageOptions] = useState(fallbackLanguages)
 
   const combineCode = () => {
     const html = htmlCode.trim() || '<p>No HTML content yet</p>'
@@ -207,6 +236,47 @@ ${js}
       }
     }
   }, [code, htmlCode, cssCode, jsCode, activeTab, lesson?.codeExercise?.language])
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await api.get('/code/languages')
+        const list = res?.data?.languages
+        if (!Array.isArray(list)) return
+
+        const remote = list
+          .map((l: any) => ({
+            id: String(l?.id || '').toLowerCase(),
+            label: String(l?.name || l?.id || '').trim() || String(l?.id || '').toUpperCase(),
+          }))
+          .filter((l: any) => l.id)
+
+        const byId = new Map()
+        for (const f of fallbackLanguages) byId.set(f.id, f)
+        for (const r of remote) if (!byId.has(r.id)) byId.set(r.id, r)
+
+        const merged = Array.from(byId.values())
+        const pinned = fallbackLanguages.map((l) => l.id)
+        merged.sort((a, b) => {
+          const ap = pinned.indexOf(a.id)
+          const bp = pinned.indexOf(b.id)
+          if (ap !== -1 || bp !== -1) return (ap === -1 ? 999 : ap) - (bp === -1 ? 999 : bp)
+          return a.label.localeCompare(b.label)
+        })
+
+        if (!cancelled && merged.length) setLanguageOptions(merged)
+      } catch {
+        // keep fallback
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [isAuthenticated])
   const { stopTracking } = useTimeTracker()
   const { trackLessonAction, trackButtonClick } = useGATracking()
 
@@ -229,6 +299,14 @@ ${js}
       console.log('Lesson data:', lessonData)
       console.log('CodeExercise:', lessonData.codeExercise)
       setLesson(lessonData)
+      if (lessonData?.codeExercise?.language) {
+        setSelectedLanguage(lessonData.codeExercise.language)
+        const shouldPreview =
+          lessonData.codeExercise.language === 'html' ||
+          lessonData.codeExercise.language === 'css' ||
+          lessonData.codeExercise.language === 'html-css-js'
+        setIoTab(shouldPreview ? 'preview' : 'terminal')
+      }
       if (lessonData.codeExercise?.starterCode) {
         const starterCode = lessonData.codeExercise.starterCode
         
@@ -282,26 +360,36 @@ ${js}
     }
   }
 
-  const handleRun = () => {
+  useEffect(() => {
+    const shouldMulti = selectedLanguage === 'html-css-js'
+    setActiveTab(shouldMulti ? 'multi' : 'single')
+    const shouldPreview = shouldMulti || selectedLanguage === 'html' || selectedLanguage === 'css'
+    setIoTab(shouldPreview ? 'preview' : 'terminal')
+  }, [selectedLanguage])
+
+  const handleRun = async () => {
     setIsRunning(true)
     setOutput('')
     trackButtonClick('Run Code', window.location.pathname)
 
     try {
-      const currentCode = activeTab === 'multi' ? combineCode() : code
-      const lang = lesson?.codeExercise?.language || 'html'
+      const currentCodeRaw = activeTab === 'multi' ? combineCode() : code
+      const currentCode = preprocessListedCode(currentCodeRaw)
+      const lang = selectedLanguage || lesson?.codeExercise?.language || 'html'
+      const isPreviewMode = activeTab === 'multi' || lang === 'html-css-js' || lang === 'html' || lang === 'css'
       
-      // Force update preview content
-      if (activeTab === 'multi' || lang === 'html-css-js') {
-        setPreviewContent(combineCode())
-      } else if (lang === 'html') {
-        setPreviewContent(code || '<!DOCTYPE html><html><head><title>Preview</title></head><body><p>No content yet</p></body></html>')
-      } else if (lang === 'css') {
-        setPreviewContent(`<!DOCTYPE html>
+      if (isPreviewMode) {
+        // Force update preview content
+        if (activeTab === 'multi' || lang === 'html-css-js') {
+          setPreviewContent(combineCode())
+        } else if (lang === 'html') {
+          setPreviewContent(currentCode || '<!DOCTYPE html><html><head><title>Preview</title></head><body><p>No content yet</p></body></html>')
+        } else if (lang === 'css') {
+          setPreviewContent(`<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <style>${code || '/* Add your CSS here */'}</style>
+    <style>${currentCode || '/* Add your CSS here */'}</style>
 </head>
 <body>
     <div class="demo-container">
@@ -314,40 +402,33 @@ ${js}
     </div>
 </body>
 </html>`)
-      }
-      
-      if (lang === 'javascript' && activeTab === 'single') {
-        // Pure JavaScript execution
-        try {
-          const result = eval(currentCode)
-          if (result !== undefined) {
-            setOutput(String(result))
-          } else {
-            setOutput('Code executed successfully!')
-          }
-        } catch (error: any) {
-          setOutput(`Error: ${error.message}`)
         }
-      } else {
+
         // For HTML, CSS, or multi-language (HTML+CSS+JS), update preview
         setOutput('Preview updated!')
         setIframeKey(prev => prev + 1)
-        
-        // Also try to execute JavaScript if present
-        if (activeTab === 'multi' && jsCode.trim()) {
-          try {
-            // Create a safe execution context
-            const result = eval(jsCode)
-            if (result !== undefined) {
-              setOutput(`Preview updated! JavaScript output: ${String(result)}`)
-            }
-          } catch (error: any) {
-            setOutput(`Preview updated! JavaScript error: ${error.message}`)
-          }
-        }
+        return
       }
+
+      // Non-preview languages: execute via backend (supports stdin)
+      const response = await api.post('/code/execute', {
+        code: currentCode,
+        language: lang,
+        input: stdinInput,
+      })
+
+      const data = response?.data
+      if (!data?.success) {
+        setOutput(data?.error || 'Execution failed')
+        return
+      }
+
+      const combinedOutput = [data.output, data.error ? `\n${data.error}` : '']
+        .filter(Boolean)
+        .join('')
+      setOutput(combinedOutput || 'Program executed successfully (no output)')
     } catch (error: any) {
-      setOutput(`Error: ${error.message}`)
+      setOutput(error?.response?.data?.error || error?.message || 'Execution failed')
     } finally {
       setIsRunning(false)
     }
@@ -562,9 +643,17 @@ ${js}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">Language:</span>
-                  <span className="px-2 py-1 bg-primary/10 text-primary rounded text-sm">
-                    {lesson.codeExercise.language.toUpperCase()}
-                  </span>
+                  <select
+                    value={selectedLanguage}
+                    onChange={(e) => setSelectedLanguage(e.target.value)}
+                    className="h-9 rounded-md border bg-background px-3 text-sm"
+                  >
+                    {languageOptions.map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {l.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <Button variant="outline" size="sm" onClick={handleReset}>
                   <RotateCcw className="h-4 w-4 mr-2" />
@@ -598,7 +687,7 @@ ${js}
 
               {/* Code Editor - Full width */}
               <div>
-                {lesson.codeExercise.language === 'html-css-js' || activeTab === 'multi' ? (
+                {selectedLanguage === 'html-css-js' || activeTab === 'multi' ? (
                     <Tabs defaultValue="html" className="w-full">
                       <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="html">
@@ -651,8 +740,14 @@ ${js}
                   ) : (
               <DynamicCodeEditor
                 value={code}
-                onChange={setCode}
-                language={lesson.codeExercise.language}
+                onChange={(v) => {
+                  setCode(v)
+                  const detected = detectLanguageFromCode(v)
+                  if (detected && detected !== selectedLanguage && detected !== 'html-css-js') {
+                    setSelectedLanguage(detected)
+                  }
+                }}
+                language={selectedLanguage}
                 height="500px"
                 placeholder="Write your code here..."
                       showErrors={true}
@@ -761,31 +856,62 @@ ${js}
                 </Button>
               </div>
 
-              {/* Output */}
-              {output && (
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-sm">Output:</h3>
-                  <div className="p-4 bg-muted rounded-lg border">
-                    <pre className="whitespace-pre-wrap text-sm">{output}</pre>
-                  </div>
-                </div>
-              )}
-              {/* Preview - Always show for HTML, CSS, or multi-language */}
-              {(lesson.codeExercise.language === 'html' || lesson.codeExercise.language === 'css' || lesson.codeExercise.language === 'html-css-js' || activeTab === 'multi') && (
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-sm">Preview:</h3>
-                  <div className="border rounded-lg overflow-hidden bg-white dark:bg-[hsl(220_30%_8%)]">
-                    <iframe
-                      key={`preview-${iframeKey}-${activeTab === 'multi' ? htmlCode.length + cssCode.length + jsCode.length : code.length}`}
-                      srcDoc={previewContent}
-                      className="w-full h-96 border-0"
-                      sandbox="allow-scripts allow-same-origin allow-forms"
-                      title="Code Preview"
-                      style={{ minHeight: '400px' }}
-                    />
-                  </div>
-                </div>
-              )}
+              {/* Terminal / Preview Tabs */}
+              {(() => {
+                const lang = selectedLanguage || lesson?.codeExercise?.language || 'html'
+                const isPreviewMode = activeTab === 'multi' || lang === 'html-css-js' || lang === 'html' || lang === 'css'
+
+                return (
+                  <Tabs value={ioTab} onValueChange={(v) => setIoTab(v as any)} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="terminal">Terminal</TabsTrigger>
+                      <TabsTrigger value="preview" disabled={!isPreviewMode}>
+                        Preview
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="terminal" className="mt-4 space-y-3">
+                      {!isPreviewMode && (
+                        <div className="space-y-2">
+                          <h3 className="font-semibold text-sm">Input (stdin):</h3>
+                          <textarea
+                            value={stdinInput}
+                            onChange={(e) => setStdinInput(e.target.value)}
+                            rows={4}
+                            className="w-full p-3 bg-muted rounded-lg border text-sm font-mono"
+                            placeholder="Input for your program (optional). Example:\n5\n10\n"
+                          />
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <h3 className="font-semibold text-sm">Output:</h3>
+                        <div className="p-4 bg-black text-green-400 rounded-lg border font-mono text-sm min-h-[120px]">
+                          <pre className="whitespace-pre-wrap">{output || ' '}</pre>
+                        </div>
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="preview" className="mt-4">
+                      {isPreviewMode && (
+                        <div className="space-y-2">
+                          <h3 className="font-semibold text-sm">Preview:</h3>
+                          <div className="border rounded-lg overflow-hidden bg-white dark:bg-[hsl(220_30%_8%)]">
+                            <iframe
+                              key={`preview-${iframeKey}-${activeTab === 'multi' ? htmlCode.length + cssCode.length + jsCode.length : code.length}`}
+                              srcDoc={previewContent}
+                              className="w-full h-96 border-0"
+                              sandbox="allow-scripts allow-same-origin allow-forms"
+                              title="Code Preview"
+                              style={{ minHeight: '400px' }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </TabsContent>
+                  </Tabs>
+                )
+              })()}
             </div>
           </CardContent>
         </Card>

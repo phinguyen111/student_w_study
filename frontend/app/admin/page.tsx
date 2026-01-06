@@ -4288,10 +4288,32 @@ export default function AdminPage() {
                                         value={q.codeType || 'html'}
                                         onChange={(e) => updateQuizQuestion(qIndex, 'codeType', e.target.value)}
                                       >
-                                        <option value="html">HTML</option>
-                                        <option value="css">CSS</option>
-                                        <option value="javascript">JavaScript</option>
-                                        <option value="html-css-js">HTML + CSS + JS</option>
+                                        <optgroup label="Web Development">
+                                          <option value="html">HTML</option>
+                                          <option value="css">CSS</option>
+                                          <option value="javascript">JavaScript</option>
+                                          <option value="typescript">TypeScript</option>
+                                          <option value="php">PHP</option>
+                                          <option value="html-css-js">HTML + CSS + JS</option>
+                                        </optgroup>
+                                        <optgroup label="Backend & Systems">
+                                          <option value="python">🐍 Python</option>
+                                          <option value="java">☕ Java</option>
+                                          <option value="cpp">⚙️ C++</option>
+                                          <option value="c">🔧 C</option>
+                                          <option value="csharp">🟣 C#</option>
+                                          <option value="go">🐹 Go</option>
+                                          <option value="rust">🦀 Rust</option>
+                                          <option value="ruby">💎 Ruby</option>
+                                          <option value="swift">🐦 Swift</option>
+                                          <option value="kotlin">🟧 Kotlin</option>
+                                        </optgroup>
+                                        <optgroup label="Data & Scripting">
+                                          <option value="r">📊 R</option>
+                                          <option value="sql">🗄️ SQL</option>
+                                          <option value="bash">🐚 Bash</option>
+                                          <option value="powershell">💠 PowerShell</option>
+                                        </optgroup>
                                       </select>
                                     </div>
                                     <div>
@@ -5359,10 +5381,32 @@ export default function AdminPage() {
                                 value={q.codeType || 'html'}
                                 onChange={(e) => updateEditQuizQuestion(qIndex, 'codeType', e.target.value)}
                               >
-                                <option value="html">HTML</option>
-                                <option value="css">CSS</option>
-                                <option value="javascript">JavaScript</option>
-                                <option value="html-css-js">HTML + CSS + JS</option>
+                                <optgroup label="Web Development">
+                                  <option value="html">HTML</option>
+                                  <option value="css">CSS</option>
+                                  <option value="javascript">JavaScript</option>
+                                  <option value="typescript">TypeScript</option>
+                                  <option value="php">PHP</option>
+                                  <option value="html-css-js">HTML + CSS + JS</option>
+                                </optgroup>
+                                <optgroup label="Backend & Systems">
+                                  <option value="python">🐍 Python</option>
+                                  <option value="java">☕ Java</option>
+                                  <option value="cpp">⚙️ C++</option>
+                                  <option value="c">🔧 C</option>
+                                  <option value="csharp">🟣 C#</option>
+                                  <option value="go">🐹 Go</option>
+                                  <option value="rust">🦀 Rust</option>
+                                  <option value="ruby">💎 Ruby</option>
+                                  <option value="swift">🐦 Swift</option>
+                                  <option value="kotlin">🟧 Kotlin</option>
+                                </optgroup>
+                                <optgroup label="Data & Scripting">
+                                  <option value="r">📊 R</option>
+                                  <option value="sql">🗄️ SQL</option>
+                                  <option value="bash">🐚 Bash</option>
+                                  <option value="powershell">💠 PowerShell</option>
+                                </optgroup>
                               </select>
                             </div>
                             <div>

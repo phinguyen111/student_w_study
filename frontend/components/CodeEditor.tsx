@@ -5,6 +5,12 @@ import CodeMirror from '@uiw/react-codemirror'
 import { html } from '@codemirror/lang-html'
 import { javascript } from '@codemirror/lang-javascript'
 import { css } from '@codemirror/lang-css'
+import { python } from '@codemirror/lang-python'
+import { java } from '@codemirror/lang-java'
+import { cpp } from '@codemirror/lang-cpp'
+import { rust } from '@codemirror/lang-rust'
+import { php } from '@codemirror/lang-php'
+import { sql } from '@codemirror/lang-sql'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { EditorView } from '@codemirror/view'
 import { useTheme } from 'next-themes'
@@ -12,7 +18,7 @@ import { useTheme } from 'next-themes'
 interface CodeEditorProps {
   value: string
   onChange: (value: string) => void
-  language: 'html' | 'javascript' | 'css' | 'python' | 'html-css-js'
+  language: string
   height?: string
   placeholder?: string
   readOnly?: boolean
@@ -20,12 +26,27 @@ interface CodeEditorProps {
   onErrorsChange?: (errors: any[]) => void
 }
 
-const languageExtensions = {
+const languageExtensions: Record<string, any> = {
   html: html(),
-  javascript: javascript(),
   css: css(),
-  python: javascript(), // Fallback to JavaScript for Python
-  'html-css-js': html(), // For combined editing
+  javascript: javascript(),
+  typescript: javascript({ typescript: true }),
+  python: python(),
+  java: java(),
+  cpp: cpp(),
+  c: cpp(),
+  csharp: cpp(),
+  go: cpp(),
+  rust: rust(),
+  ruby: javascript(),
+  php: php(),
+  swift: cpp(),
+  kotlin: java(),
+  r: javascript(),
+  sql: sql(),
+  bash: javascript(),
+  powershell: javascript(),
+  'html-css-js': html(),
 }
 
 // Custom light theme similar to W3Schools
@@ -175,7 +196,7 @@ export function CodeEditor({
         }
       }
       
-      if (language === 'javascript') {
+      if (language === 'javascript' || language === 'typescript') {
         try {
           new Function(value)
         } catch (e: any) {
@@ -215,7 +236,7 @@ export function CodeEditor({
 
   const extensions = useMemo(() => {
     const baseExtensions = [
-      languageExtensions[language] || languageExtensions.html,
+      languageExtensions[language] || languageExtensions.javascript,
       EditorView.lineWrapping,
       EditorView.contentAttributes.of({ 'data-gramm': 'false' }), // Disable Grammarly
     ]

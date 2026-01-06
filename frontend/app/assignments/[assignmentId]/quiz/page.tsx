@@ -12,11 +12,12 @@ import { ArrowLeft, Code, Loader2, FileCode, Play, RotateCcw, CheckCircle2, File
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useQuizTracker } from '@/hooks/useQuizTracker'
 import { useGATracking } from '@/hooks/useGATracking'
+import { detectLanguageFromCode, preprocessListedCode } from '@/lib/codeDetect'
 
 interface CodeQuestion {
   type: 'code'
   question: string
-  codeType: 'html' | 'css' | 'javascript' | 'html-css-js'
+  codeType: string
   starterCode: {
     html?: string
     css?: string
@@ -49,11 +50,13 @@ export default function QuizAssignmentPage() {
   const [codeAnswers, setCodeAnswers] = useState<Record<number, string>>({})
   
   // Code editor states (for current code question)
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('html')
   const [code, setCode] = useState('')
   const [htmlCode, setHtmlCode] = useState('')
   const [cssCode, setCssCode] = useState('')
   const [jsCode, setJsCode] = useState('')
   const [output, setOutput] = useState('')
+  const [stdinInput, setStdinInput] = useState('')
   const [isRunning, setIsRunning] = useState(false)
   const [iframeKey, setIframeKey] = useState(0)
   const [activeTab, setActiveTab] = useState<'single' | 'multi'>('single')
@@ -65,6 +68,73 @@ export default function QuizAssignmentPage() {
   const [codeErrors, setCodeErrors] = useState<any[]>([])
   const [exerciseInstructions, setExerciseInstructions] = useState<string>('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [ioTab, setIoTab] = useState<'terminal' | 'preview'>('preview')
+
+  const fallbackLanguages = [
+    { id: 'html', label: 'HTML' },
+    { id: 'css', label: 'CSS' },
+    { id: 'javascript', label: 'JavaScript' },
+    { id: 'typescript', label: 'TypeScript' },
+    { id: 'html-css-js', label: 'HTML + CSS + JS' },
+    { id: 'python', label: 'Python' },
+    { id: 'java', label: 'Java' },
+    { id: 'cpp', label: 'C++' },
+    { id: 'c', label: 'C' },
+    { id: 'csharp', label: 'C#' },
+    { id: 'go', label: 'Go' },
+    { id: 'rust', label: 'Rust' },
+    { id: 'ruby', label: 'Ruby' },
+    { id: 'php', label: 'PHP' },
+    { id: 'swift', label: 'Swift' },
+    { id: 'kotlin', label: 'Kotlin' },
+    { id: 'r', label: 'R' },
+    { id: 'sql', label: 'SQL' },
+    { id: 'bash', label: 'Bash' },
+    { id: 'powershell', label: 'PowerShell' },
+  ]
+
+  const [languageOptions, setLanguageOptions] = useState(fallbackLanguages)
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await api.get('/code/languages')
+        const list = res?.data?.languages
+        if (!Array.isArray(list)) return
+
+        const remote = list
+          .map((l: any) => ({
+            id: String(l?.id || '').toLowerCase(),
+            label: String(l?.name || l?.id || '').trim() || String(l?.id || '').toUpperCase(),
+          }))
+          .filter((l: any) => l.id)
+
+        const byId = new Map()
+        for (const f of fallbackLanguages) byId.set(f.id, f)
+        for (const r of remote) if (!byId.has(r.id)) byId.set(r.id, r)
+
+        const merged = Array.from(byId.values())
+        const pinned = fallbackLanguages.map((l) => l.id)
+        merged.sort((a, b) => {
+          const ap = pinned.indexOf(a.id)
+          const bp = pinned.indexOf(b.id)
+          if (ap !== -1 || bp !== -1) return (ap === -1 ? 999 : ap) - (bp === -1 ? 999 : bp)
+          return a.label.localeCompare(b.label)
+        })
+
+        if (!cancelled && merged.length) setLanguageOptions(merged)
+      } catch {
+        // keep fallback
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [isAuthenticated])
 
   const { startTracking, endTracking, isTracking } = useQuizTracker({
     assignmentId: assignmentId || '',
@@ -196,7 +266,7 @@ ${js}
     if (assignment?.questions && currentQuestionIndex < assignment.questions.length) {
       const currentQ = assignment.questions[currentQuestionIndex]
       if (currentQ.type === 'code') {
-        const lang = currentQ.codeType
+        const lang = selectedLanguage || currentQ.codeType
         if (lang === 'html' || lang === 'css' || lang === 'html-css-js' || activeTab === 'multi') {
           if (activeTab === 'multi' || lang === 'html-css-js') {
             setPreviewContent(combineCode())
@@ -224,7 +294,14 @@ ${js}
         }
       }
     }
-  }, [code, htmlCode, cssCode, jsCode, activeTab, assignment?.questions, currentQuestionIndex])
+  }, [code, htmlCode, cssCode, jsCode, activeTab, assignment?.questions, currentQuestionIndex, selectedLanguage])
+
+  useEffect(() => {
+    const shouldMulti = selectedLanguage === 'html-css-js'
+    setActiveTab(shouldMulti ? 'multi' : 'single')
+    const shouldPreview = shouldMulti || selectedLanguage === 'html' || selectedLanguage === 'css'
+    setIoTab(shouldPreview ? 'preview' : 'terminal')
+  }, [selectedLanguage])
 
   const fetchAssignment = async () => {
     try {
@@ -250,6 +327,10 @@ ${js}
     const q = assignment.questions[currentQuestionIndex]
     
     if (q.type === 'code') {
+      setSelectedLanguage(q.codeType || 'html')
+      const shouldMulti = q.codeType === 'html-css-js'
+      const shouldPreview = shouldMulti || q.codeType === 'html' || q.codeType === 'css'
+      setIoTab(shouldPreview ? 'preview' : 'terminal')
       // Load saved code answer if exists
       const savedCode = codeAnswers[currentQuestionIndex]
       
@@ -321,26 +402,29 @@ ${js}
     }
   }
 
-  const handleRun = () => {
+  const handleRun = async () => {
     setIsRunning(true)
     setOutput('')
     trackButtonClick('Run Code', window.location.pathname)
 
     try {
-      const currentCode = activeTab === 'multi' ? combineCode() : code
+      const currentCodeRaw = activeTab === 'multi' ? combineCode() : code
+      const currentCode = preprocessListedCode(currentCodeRaw)
       const currentQ = assignment?.questions[currentQuestionIndex] as CodeQuestion
-      const lang = currentQ?.codeType || 'html'
+      const lang = selectedLanguage || currentQ?.codeType || 'html'
+      const isPreviewMode = activeTab === 'multi' || lang === 'html-css-js' || lang === 'html' || lang === 'css'
       
-      if (activeTab === 'multi' || lang === 'html-css-js') {
-        setPreviewContent(combineCode())
-      } else if (lang === 'html') {
-        setPreviewContent(code || '<!DOCTYPE html><html><head><title>Preview</title></head><body><p>No content yet</p></body></html>')
-      } else if (lang === 'css') {
-        setPreviewContent(`<!DOCTYPE html>
+      if (isPreviewMode) {
+        if (activeTab === 'multi' || lang === 'html-css-js') {
+          setPreviewContent(combineCode())
+        } else if (lang === 'html') {
+          setPreviewContent(currentCode || '<!DOCTYPE html><html><head><title>Preview</title></head><body><p>No content yet</p></body></html>')
+        } else if (lang === 'css') {
+          setPreviewContent(`<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <style>${code || '/* Add your CSS here */'}</style>
+    <style>${currentCode || '/* Add your CSS here */'}</style>
 </head>
 <body>
     <div class="demo-container">
@@ -353,36 +437,31 @@ ${js}
     </div>
 </body>
 </html>`)
-      }
-      
-      if (lang === 'javascript' && activeTab === 'single') {
-        try {
-          const result = eval(currentCode)
-          if (result !== undefined) {
-            setOutput(String(result))
-          } else {
-            setOutput('Code executed successfully!')
-          }
-        } catch (error: any) {
-          setOutput(`Error: ${error.message}`)
         }
-      } else {
+
         setOutput('Preview updated!')
         setIframeKey(prev => prev + 1)
-        
-        if (activeTab === 'multi' && jsCode.trim()) {
-          try {
-            const result = eval(jsCode)
-            if (result !== undefined) {
-              setOutput(`Preview updated! JavaScript output: ${String(result)}`)
-            }
-          } catch (error: any) {
-            setOutput(`Preview updated! JavaScript error: ${error.message}`)
-          }
-        }
+        return
       }
+
+      const response = await api.post('/code/execute', {
+        code: currentCode,
+        language: lang,
+        input: stdinInput,
+      })
+
+      const data = response?.data
+      if (!data?.success) {
+        setOutput(data?.error || 'Execution failed')
+        return
+      }
+
+      const combinedOutput = [data.output, data.error ? `\n${data.error}` : '']
+        .filter(Boolean)
+        .join('')
+      setOutput(combinedOutput || 'Program executed successfully (no output)')
     } catch (error: any) {
-      setOutput(`Error: ${error.message}`)
+      setOutput(error?.response?.data?.error || error?.message || 'Execution failed')
     } finally {
       setIsRunning(false)
     }
@@ -749,9 +828,17 @@ ${js}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium">Language:</span>
-                      <span className="px-2 py-1 bg-primary/10 text-primary rounded text-sm">
-                        {currentQuestion.codeType.toUpperCase()}
-                      </span>
+                      <select
+                        value={selectedLanguage}
+                        onChange={(e) => setSelectedLanguage(e.target.value)}
+                        className="h-9 rounded-md border bg-background px-3 text-sm"
+                      >
+                        {languageOptions.map((l) => (
+                          <option key={l.id} value={l.id}>
+                            {l.label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <Button variant="outline" size="sm" onClick={handleReset}>
                       <RotateCcw className="h-4 w-4 mr-2" />
@@ -778,7 +865,7 @@ ${js}
 
                   {/* Code Editor - Full width */}
                   <div>
-                    {currentQuestion.codeType === 'html-css-js' || activeTab === 'multi' ? (
+                    {selectedLanguage === 'html-css-js' || activeTab === 'multi' ? (
                       <Tabs defaultValue="html" className="w-full">
                         <TabsList className="grid w-full grid-cols-3">
                           <TabsTrigger value="html">
@@ -808,7 +895,13 @@ ${js}
                         <TabsContent value="css" className="mt-4">
                           <DynamicCodeEditor
                             value={cssCode}
-                            onChange={setCssCode}
+                            onChange={(v) => {
+                              setCode(v)
+                              const detected = detectLanguageFromCode(v)
+                              if (detected && detected !== selectedLanguage && detected !== 'html-css-js') {
+                                setSelectedLanguage(detected)
+                              }
+                            }}
                             language="css"
                             height="400px"
                             placeholder="Write your CSS here..."
@@ -851,7 +944,7 @@ ${js}
                     </CardHeader>
                     <CardContent>
                       {(() => {
-                        const allErrors = activeTab === 'multi' 
+                        const allErrors = activeTab === 'multi'
                           ? [...htmlErrors, ...cssErrors, ...jsErrors]
                           : codeErrors
                         const totalErrors = allErrors.length
@@ -879,11 +972,11 @@ ${js}
                               {totalErrors} error{totalErrors > 1 ? 's' : ''} found
                             </div>
                             {allErrors.map((error, index) => (
-                              <div 
-                                key={index} 
+                              <div
+                                key={index}
                                 className={`text-xs p-2 rounded border ${
-                                  error.severity === 'error' 
-                                    ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200' 
+                                  error.severity === 'error'
+                                    ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200'
                                     : 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200'
                                 }`}
                               >
@@ -923,31 +1016,62 @@ ${js}
                     </Button>
                   </div>
 
-                  {/* Output */}
-                  {output && (
-                    <div className="space-y-2">
-                      <h3 className="font-semibold text-sm">Output:</h3>
-                      <div className="p-4 bg-muted rounded-lg border">
-                        <pre className="whitespace-pre-wrap text-sm">{output}</pre>
-                      </div>
-                    </div>
-                  )}
-                  {/* Preview - Always show for HTML, CSS, or multi-language */}
-                  {(currentQuestion.codeType === 'html' || currentQuestion.codeType === 'css' || currentQuestion.codeType === 'html-css-js' || activeTab === 'multi') && (
-                    <div className="space-y-2">
-                      <h3 className="font-semibold text-sm">Preview:</h3>
-                      <div className="border rounded-lg overflow-hidden bg-white dark:bg-[hsl(220_30%_8%)]">
-                        <iframe
-                          key={`preview-${iframeKey}-${activeTab === 'multi' ? htmlCode.length + cssCode.length + jsCode.length : code.length}`}
-                          srcDoc={previewContent}
-                          className="w-full h-96 border-0"
-                          sandbox="allow-scripts allow-same-origin allow-forms"
-                          title="Code Preview"
-                          style={{ minHeight: '400px' }}
-                        />
-                      </div>
-                    </div>
-                  )}
+                  {/* Terminal / Preview Tabs */}
+                  {(() => {
+                    const lang = selectedLanguage || currentQuestion?.codeType || 'html'
+                    const isPreviewMode = activeTab === 'multi' || lang === 'html-css-js' || lang === 'html' || lang === 'css'
+
+                    return (
+                      <Tabs value={ioTab} onValueChange={(v) => setIoTab(v as any)} className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                          <TabsTrigger value="terminal">Terminal</TabsTrigger>
+                          <TabsTrigger value="preview" disabled={!isPreviewMode}>
+                            Preview
+                          </TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="terminal" className="mt-4 space-y-3">
+                          {!isPreviewMode && (
+                            <div className="space-y-2">
+                              <h3 className="font-semibold text-sm">Input (stdin):</h3>
+                              <textarea
+                                value={stdinInput}
+                                onChange={(e) => setStdinInput(e.target.value)}
+                                rows={4}
+                                className="w-full p-3 bg-muted rounded-lg border text-sm font-mono"
+                                placeholder="Input for your program (optional). Example:\n5\n10\n"
+                              />
+                            </div>
+                          )}
+
+                          <div className="space-y-2">
+                            <h3 className="font-semibold text-sm">Output:</h3>
+                            <div className="p-4 bg-black text-green-400 rounded-lg border font-mono text-sm min-h-[120px]">
+                              <pre className="whitespace-pre-wrap">{output || ' '}</pre>
+                            </div>
+                          </div>
+                        </TabsContent>
+
+                        <TabsContent value="preview" className="mt-4">
+                          {isPreviewMode && (
+                            <div className="space-y-2">
+                              <h3 className="font-semibold text-sm">Preview:</h3>
+                              <div className="border rounded-lg overflow-hidden bg-white dark:bg-[hsl(220_30%_8%)]">
+                                <iframe
+                                  key={`preview-${iframeKey}-${activeTab === 'multi' ? htmlCode.length + cssCode.length + jsCode.length : code.length}`}
+                                  srcDoc={previewContent}
+                                  className="w-full h-96 border-0"
+                                  sandbox="allow-scripts allow-same-origin allow-forms"
+                                  title="Code Preview"
+                                  style={{ minHeight: '400px' }}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </TabsContent>
+                      </Tabs>
+                    )
+                  })()}
                 </div>
               </CardContent>
             </Card>

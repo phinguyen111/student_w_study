@@ -4,6 +4,9 @@
   "description": "Backend API for LearnCode learning platform",
   "main": "app.js",
   "type": "module",
+  "engines": {
+    "node": ">=18.18.0"
+  },
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
