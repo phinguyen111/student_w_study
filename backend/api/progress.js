@@ -690,9 +690,18 @@ router.post(
         return res.status(400).json({ message: 'fileKey is required' });
       }
 
-      const assignment = await Assignment.findById(assignmentId);
+      const assignment = await FileAssignment.findById(assignmentId);
       if (!assignment) {
         return res.status(404).json({ message: 'Assignment not found' });
+      }
+
+      // Ensure user is actually assigned to this file assignment
+      const isAssigned = (assignment.assignedTo || []).some(
+        (userId) => userId?.toString() === req.user._id.toString()
+      );
+
+      if (!isAssigned) {
+        return res.status(403).json({ message: 'You are not assigned to this assignment' });
       }
 
       // Check nếu user đã nộp bài
