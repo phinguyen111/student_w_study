@@ -602,7 +602,8 @@ ${js}
 
   if (!lesson || !lesson.codeExercise) {
     return (
-      <div className="container mx-auto px-4 py-16 text-center min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-16 text-center min-h-screen flex items-center justify-center">
         <div>
           <FileCode className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
           <h2 className="text-2xl font-bold mb-2">Code Exercise Not Available</h2>
@@ -611,12 +612,13 @@ ${js}
             <Button>Back to Lesson</Button>
           </Link>
         </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[hsl(185_80%_98%)] via-[hsl(210_60%_98%)] to-[hsl(250_60%_98%)] dark:from-[hsl(220_30%_8%)] dark:via-[hsl(230_30%_10%)] dark:to-[hsl(240_30%_12%)]">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         {/* Back Button */}
         <Link href={`/learn/${params.langId}/lesson/${params.lessonId}`}>
@@ -664,12 +666,12 @@ ${js}
               {/* Exercise Instructions and Description - Above Code Editor */}
               {exerciseDescription && (
                 <Card className="mb-4">
-                  <CardHeader className="pb-3 bg-blue-50/50 dark:bg-blue-950/20 border-b">
+                  <CardHeader className="pb-3 bg-muted/40 border-b">
                     <CardTitle className="text-lg flex items-center gap-2">
-                      <div className="p-1.5 rounded bg-blue-600 dark:bg-blue-500 text-white">
+                      <div className="p-1.5 rounded bg-primary text-primary-foreground">
                         <Code className="h-4 w-4" />
                       </div>
-                      <span className="text-blue-700 dark:text-blue-400 font-semibold">
+                      <span className="text-foreground font-semibold">
                         Yêu cầu bài tập
                       </span>
                     </CardTitle>
@@ -760,7 +762,7 @@ ${js}
               <Card className="mt-4">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                    <AlertCircle className="h-5 w-5 text-destructive" />
                     Syntax Errors
                   </CardTitle>
                 </CardHeader>
@@ -773,7 +775,7 @@ ${js}
 
                     if (totalErrors === 0 && (code.trim().length > 0 || htmlCode.trim().length > 0 || cssCode.trim().length > 0 || jsCode.trim().length > 0)) {
                       return (
-                        <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                        <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400 p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg">
                           <CheckCircle2 className="h-4 w-4" />
                           <span>No syntax errors</span>
                         </div>
@@ -798,8 +800,8 @@ ${js}
                             key={index} 
                             className={`text-xs p-2 rounded border ${
                               error.severity === 'error' 
-                                ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200' 
-                                : 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200'
+                                ? 'bg-destructive/10 border-destructive/20 text-destructive' 
+                                : 'bg-muted/40 border-border text-foreground'
                             }`}
                           >
                             <div className="font-medium mb-1">
@@ -878,7 +880,7 @@ ${js}
                             value={stdinInput}
                             onChange={(e) => setStdinInput(e.target.value)}
                             rows={4}
-                            className="w-full p-3 bg-muted rounded-lg border text-sm font-mono"
+                            className="w-full p-3 bg-muted/40 rounded-lg border border-border text-sm font-mono"
                             placeholder="Input for your program (optional). Example:\n5\n10\n"
                           />
                         </div>
@@ -886,7 +888,7 @@ ${js}
 
                       <div className="space-y-2">
                         <h3 className="font-semibold text-sm">Output:</h3>
-                        <div className="p-4 bg-black text-green-400 rounded-lg border font-mono text-sm min-h-[120px]">
+                        <div className="p-4 bg-muted/40 text-foreground rounded-lg border border-border font-mono text-sm min-h-[120px]">
                           <pre className="whitespace-pre-wrap">{output || ' '}</pre>
                         </div>
                       </div>
@@ -896,7 +898,7 @@ ${js}
                       {isPreviewMode && (
                         <div className="space-y-2">
                           <h3 className="font-semibold text-sm">Preview:</h3>
-                          <div className="border rounded-lg overflow-hidden bg-white dark:bg-[hsl(220_30%_8%)]">
+                          <div className="border border-border rounded-lg overflow-hidden bg-background">
                             <iframe
                               key={`preview-${iframeKey}-${activeTab === 'multi' ? htmlCode.length + cssCode.length + jsCode.length : code.length}`}
                               srcDoc={previewContent}

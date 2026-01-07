@@ -193,17 +193,11 @@ export default function Home() {
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-20 pb-32 px-4">
-        {/* Animated Background Gradient */}
-        <div className="absolute inset-0 gradient-primary-light opacity-40 dark:gradient-primary-dark dark:opacity-20" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(120,119,198,0.1),transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(59,130,246,0.1),transparent_50%)]" />
-        
         <div className="container mx-auto relative z-10">
           <div className="text-center max-w-4xl mx-auto">
             {/* Logo with Animation */}
             <div className="inline-block mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
               <div className="relative w-32 h-32 mx-auto">
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 rounded-full blur-2xl opacity-30 animate-pulse" />
                 <div className="relative w-32 h-32 mx-auto bg-background/80 backdrop-blur-sm rounded-full p-4 shadow-lg border border-border/50">
                   <Image
                     src={logoImage}
@@ -544,7 +538,6 @@ export default function Home() {
 
       {/* Final CTA Section */}
       <section className="py-20 px-4 relative overflow-hidden">
-        <div className="absolute inset-0 gradient-primary-light opacity-40 dark:gradient-primary-dark dark:opacity-20" />
         <div className="container mx-auto text-center max-w-3xl relative z-10">
           <Award className="w-16 h-16 mx-auto mb-6 text-primary" />
           <h2 className="text-4xl md:text-5xl font-bold mb-6">

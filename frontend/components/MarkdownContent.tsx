@@ -189,11 +189,9 @@ export function MarkdownContent({ content }: MarkdownContentProps) {
           ),
 
           // Images
-          img: ({ node, alt, ...props }) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              className="rounded-lg my-6 shadow-lg max-w-full h-auto border border-border"
-              alt={alt || ''}
+          img: ({ node, ...props }) => (
+            <img 
+              className="rounded-lg my-6 shadow-lg max-w-full h-auto border border-border" 
               {...props}
             />
           ),

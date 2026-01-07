@@ -52,7 +52,7 @@ export default function LevelPage() {
 
   if (loading || loadingLessons) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[hsl(185_80%_98%)] via-[hsl(210_60%_98%)] to-[hsl(250_60%_98%)] dark:from-[hsl(220_30%_8%)] dark:via-[hsl(230_30%_10%)] dark:to-[hsl(240_30%_12%)]">
+      <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-16 text-center">
           <p>Loading...</p>
         </div>
@@ -65,7 +65,7 @@ export default function LevelPage() {
   const levelNumber = levelMeta?.levelNumber
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[hsl(185_80%_98%)] via-[hsl(210_60%_98%)] to-[hsl(250_60%_98%)] dark:from-[hsl(220_30%_8%)] dark:via-[hsl(230_30%_10%)] dark:to-[hsl(240_30%_12%)]">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <Link href={`/learn/${params.langId}`}>
           <Button variant="ghost" className="mb-4">
@@ -108,16 +108,10 @@ export default function LevelPage() {
             {lessons.map((lesson) => (
               <div key={lesson._id} className="relative">
                 {/* Step marker */}
-                <div className="absolute left-5 md:left-7 top-7 -translate-x-1/2">
-                  <div className="grid h-11 w-11 place-items-center rounded-full border border-primary/20 bg-primary/10">
-                    <span className="text-primary font-extrabold text-xl md:text-2xl leading-none">
-                      {lesson.lessonNumber}
-                    </span>
-                  </div>
-                </div>
+              
 
                 {/* Step card */}
-                <Card className="relative overflow-hidden border border-border/60 bg-white/90 dark:bg-slate-900/60 rounded-3xl shadow-md hover:shadow-xl transition-all duration-300">
+                <Card className="relative overflow-hidden border border-border/60 bg-card/80 rounded-3xl shadow-md hover:shadow-xl transition-all duration-300">
                   <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity" />
                   <CardContent className="relative p-6 md:p-7">
                     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

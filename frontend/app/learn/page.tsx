@@ -92,23 +92,23 @@ export default function LearnPage() {
   const trendingLanguage = languages[0]
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_hsl(200_80%_94%)_0%,_white_50%)] dark:bg-[radial-gradient(circle_at_top,_hsl(215_30%_15%)_0%,_hsl(220_30%_10%)_60%)]">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-4 space-y-4">
         {/* Hero */}
         <div className="grid gap-6 lg:grid-cols-[3fr,2fr]">
-          <div className="rounded-3xl border border-blue-100/60 dark:border-white/10 bg-white/90 dark:bg-slate-900/60 shadow-[0_25px_60px_rgba(15,23,42,0.08)] p-10 space-y-5">
-            <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-200 text-xs font-semibold tracking-[0.4em] uppercase">
+          <div className="rounded-3xl border border-border/60 bg-card/80 shadow-[0_25px_60px_rgba(15,23,42,0.08)] p-10 space-y-5">
+            <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold tracking-[0.4em] uppercase">
               <Sparkles className="h-3 w-3" />
               Learn
             </div>
-            <h1 className="text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white leading-tight">
+            <h1 className="text-4xl lg:text-5xl font-bold text-foreground leading-tight">
               Build your stack step-by-step with curated language roadmaps.
             </h1>
-            <p className="text-slate-600 dark:text-slate-300 text-lg">
+            <p className="text-muted-foreground text-lg">
               Learn with bite-sized lessons, real projects, and progress tracking. Pick a language to unlock its full learning journey.
             </p>
             <div className="flex flex-wrap gap-3 text-sm">
-              <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 dark:bg-white/5 px-4 py-2 font-medium text-slate-700 dark:text-white">
+              <div className="inline-flex items-center gap-2 rounded-full bg-muted px-4 py-2 font-medium text-foreground">
                 <Layers className="h-4 w-4" />
                 {totalLanguages}+ tracks
               </div>
@@ -121,29 +121,29 @@ export default function LearnPage() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-blue-100/70 dark:border-white/5 bg-gradient-to-br from-cyan-50 to-sky-50 dark:from-slate-900/60 dark:to-slate-900/40 shadow-xl p-8 space-y-6">
+          <div className="rounded-3xl border border-border/60 bg-gradient-to-br from-primary/5 to-secondary/20 shadow-xl p-8 space-y-6">
             <div className="space-y-1">
-              <p className="text-xs uppercase tracking-[0.4em] text-slate-500 dark:text-slate-400">
+              <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground">
                 Quick filters
               </p>
-              <p className="text-2xl font-semibold text-slate-900 dark:text-white">
+              <p className="text-2xl font-semibold text-foreground">
                 Find a language that matches your focus
               </p>
             </div>
             <div className="space-y-3">
-              <label className="text-xs uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400 flex items-center gap-2">
+              <label className="text-xs uppercase tracking-[0.3em] text-muted-foreground flex items-center gap-2">
                 <Search className="h-3.5 w-3.5" />
                 Search
               </label>
               <Input
-                className="h-11 bg-white/80 dark:bg-slate-900/70 border-transparent focus-visible:ring-primary/40"
+                className="h-11 bg-background/60 border-input focus-visible:ring-ring/40"
                 placeholder="HTML, CSS, React..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <p className="text-xs uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">
+              <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                 Categories
               </p>
               <div className="flex flex-wrap gap-2">
@@ -154,7 +154,7 @@ export default function LearnPage() {
                     className={`px-3 py-1.5 rounded-full text-sm border transition ${
                       selectedCategory === category
                         ? 'border-primary bg-primary text-primary-foreground'
-                        : 'border-transparent bg-white/70 text-slate-600 dark:bg-white/5 dark:text-slate-300 hover:border-slate-300'
+                        : 'border-border/30 bg-background/60 text-foreground/80 hover:border-border/60 hover:text-foreground dark:bg-background/20'
                     }`}
                   >
                     {category === 'all' ? 'All paths' : category}

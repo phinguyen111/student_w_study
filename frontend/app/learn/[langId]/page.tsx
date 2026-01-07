@@ -76,7 +76,7 @@ export default function LanguagePage() {
   const completedLevels = language.levels.filter(level => level.isUnlocked && level.averageScore >= 9).length
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[hsl(185_80%_98%)] via-[hsl(210_60%_98%)] to-[hsl(250_60%_98%)] dark:from-[hsl(220_30%_8%)] dark:via-[hsl(230_30%_10%)] dark:to-[hsl(240_30%_12%)]">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Header Section */}
         <div className="mb-8">
@@ -141,9 +141,7 @@ export default function LanguagePage() {
                       }`}
                     >
                       <span
-                        className={`font-extrabold text-xl md:text-2xl leading-none ${
-                          level.isUnlocked ? 'text-primary' : 'text-muted-foreground'
-                        }`}
+                        className={level.isUnlocked ? undefined : 'text-muted-foreground'}
                       >
                         {level.levelNumber}
                       </span>
@@ -154,7 +152,7 @@ export default function LanguagePage() {
                   <Card
                     className={`relative overflow-hidden rounded-3xl transition-all duration-300 ${
                       level.isUnlocked
-                        ? 'border border-border/60 bg-white/90 dark:bg-slate-900/60 shadow-md hover:shadow-xl'
+                        ? 'border border-border/60 bg-card/80 shadow-md hover:shadow-xl'
                         : 'border border-border/60 border-dashed bg-card/60 shadow-sm opacity-70'
                     }`}
                   >

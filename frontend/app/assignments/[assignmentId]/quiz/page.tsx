@@ -37,6 +37,14 @@ interface MultipleChoiceQuestion {
 
 type Question = CodeQuestion | MultipleChoiceQuestion
 
+type CodeEditorLanguage = 'html' | 'javascript' | 'css' | 'python' | 'html-css-js'
+
+function toCodeEditorLanguage(input: string | undefined | null): CodeEditorLanguage {
+  const v = String(input || '').toLowerCase()
+  if (v === 'html' || v === 'javascript' || v === 'css' || v === 'python' || v === 'html-css-js') return v
+  return 'javascript'
+}
+
 export default function QuizAssignmentPage() {
   const params = useParams()
   const router = useRouter()
@@ -925,7 +933,7 @@ ${js}
                       <DynamicCodeEditor
                         value={code}
                         onChange={setCode}
-                        language={currentQuestion.codeType}
+                        language={toCodeEditorLanguage(currentQuestion.codeType)}
                         height="500px"
                         placeholder="Write your code here..."
                         showErrors={true}
