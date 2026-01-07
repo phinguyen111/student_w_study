@@ -120,42 +120,21 @@ export default function LanguagePage() {
           </Card>
         </div>
 
-        {/* Timeline / Steps (roadmap) */}
-        <div className="relative pl-12 md:pl-16">
-          <div className="absolute left-5 md:left-7 top-2 bottom-2 w-px bg-border/70" />
+        {/* Levels */}
+        <div className="grid gap-5">
+          {language.levels.map((level) => {
+            const progress = level.averageScore > 0 ? (level.averageScore / 10) * 100 : 0
+            const lessonCount = level.lessons?.length || 0
 
-          <div className="grid gap-5">
-            {language.levels.map((level) => {
-              const progress = level.averageScore > 0 ? (level.averageScore / 10) * 100 : 0
-              const lessonCount = level.lessons?.length || 0
-
-              return (
-                <div key={level._id} className="relative">
-                  {/* Step marker */}
-                  <div className="absolute left-5 md:left-7 top-7 -translate-x-1/2">
-                    <div
-                      className={`grid h-12 w-12 place-items-center rounded-full border ${
-                        level.isUnlocked
-                          ? 'border-primary/20 bg-primary/10'
-                          : 'border-border/70 bg-muted/40'
-                      }`}
-                    >
-                      <span
-                        className={level.isUnlocked ? undefined : 'text-muted-foreground'}
-                      >
-                        {level.levelNumber}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Step card */}
-                  <Card
-                    className={`relative overflow-hidden rounded-3xl transition-all duration-300 ${
-                      level.isUnlocked
-                        ? 'border border-border/60 bg-card/80 shadow-md hover:shadow-xl'
-                        : 'border border-border/60 border-dashed bg-card/60 shadow-sm opacity-70'
-                    }`}
-                  >
+            return (
+              <Card
+                key={level._id}
+                className={`relative overflow-hidden rounded-3xl transition-all duration-300 ${
+                  level.isUnlocked
+                    ? 'border border-border/60 bg-card/80 shadow-md hover:shadow-xl'
+                    : 'border border-border/60 border-dashed bg-card/60 shadow-sm opacity-70'
+                }`}
+              >
                     {level.isUnlocked && (
                       <>
                         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/10 opacity-0 hover:opacity-100 transition-opacity" />
@@ -224,11 +203,9 @@ export default function LanguagePage() {
                         </div>
                       </div>
                     </CardContent>
-                  </Card>
-                </div>
-              )
-            })}
-          </div>
+              </Card>
+            )
+          })}
         </div>
       </div>
     </div>
