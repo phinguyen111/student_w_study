@@ -89,26 +89,26 @@ export default function LanguagePage() {
 
           <Card className="relative overflow-hidden border border-border/60 bg-card/80 rounded-3xl shadow-md">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/10" />
-            <CardContent className="relative p-8 md:p-10">
+            <CardContent className="relative p-6 sm:p-8 md:p-10">
               <div className="flex items-start justify-between gap-6">
                 <div className="flex-1">
-                  <h1 className="inline-block text-4xl md:text-5xl font-bold mb-4 pb-1 leading-[1.12] bg-gradient-to-r from-[hsl(185_80%_45%)] via-[hsl(210_60%_55%)] to-[hsl(250_60%_55%)] bg-clip-text text-transparent">
+                  <h1 className="inline-block text-3xl sm:text-4xl md:text-5xl font-bold mb-4 pb-1 leading-[1.12] bg-gradient-to-r from-[hsl(185_80%_45%)] via-[hsl(210_60%_55%)] to-[hsl(250_60%_55%)] bg-clip-text text-transparent">
                     {language.name}
                   </h1>
                   <p className="text-lg text-muted-foreground mb-6">
                     Master {language.name} step by step through structured levels and hands-on practice.
                   </p>
                   <div className="flex flex-wrap gap-4 text-sm">
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary">
+                    <div className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-primary/10 text-primary">
                       <Layers className="h-4 w-4" />
                       {language.levels.length} Levels
                     </div>
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/10 text-secondary-foreground">
+                    <div className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-secondary/10 text-secondary-foreground">
                       <BookOpen className="h-4 w-4" />
                       {totalLessons} Lessons
                     </div>
                     {completedLevels > 0 && (
-                      <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 text-green-600 dark:text-green-400">
+                      <div className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-green-500/10 text-green-600 dark:text-green-400">
                         <CheckCircle2 className="h-4 w-4" />
                         {completedLevels} Completed
                       </div>
@@ -155,7 +155,7 @@ export default function LanguagePage() {
                             )}
                           </div>
 
-                          <CardTitle className="text-2xl md:text-3xl leading-snug overflow-hidden [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
+                          <CardTitle className="text-xl sm:text-2xl md:text-3xl leading-snug overflow-hidden [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
                             {level.title}
                           </CardTitle>
                           <CardDescription className="text-base mt-2 overflow-hidden [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3]">
